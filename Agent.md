@@ -85,6 +85,7 @@ Multiple subjects/teachers, timetable integration, geofencing, face/device verif
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-08-10** — Phase 1 Task 3 done: student registration endpoint (`POST /api/student/register/`), DB-level unique CRN + username enforced. Spec + code-quality reviewed, approved. Noted for later: response omits `photo` field, minor TOCTOU race on uniqueness checks under concurrent requests (plan-level tradeoff, not blocking).
 - **2026-08-10** — Phase 1 Task 2 done: custom `User` model (role field) + `StudentProfile` (unique CRN) in `accounts` app, migration + 3 model tests passing. Spec + code-quality reviewed, approved.
 - **2026-08-10** — Phase 1 Task 1 done: Django backend scaffolded (`backend/classpulse`, `backend/accounts`), DRF token auth + CORS + media settings wired. Spec + code-quality reviewed, approved. Added root `.gitignore`.
 - **2026-08-10** — Wrote detailed Phase 1 (Auth) implementation plan: `docs/superpowers/plans/2026-08-10-phase-1-auth.md`. TDD task-by-task, backend (Django+DRF token auth) and frontend (React+Bootstrap). Not yet executed.
