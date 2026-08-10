@@ -8,9 +8,11 @@ Smart QR-Based Real-Time Attendance System. Full spec: [`document.md`](document.
 
 ## Tech Stack
 
+Decoupled: Django backend (API + WebSocket only, no server-rendered templates) + separate React SPA frontend.
+
 - **Backend:** Python 3.12, Django, Django REST Framework, Django Channels (WebSocket)
 - **DB:** SQLite (dev), PostgreSQL (prod)
-- **Frontend:** Django templates (or DRF-consumed by) HTML5, Bootstrap 5, vanilla JS, a browser QR-scanner JS library (e.g. `html5-qrcode`)
+- **Frontend:** React + TypeScript or JS, Bootstrap 5 (via `react-bootstrap` or plain Bootstrap CSS), a browser QR-scanner library (e.g. `html5-qrcode`), fetch/axios for REST, native `WebSocket` for the live dashboard
 - **Async/QR rotation:** Channels + a periodic task (APScheduler or Celery beat) generating a new `QRToken` every 15s per active session
 - **Exports:** `openpyxl` (XLSX), stdlib `csv`, `reportlab`/`weasyprint` (PDF)
 
@@ -18,15 +20,21 @@ Smart QR-Based Real-Time Attendance System. Full spec: [`document.md`](document.
 
 ```text
 classpulse/
-├── manage.py
-├── classpulse/          # Django project settings, asgi.py, urls.py
-├── accounts/             # Student, Teacher models + auth
-├── attendance/            # AttendanceSession, QRToken, Attendance, ActivityLog
-├── realtime/               # Channels consumers/routing
-├── templates/
-├── static/
-├── docs/plan.md
-└── requirements.txt
+├── backend/
+│   ├── manage.py
+│   ├── classpulse/       # Django project settings, asgi.py, urls.py
+│   ├── accounts/          # Student, Teacher models + auth
+│   ├── attendance/         # AttendanceSession, QRToken, Attendance, ActivityLog
+│   ├── realtime/            # Channels consumers/routing
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── pages/          # student/, teacher/ views
+│   │   ├── components/
+│   │   ├── api/             # REST + WebSocket client
+│   │   └── App.tsx
+│   └── package.json
+└── docs/plan.md
 ```
 
 ## Build Order
@@ -41,15 +49,23 @@ Follow `docs/plan.md` phases in order (1 → 5). Do not start a phase until the 
 4. **Unique CRN:** enforce with a DB unique constraint, not application logic alone.
 5. **QR payload:** an opaque random token only — no student data, no session internals.
 6. **No secrets committed.** `DATABASE_URL`, `SECRET_KEY`, etc. go in `.env` / environment, never in code.
+7. **CORS/CSRF:** backend is a pure API for a separately-hosted SPA — configure `django-cors-headers` for the frontend origin, use token/session auth appropriately, never disable CSRF protection wholesale.
 
 ## Commands (once scaffolded)
 
 ```bash
+# backend
+cd backend
 python -m venv venv
 venv\Scripts\activate        # Windows (PowerShell)
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
+
+# frontend
+cd frontend
+npm install
+npm run dev
 ```
 
 ## Conventions
@@ -58,6 +74,8 @@ python manage.py runserver
 - DRF serializers for all API I/O; validate at the serializer/model layer, not just in views.
 - Keep WebSocket consumer logic thin — business logic (validation chain, marking attendance) lives in `attendance/services.py` or similar, callable from both the REST view and the consumer.
 - Every new model needs an admin registration for manual inspection during dev.
+- Frontend calls backend only through `frontend/src/api/` — no inline `fetch`/`axios` calls scattered in components.
+- Bootstrap for layout/components; avoid mixing in another CSS framework.
 
 ## Out of Scope (v1)
 
@@ -67,4 +85,5 @@ Multiple subjects/teachers, timetable integration, geofencing, face/device verif
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-08-10** — Stack finalized: decoupled Django REST/Channels backend + React+Bootstrap frontend (`backend/` + `frontend/`). Updated `Agent.md`, `docs/plan.md`, `Readme.md`.
 - **2026-08-10** — Repo initialized. Wrote `document.md` spec (pre-existing), `docs/plan.md` (5-phase plan), `Agent.md`, `Readme.md`. No code yet.

@@ -1,6 +1,6 @@
 # ClassPulse — Development Plan
 
-Source spec: [`document.md`](../document.md). Stack: Python, Django, Django REST Framework, Django Channels, PostgreSQL (SQLite for dev), Bootstrap 5 frontend.
+Source spec: [`document.md`](../document.md). Stack: decoupled — Django + DRF + Channels backend (`backend/`, PostgreSQL/SQLite), React + Bootstrap 5 frontend (`frontend/`) talking to it over REST + WebSocket.
 
 Each phase ends with a working, demoable slice. No phase depends on future phases' code — only on prior ones.
 
@@ -18,9 +18,9 @@ Each phase ends with a working, demoable slice. No phase depends on future phase
 - `GET /api/student/profile`, `GET /api/teacher/profile`.
 
 **Frontend:**
-- Registration form (name, CRN, course, semester, section, email, password, photo upload).
-- Login pages (student, teacher).
-- Student profile page (read-only).
+- React registration form component (name, CRN, course, semester, section, email, password, photo upload) calling `POST /api/student/register`.
+- Login pages (student, teacher) using React Router (or similar) for routing.
+- Student profile page (read-only), Bootstrap-styled.
 
 **Exit criteria:** a student can register, log in, see their profile. A teacher can log in. Duplicate CRN registration rejected with a clear error.
 

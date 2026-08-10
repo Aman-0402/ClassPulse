@@ -23,16 +23,29 @@ Out of scope for v1: multiple subjects/teachers, timetabling, geofencing, face v
 
 ## Tech Stack
 
-Python · Django · Django REST Framework · Django Channels (WebSocket) · PostgreSQL (SQLite in dev) · Bootstrap 5
+**Backend (`backend/`):** Python · Django · Django REST Framework · Django Channels (WebSocket) · PostgreSQL (SQLite in dev)
+
+**Frontend (`frontend/`):** React · Bootstrap 5 · WebSocket client for the live dashboard
 
 ## Getting Started
 
+Backend:
+
 ```bash
+cd backend
 python -m venv venv
 venv\Scripts\activate        # Windows PowerShell
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 Configure `DATABASE_URL` and `SECRET_KEY` via environment variables / `.env` — never commit these.
