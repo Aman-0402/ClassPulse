@@ -85,6 +85,7 @@ Multiple subjects/teachers, timetable integration, geofencing, face/device verif
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-08-10** — Phase 1 Task 4 done: role-aware token login (`POST /api/student/login/`, returns token+role+username). Spec + code-quality reviewed, approved. Noted for later phase: no logout/token-revocation endpoint, no throttling.
 - **2026-08-10** — Phase 1 Task 3 done: student registration endpoint (`POST /api/student/register/`), DB-level unique CRN + username enforced. Spec + code-quality reviewed, approved. Noted for later: response omits `photo` field, minor TOCTOU race on uniqueness checks under concurrent requests (plan-level tradeoff, not blocking).
 - **2026-08-10** — Phase 1 Task 2 done: custom `User` model (role field) + `StudentProfile` (unique CRN) in `accounts` app, migration + 3 model tests passing. Spec + code-quality reviewed, approved.
 - **2026-08-10** — Phase 1 Task 1 done: Django backend scaffolded (`backend/classpulse`, `backend/accounts`), DRF token auth + CORS + media settings wired. Spec + code-quality reviewed, approved. Added root `.gitignore`.
