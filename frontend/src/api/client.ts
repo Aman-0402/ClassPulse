@@ -46,6 +46,11 @@ export async function getStudentProfile() {
   return data;
 }
 
+export async function getTeacherProfile() {
+  const { data } = await api.get("/teacher/profile/");
+  return data;
+}
+
 export function logout() {
   localStorage.removeItem("classpulse_token");
   localStorage.removeItem("classpulse_role");

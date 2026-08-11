@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from accounts.views import TeacherProfileView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/student/', include('accounts.urls')),
+    path('api/teacher/profile/', TeacherProfileView.as_view(), name='teacher-profile'),
 ]

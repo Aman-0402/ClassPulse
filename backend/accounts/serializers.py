@@ -73,3 +73,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "id", "username", "email", "full_name",
             "crn", "course", "semester", "section", "photo",
         ]
+
+
+class TeacherProfileSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField(source="first_name")
+    date_joined = serializers.DateTimeField()
