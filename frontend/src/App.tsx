@@ -14,6 +14,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/student/profile" element={<StudentProfilePage />} />
         </Route>
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

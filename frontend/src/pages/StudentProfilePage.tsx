@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Container, Spinner } from "react-bootstrap";
-import { getStudentProfile } from "../api/client";
+import { getStudentProfile, logout } from "../api/client";
 
 interface Profile {
   full_name: string;
@@ -13,10 +14,16 @@ interface Profile {
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getStudentProfile().then(setProfile);
-  }, []);
+    getStudentProfile()
+      .then(setProfile)
+      .catch(() => {
+        logout();
+        navigate("/login", { replace: true });
+      });
+  }, [navigate]);
 
   if (!profile) return <Spinner animation="border" className="m-4" />;
 
