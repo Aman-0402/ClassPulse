@@ -8,6 +8,7 @@ class AttendanceConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
         self.group_name = f"attendance_session_{self.session_id}"
+        self.joined_group = False
         user = self.scope.get("user")
 
         if user is None or not user.is_authenticated or user.role != user.ROLE_TEACHER:
@@ -20,10 +21,11 @@ class AttendanceConsumer(AsyncJsonWebsocketConsumer):
             return
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
+        self.joined_group = True
         await self.accept()
 
     async def disconnect(self, close_code):
-        if hasattr(self, "group_name"):
+        if self.joined_group:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def attendance_update(self, event):

@@ -60,3 +60,12 @@ class AttendanceConsumerTest(TransactionTestCase):
         self.assertEqual(message["name"], "Aman Raj")
         self.assertEqual(message["present_count"], 1)
         await communicator.disconnect()
+
+    async def test_disconnect_after_rejection_does_not_error(self):
+        communicator = WebsocketCommunicator(
+            application, f"/ws/attendance/{self.session.id}/?token={self.student_token.key}"
+        )
+        connected, _ = await communicator.connect()
+        self.assertFalse(connected)
+        # Should not raise even though the connection was rejected before joining any group.
+        await communicator.disconnect()
