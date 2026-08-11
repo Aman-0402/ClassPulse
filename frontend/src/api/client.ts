@@ -89,3 +89,19 @@ export async function markAttendance(token: string) {
   const { data } = await api.post("/attendance/mark/", { token });
   return data;
 }
+
+export interface AttendanceRecord {
+  name: string;
+  crn: string;
+  marked_at: string;
+}
+
+export interface LiveSessionResponse {
+  present_count: number;
+  recent: AttendanceRecord[];
+}
+
+export async function getSessionLive(sessionId: number): Promise<LiveSessionResponse> {
+  const { data } = await api.get<LiveSessionResponse>(`/attendance/sessions/${sessionId}/live/`);
+  return data;
+}
