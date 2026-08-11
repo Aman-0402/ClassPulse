@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Container, Spinner } from "react-bootstrap";
 import { getTeacherProfile, logout } from "../api/client";
 
@@ -28,6 +28,9 @@ export default function TeacherProfilePage() {
     <Container className="py-4">
       <h2>Welcome, {profile.full_name || profile.username}</h2>
       <p>Email: {profile.email}</p>
+      <Link to="/teacher/start-attendance" className="btn btn-primary">
+        Start Attendance
+      </Link>
     </Container>
   );
 }
