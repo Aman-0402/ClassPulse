@@ -1,3 +1,6 @@
 from django.contrib import admin
+from attendance.models import AttendanceSession, QRToken, Attendance
 
-# Register your models here.
+admin.site.register(AttendanceSession)
+admin.site.register(QRToken)
+admin.site.register(Attendance)
