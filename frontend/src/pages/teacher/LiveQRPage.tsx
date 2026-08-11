@@ -17,6 +17,7 @@ export default function LiveQRPage() {
   const [presentCount, setPresentCount] = useState(0);
   const [recent, setRecent] = useState<AttendanceRecord[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastKey, setToastKey] = useState(0);
   const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function LiveQRPage() {
         setPresentCount(update.present_count);
         setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
         setToast(`${update.name} marked present`);
+        setToastKey((key) => key + 1);
       },
       onStatusChange: (status) => {
         if (active) setWsStatus(status);
@@ -126,7 +128,7 @@ export default function LiveQRPage() {
         </Button>
       </div>
       <ToastContainer position="top-end" className="p-3">
-        <Toast key={toast ?? "none"} show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
+        <Toast key={toastKey} show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
           <Toast.Body className="text-white">{toast}</Toast.Body>
         </Toast>
       </ToastContainer>
