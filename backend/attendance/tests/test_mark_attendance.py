@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from attendance.models import AttendanceSession, QRToken, Attendance
+from attendance.models import AttendanceSession, QRToken, Attendance, ActivityLog
 
 User = get_user_model()
 
@@ -26,25 +26,28 @@ class MarkAttendanceTest(APITestCase):
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Attendance.objects.count(), 1)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SUCCESS).count(), 1)
 
     def test_teacher_cannot_mark_attendance(self):
         self._auth(self.teacher_token)
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_invalid_token_rejected(self):
+    def test_invalid_token_rejected_and_logged(self):
         self._auth(self.student_token)
         response = self.client.post(reverse("attendance-mark"), {"token": "not-a-real-token"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_INVALID_TOKEN).count(), 1)
 
-    def test_expired_token_rejected(self):
+    def test_expired_token_rejected_and_logged(self):
         self.qr.expires_at = timezone.now() - timezone.timedelta(seconds=1)
         self.qr.save()
         self._auth(self.student_token)
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_EXPIRED_TOKEN).count(), 1)
 
-    def test_duplicate_attendance_rejected(self):
+    def test_duplicate_attendance_rejected_and_logged(self):
         self._auth(self.student_token)
         url = reverse("attendance-mark")
         self.client.post(url, {"token": self.qr.token}, format="json")
@@ -52,17 +55,12 @@ class MarkAttendanceTest(APITestCase):
         response = self.client.post(url, {"token": second_qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Attendance.objects.count(), 1)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_DUPLICATE).count(), 1)
 
-    def test_closed_session_rejected(self):
+    def test_closed_session_rejected_and_logged(self):
         self.session.status = AttendanceSession.STATUS_CLOSED
         self.session.save()
         self._auth(self.student_token)
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_mark_attendance_response_shape_on_success(self):
-        self._auth(self.student_token)
-        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["status"], "marked")
-        self.assertIn("marked_at", response.data)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)

@@ -1,14 +1,14 @@
-from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsTeacher, IsStudent
+from attendance.exceptions import AttendanceError
 from attendance.models import AttendanceSession, Attendance
-from attendance.serializers import MarkAttendanceSerializer, QRTokenSerializer, SessionSerializer, StartSessionSerializer
-from attendance.services import broadcast_attendance_update, get_current_qr_token
+from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
+from attendance.services import get_current_qr_token, mark_attendance
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -42,17 +42,17 @@ class MarkAttendanceView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
 
     def post(self, request):
-        serializer = MarkAttendanceSerializer(data=request.data, context={"request": request})
+        serializer = TokenInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            with transaction.atomic():
-                attendance = serializer.save()
-        except IntegrityError:
-            return Response(
-                {"detail": "Attendance already marked for this session."},
-                status=status.HTTP_400_BAD_REQUEST,
+            attendance = mark_attendance(
+                student=request.user,
+                token_value=serializer.validated_data["token"],
+                ip_address=request.META.get("REMOTE_ADDR"),
+                device_info=request.META.get("HTTP_USER_AGENT", "")[:255],
             )
-        broadcast_attendance_update(attendance)
+        except AttendanceError as exc:
+            return Response({"detail": exc.message}, status=400)
         return Response({"status": "marked", "marked_at": attendance.marked_at})
 
 
