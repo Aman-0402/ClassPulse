@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Container, Spinner } from "react-bootstrap";
 import { getStudentProfile, logout } from "../api/client";
 
@@ -35,6 +35,9 @@ export default function StudentProfilePage() {
       <p>Semester: {profile.semester}</p>
       <p>Section: {profile.section}</p>
       <p>Email: {profile.email}</p>
+      <Link to="/student/scan" className="btn btn-primary mt-2">
+        Scan Attendance QR
+      </Link>
     </Container>
   );
 }
