@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 
 from accounts.permissions import IsTeacher
 from attendance.models import AttendanceSession
-from attendance.serializers import SessionSerializer, StartSessionSerializer
+from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer
+from attendance.services import get_current_qr_token
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -25,3 +26,12 @@ class StopSessionView(APIView):
         session.end_time = timezone.now()
         session.save(update_fields=["status", "end_time"])
         return Response(SessionSerializer(session).data)
+
+
+class SessionQRView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request, session_id):
+        session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        token = get_current_qr_token(session)
+        return Response(QRTokenSerializer(token).data)

@@ -1,7 +1,8 @@
 from django.urls import path
-from attendance.views import StartSessionView, StopSessionView
+from attendance.views import SessionQRView, StartSessionView, StopSessionView
 
 urlpatterns = [
     path("sessions/start/", StartSessionView.as_view(), name="session-start"),
     path("sessions/<int:session_id>/stop/", StopSessionView.as_view(), name="session-stop"),
+    path("sessions/<int:session_id>/qr/", SessionQRView.as_view(), name="session-qr"),
 ]

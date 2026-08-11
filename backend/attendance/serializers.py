@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from attendance.models import AttendanceSession
+from attendance.models import AttendanceSession, QRToken
 
 
 class StartSessionSerializer(serializers.ModelSerializer):
@@ -16,3 +16,9 @@ class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendanceSession
         fields = ["id", "subject", "date", "start_time", "end_time", "status"]
+
+
+class QRTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QRToken
+        fields = ["token", "expires_at"]
