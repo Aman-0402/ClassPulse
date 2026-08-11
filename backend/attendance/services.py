@@ -118,6 +118,16 @@ def mark_attendance(student, token_value, ip_address, device_info):
         log_activity(student, session, ActivityLog.TYPE_DUPLICATE, ip_address, device_info)
         raise DuplicateAttendanceError()
 
+    previous_device = (
+        ActivityLog.objects.filter(student=student, activity_type=ActivityLog.TYPE_SUCCESS)
+        .exclude(device_info="")
+        .order_by("-created_at")
+        .values_list("device_info", flat=True)
+        .first()
+    )
+    if previous_device and device_info and previous_device != device_info:
+        log_activity(student, session, ActivityLog.TYPE_NEW_DEVICE, ip_address, device_info)
+
     log_activity(student, session, ActivityLog.TYPE_SUCCESS, ip_address, device_info)
     broadcast_attendance_update(attendance)
     return attendance
