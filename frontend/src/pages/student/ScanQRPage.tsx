@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Container, Alert } from "react-bootstrap";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { markAttendance } from "../../api/client";
 
 const SCANNER_ELEMENT_ID = "qr-scanner";
@@ -11,6 +11,8 @@ export default function ScanQRPage() {
 
   useEffect(() => {
     const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID);
+    let active = true;
+    let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
 
     scanner
       .start(
@@ -21,13 +23,13 @@ export default function ScanQRPage() {
           scanningRef.current = true;
           try {
             await markAttendance(decodedText);
-            setMessage({ type: "success", text: "Attendance marked!" });
+            if (active) setMessage({ type: "success", text: "Attendance marked!" });
           } catch (err: any) {
             const data = err?.response?.data;
             const detail = data?.token?.[0] || data?.non_field_errors?.[0] || "Could not mark attendance.";
-            setMessage({ type: "danger", text: detail });
+            if (active) setMessage({ type: "danger", text: detail });
           } finally {
-            setTimeout(() => {
+            debounceTimeout = setTimeout(() => {
               scanningRef.current = false;
             }, 2000);
           }
@@ -35,11 +37,15 @@ export default function ScanQRPage() {
         () => {}
       )
       .catch(() => {
-        setMessage({ type: "danger", text: "Could not access camera." });
+        if (active) setMessage({ type: "danger", text: "Could not access camera." });
       });
 
     return () => {
-      scanner.stop().catch(() => {});
+      active = false;
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      if (scanner.getState() === Html5QrcodeScannerState.SCANNING) {
+        scanner.stop().catch(() => {});
+      }
     };
   }, []);
 
