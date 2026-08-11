@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import Token
 @database_sync_to_async
 def get_user_from_token(token_key):
     try:
-        return Token.objects.select_related("user").get(key=token_key).user
+        return Token.objects.select_related("user").get(key=token_key, user__is_active=True).user
     except Token.DoesNotExist:
         return AnonymousUser()
 
