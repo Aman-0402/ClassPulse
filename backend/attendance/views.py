@@ -19,6 +19,8 @@ class StopSessionView(APIView):
 
     def post(self, request, session_id):
         session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        if session.status == AttendanceSession.STATUS_CLOSED:
+            return Response({"detail": "Session already closed."}, status=400)
         session.status = AttendanceSession.STATUS_CLOSED
         session.end_time = timezone.now()
         session.save(update_fields=["status", "end_time"])

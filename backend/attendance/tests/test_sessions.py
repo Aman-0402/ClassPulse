@@ -44,3 +44,14 @@ class SessionLifecycleTest(APITestCase):
         self._auth(self.teacher_token)
         response = self.client.post(reverse("session-stop", args=[session.id]))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_stopping_already_closed_session_rejected(self):
+        self._auth(self.teacher_token)
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED
+        )
+        original_end_time = session.end_time
+        response = self.client.post(reverse("session-stop", args=[session.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        session.refresh_from_db()
+        self.assertEqual(session.end_time, original_end_time)
