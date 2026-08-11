@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsTeacher, IsStudent
-from attendance.models import AttendanceSession
+from attendance.models import AttendanceSession, Attendance
 from attendance.serializers import MarkAttendanceSerializer, QRTokenSerializer, SessionSerializer, StartSessionSerializer
 from attendance.services import broadcast_attendance_update, get_current_qr_token
 
@@ -54,3 +54,25 @@ class MarkAttendanceView(APIView):
             )
         broadcast_attendance_update(attendance)
         return Response({"status": "marked", "marked_at": attendance.marked_at})
+
+
+class SessionLiveView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request, session_id):
+        session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        records = (
+            Attendance.objects.filter(session=session)
+            .select_related("student", "student__student_profile")
+            .order_by("-marked_at")[:10]
+        )
+        recent = [
+            {
+                "name": record.student.get_full_name() or record.student.username,
+                "crn": getattr(getattr(record.student, "student_profile", None), "crn", ""),
+                "marked_at": record.marked_at,
+            }
+            for record in records
+        ]
+        present_count = Attendance.objects.filter(session=session).count()
+        return Response({"present_count": present_count, "recent": recent})
