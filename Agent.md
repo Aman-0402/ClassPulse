@@ -85,6 +85,7 @@ Multiple subjects/teachers, timetable integration, geofencing, face/device verif
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-08-10** — Phase 1 Task 6 done: React+Vite+TS frontend scaffolded (`frontend/`), Bootstrap 5 + react-bootstrap + react-router-dom + axios installed. Spec + code-quality reviewed, approved. Note: scaffold resolved React 19 (plan said React 18) — non-breaking, watch for API differences in later tasks.
 - **2026-08-10** — Phase 1 Task 5 done: student profile endpoint (`GET /api/student/profile/`), admin registration for User+StudentProfile. Spec + code-quality reviewed, approved with follow-ups: (1) `StudentProfile.DoesNotExist` → unhandled 500 if a teacher or profile-less user hits this route, should be 403/404 — fix before frontend relies on it; (2) `photo` serializes as relative path, not absolute URL (no `context=request` passed); (3) mid-file imports in views.py, cosmetic.
 - **2026-08-10** — Phase 1 Task 4 done: role-aware token login (`POST /api/student/login/`, returns token+role+username). Spec + code-quality reviewed, approved. Noted for later phase: no logout/token-revocation endpoint, no throttling.
 - **2026-08-10** — Phase 1 Task 3 done: student registration endpoint (`POST /api/student/register/`), DB-level unique CRN + username enforced. Spec + code-quality reviewed, approved. Noted for later: response omits `photo` field, minor TOCTOU race on uniqueness checks under concurrent requests (plan-level tradeoff, not blocking).
