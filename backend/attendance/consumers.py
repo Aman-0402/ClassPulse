@@ -31,6 +31,9 @@ class AttendanceConsumer(AsyncJsonWebsocketConsumer):
     async def attendance_update(self, event):
         await self.send_json(event["data"])
 
+    async def activity_update(self, event):
+        await self.send_json(event["data"])
+
     @database_sync_to_async
     def session_owned_by(self, user):
         return AttendanceSession.objects.filter(id=self.session_id, teacher=user).exists()
