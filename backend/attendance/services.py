@@ -70,13 +70,19 @@ def broadcast_activity_event(log_entry):
 
 
 def log_activity(student, session, activity_type, ip_address="", device_info=""):
-    entry = ActivityLog.objects.create(
-        student=student,
-        session=session,
-        activity_type=activity_type,
-        ip_address=ip_address or None,
-        device_info=device_info,
-    )
+    try:
+        entry = ActivityLog.objects.create(
+            student=student,
+            session=session,
+            activity_type=activity_type,
+            ip_address=ip_address or None,
+            device_info=device_info,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to write ActivityLog for student id=%s activity_type=%s", getattr(student, "id", None), activity_type
+        )
+        return None
     if activity_type != ActivityLog.TYPE_SUCCESS:
         broadcast_activity_event(entry)
     return entry
