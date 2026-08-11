@@ -149,6 +149,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ASGI_APPLICATION = "classpulse.asgi.application"
 
+# In-memory only — group messages only relay within a single process.
+# Switch to channels_redis before running >1 daphne worker or multiple runserver instances.
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
