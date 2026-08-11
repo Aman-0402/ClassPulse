@@ -33,16 +33,15 @@ class AttendanceSession(models.Model):
         return f"{self.subject} ({self.date})"
 
 
+def default_qr_expiry():
+    return timezone.now() + timezone.timedelta(seconds=QR_TOKEN_LIFETIME_SECONDS)
+
+
 class QRToken(models.Model):
     session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name="qr_tokens")
     token = models.CharField(max_length=64, unique=True, default=generate_qr_token)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.expires_at:
-            self.expires_at = timezone.now() + timezone.timedelta(seconds=QR_TOKEN_LIFETIME_SECONDS)
-        super().save(*args, **kwargs)
+    expires_at = models.DateTimeField(default=default_qr_expiry)
 
     def is_expired(self):
         return timezone.now() >= self.expires_at
