@@ -55,3 +55,37 @@ export function logout() {
   localStorage.removeItem("classpulse_token");
   localStorage.removeItem("classpulse_role");
 }
+
+export interface SessionResponse {
+  id: number;
+  subject: string;
+  date: string;
+  start_time: string;
+  end_time?: string | null;
+  status: "active" | "closed";
+}
+
+export interface QRTokenResponse {
+  token: string;
+  expires_at: string;
+}
+
+export async function startSession(subject: string): Promise<SessionResponse> {
+  const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", { subject });
+  return data;
+}
+
+export async function stopSession(sessionId: number): Promise<SessionResponse> {
+  const { data } = await api.post<SessionResponse>(`/attendance/sessions/${sessionId}/stop/`);
+  return data;
+}
+
+export async function getSessionQR(sessionId: number): Promise<QRTokenResponse> {
+  const { data } = await api.get<QRTokenResponse>(`/attendance/sessions/${sessionId}/qr/`);
+  return data;
+}
+
+export async function markAttendance(token: string) {
+  const { data } = await api.post("/attendance/mark/", { token });
+  return data;
+}
