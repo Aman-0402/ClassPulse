@@ -19,7 +19,10 @@ export default function LiveQRPage() {
     const fetchToken = () => {
       getSessionQR(id)
         .then((data) => {
-          if (active) setToken(data.token);
+          if (active) {
+            setToken(data.token);
+            setError(null);
+          }
         })
         .catch(() => {
           if (active) setError("Could not refresh the QR code. The session may have ended.");
