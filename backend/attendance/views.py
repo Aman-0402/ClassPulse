@@ -4,9 +4,9 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.permissions import IsTeacher
+from accounts.permissions import IsTeacher, IsStudent
 from attendance.models import AttendanceSession
-from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer
+from attendance.serializers import MarkAttendanceSerializer, QRTokenSerializer, SessionSerializer, StartSessionSerializer
 from attendance.services import get_current_qr_token
 
 
@@ -35,3 +35,13 @@ class SessionQRView(APIView):
         session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
         token = get_current_qr_token(session)
         return Response(QRTokenSerializer(token).data)
+
+
+class MarkAttendanceView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def post(self, request):
+        serializer = MarkAttendanceSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        attendance = serializer.save()
+        return Response({"status": "marked", "marked_at": attendance.marked_at})
