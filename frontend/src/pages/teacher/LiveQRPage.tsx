@@ -17,6 +17,7 @@ export default function LiveQRPage() {
   const [presentCount, setPresentCount] = useState(0);
   const [recent, setRecent] = useState<AttendanceRecord[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
 
   useEffect(() => {
     if (!sessionId) return;
@@ -49,23 +50,32 @@ export default function LiveQRPage() {
     const id = Number(sessionId);
     let active = true;
 
-    getSessionLive(id).then((data) => {
-      if (active) {
-        setPresentCount(data.present_count);
-        setRecent(data.recent);
-      }
-    });
+    getSessionLive(id)
+      .then((data) => {
+        if (active) {
+          setPresentCount(data.present_count);
+          setRecent(data.recent);
+        }
+      })
+      .catch(() => {
+        if (active) setError("Could not load live attendance data.");
+      });
 
-    const socket = connectToAttendanceSocket(id, (update: AttendanceUpdateEvent) => {
-      if (!active) return;
-      setPresentCount(update.present_count);
-      setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
-      setToast(`${update.name} marked present`);
+    const handle = connectToAttendanceSocket(id, {
+      onUpdate: (update: AttendanceUpdateEvent) => {
+        if (!active) return;
+        setPresentCount(update.present_count);
+        setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
+        setToast(`${update.name} marked present`);
+      },
+      onStatusChange: (status) => {
+        if (active) setWsStatus(status);
+      },
     });
 
     return () => {
       active = false;
-      socket.close();
+      handle.close();
     };
   }, [sessionId]);
 
@@ -94,11 +104,16 @@ export default function LiveQRPage() {
         </Col>
         <Col md={6}>
           <h4>
-            Present: <Badge bg="success">{presentCount}</Badge>
+            Present: <Badge bg="success">{presentCount}</Badge>{" "}
+            {wsStatus !== "connected" && (
+              <Badge bg="warning" className="ms-2">
+                {wsStatus === "reconnecting" ? "Reconnecting..." : "Disconnected"}
+              </Badge>
+            )}
           </h4>
           <ListGroup className="mt-3">
-            {recent.map((record, index) => (
-              <ListGroup.Item key={`${record.crn}-${index}`}>
+            {recent.map((record) => (
+              <ListGroup.Item key={record.crn}>
                 {record.name} <span className="text-muted">({record.crn})</span>
               </ListGroup.Item>
             ))}
@@ -111,7 +126,7 @@ export default function LiveQRPage() {
         </Button>
       </div>
       <ToastContainer position="top-end" className="p-3">
-        <Toast show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
+        <Toast key={toast ?? "none"} show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
           <Toast.Body className="text-white">{toast}</Toast.Body>
         </Toast>
       </ToastContainer>
