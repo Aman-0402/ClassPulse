@@ -70,3 +70,37 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.session} ({self.status})"
+
+
+class ActivityLog(models.Model):
+    TYPE_SUCCESS = "success"
+    TYPE_DUPLICATE = "duplicate"
+    TYPE_EXPIRED_TOKEN = "expired_token"
+    TYPE_INVALID_TOKEN = "invalid_token"
+    TYPE_SESSION_CLOSED = "session_closed"
+    TYPE_NEW_DEVICE = "new_device"
+    TYPE_CHOICES = [
+        (TYPE_SUCCESS, "Success"),
+        (TYPE_DUPLICATE, "Duplicate Attempt"),
+        (TYPE_EXPIRED_TOKEN, "Expired QR"),
+        (TYPE_INVALID_TOKEN, "Invalid QR"),
+        (TYPE_SESSION_CLOSED, "Session Closed"),
+        (TYPE_NEW_DEVICE, "New Device"),
+    ]
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
+    )
+    session = models.ForeignKey(
+        AttendanceSession, on_delete=models.CASCADE, related_name="activity_logs", null=True, blank=True
+    )
+    activity_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device_info = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.get_activity_type_display()} - {self.student} ({self.created_at})"
