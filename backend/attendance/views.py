@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from accounts.permissions import IsTeacher, IsStudent
 from attendance.models import AttendanceSession
 from attendance.serializers import MarkAttendanceSerializer, QRTokenSerializer, SessionSerializer, StartSessionSerializer
-from attendance.services import get_current_qr_token
+from attendance.services import broadcast_attendance_update, get_current_qr_token
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -52,4 +52,5 @@ class MarkAttendanceView(APIView):
                 {"detail": "Attendance already marked for this session."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        broadcast_attendance_update(attendance)
         return Response({"status": "marked", "marked_at": attendance.marked_at})
