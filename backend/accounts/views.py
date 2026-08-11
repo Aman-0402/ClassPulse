@@ -17,3 +17,14 @@ class RoleAwareLoginView(ObtainAuthToken):
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "role": user.role, "username": user.username})
+
+
+from rest_framework.views import APIView
+from accounts.serializers import StudentProfileSerializer
+from accounts.models import StudentProfile
+
+
+class StudentProfileView(APIView):
+    def get(self, request):
+        profile = StudentProfile.objects.select_related("user").get(user=request.user)
+        return Response(StudentProfileSerializer(profile).data)
