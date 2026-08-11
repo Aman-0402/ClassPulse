@@ -92,7 +92,7 @@ class ActivityLog(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
     )
     session = models.ForeignKey(
-        AttendanceSession, on_delete=models.CASCADE, related_name="activity_logs", null=True, blank=True
+        AttendanceSession, on_delete=models.SET_NULL, related_name="activity_logs", null=True, blank=True
     )
     activity_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
