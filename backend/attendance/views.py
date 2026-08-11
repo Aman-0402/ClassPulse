@@ -1,6 +1,7 @@
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -43,5 +44,12 @@ class MarkAttendanceView(APIView):
     def post(self, request):
         serializer = MarkAttendanceSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        attendance = serializer.save()
+        try:
+            with transaction.atomic():
+                attendance = serializer.save()
+        except IntegrityError:
+            return Response(
+                {"detail": "Attendance already marked for this session."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response({"status": "marked", "marked_at": attendance.marked_at})

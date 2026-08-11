@@ -59,3 +59,10 @@ class MarkAttendanceTest(APITestCase):
         self._auth(self.student_token)
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_mark_attendance_response_shape_on_success(self):
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "marked")
+        self.assertIn("marked_at", response.data)
