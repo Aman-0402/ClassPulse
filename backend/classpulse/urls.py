@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/student/', include('accounts.urls')),
     path('api/teacher/profile/', TeacherProfileView.as_view(), name='teacher-profile'),
+    path('api/attendance/', include('attendance.urls')),
 ]
