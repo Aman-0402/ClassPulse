@@ -2,12 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Container, Button, Spinner, Alert, Badge, ListGroup, Toast, ToastContainer, Row, Col } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
-import { getSessionQR, getSessionLive, stopSession } from "../../api/client";
-import type { AttendanceRecord } from "../../api/client";
+import { getSessionQR, getSessionLive, stopSession, getSessionActivity } from "../../api/client";
+import type { AttendanceRecord, ActivityLogEntry } from "../../api/client";
 import { connectToAttendanceSocket } from "../../api/ws";
-import type { AttendanceUpdateEvent } from "../../api/ws";
+import type { AttendanceUpdateEvent, ActivityUpdateEvent } from "../../api/ws";
 
 const QR_REFRESH_MS = 15000;
+
+const ACTIVITY_LABELS: Record<ActivityLogEntry["activity_type"], { label: string; variant: string }> = {
+  duplicate: { label: "Duplicate scan", variant: "warning" },
+  expired_token: { label: "Expired QR", variant: "danger" },
+  invalid_token: { label: "Invalid QR", variant: "danger" },
+  session_closed: { label: "Closed-session attempt", variant: "secondary" },
+  new_device: { label: "New device", variant: "info" },
+};
 
 export default function LiveQRPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -16,6 +24,7 @@ export default function LiveQRPage() {
   const [error, setError] = useState<string | null>(null);
   const [presentCount, setPresentCount] = useState(0);
   const [recent, setRecent] = useState<AttendanceRecord[]>([]);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
   const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
@@ -62,6 +71,14 @@ export default function LiveQRPage() {
         if (active) setError("Could not load live attendance data.");
       });
 
+    getSessionActivity(id)
+      .then((data) => {
+        if (active) setActivityLog(data.logs);
+      })
+      .catch(() => {
+        // Non-critical panel — a failed initial fetch just leaves it empty; the live WS feed will still populate it going forward.
+      });
+
     const handle = connectToAttendanceSocket(id, {
       onUpdate: (update: AttendanceUpdateEvent) => {
         if (!active) return;
@@ -69,6 +86,12 @@ export default function LiveQRPage() {
         setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
         setToast(`${update.name} marked present`);
         setToastKey((key) => key + 1);
+      },
+      onActivity: (event: ActivityUpdateEvent) => {
+        if (!active) return;
+        setActivityLog((prev) =>
+          [{ activity_type: event.activity_type, student: event.student, created_at: event.created_at }, ...prev].slice(0, 20)
+        );
       },
       onStatusChange: (status) => {
         if (active) setWsStatus(status);
@@ -122,6 +145,24 @@ export default function LiveQRPage() {
           </ListGroup>
         </Col>
       </Row>
+      {activityLog.length > 0 && (
+        <div className="mt-4">
+          <h5>Suspicious Activity</h5>
+          <ListGroup>
+            {activityLog.map((entry, index) => {
+              const meta = ACTIVITY_LABELS[entry.activity_type];
+              return (
+                <ListGroup.Item key={`${entry.student}-${entry.created_at}-${index}`}>
+                  <Badge bg={meta.variant} className="me-2">
+                    {meta.label}
+                  </Badge>
+                  {entry.student}
+                </ListGroup.Item>
+              );
+            })}
+          </ListGroup>
+        </div>
+      )}
       <div className="text-center mt-4">
         <Button variant="danger" onClick={handleStop}>
           Stop Attendance

@@ -105,3 +105,18 @@ export async function getSessionLive(sessionId: number): Promise<LiveSessionResp
   const { data } = await api.get<LiveSessionResponse>(`/attendance/sessions/${sessionId}/live/`);
   return data;
 }
+
+export interface ActivityLogEntry {
+  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device";
+  student: string;
+  created_at: string;
+}
+
+export interface ActivityLogResponse {
+  logs: ActivityLogEntry[];
+}
+
+export async function getSessionActivity(sessionId: number): Promise<ActivityLogResponse> {
+  const { data } = await api.get<ActivityLogResponse>(`/attendance/sessions/${sessionId}/activity/`);
+  return data;
+}

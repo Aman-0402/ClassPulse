@@ -2,14 +2,23 @@ const WS_BASE_URL = "ws://localhost:8000/ws";
 const RECONNECT_DELAY_MS = 3000;
 
 export interface AttendanceUpdateEvent {
+  kind: "attendance";
   name: string;
   crn: string;
   marked_at: string;
   present_count: number;
 }
 
+export interface ActivityUpdateEvent {
+  kind: "activity";
+  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device";
+  student: string;
+  created_at: string;
+}
+
 export interface AttendanceSocketHandlers {
   onUpdate: (event: AttendanceUpdateEvent) => void;
+  onActivity?: (event: ActivityUpdateEvent) => void;
   onStatusChange?: (status: "connected" | "disconnected" | "reconnecting") => void;
 }
 
@@ -35,8 +44,12 @@ export function connectToAttendanceSocket(
 
     socket.onmessage = (message) => {
       try {
-        const data = JSON.parse(message.data) as AttendanceUpdateEvent;
-        handlers.onUpdate(data);
+        const data = JSON.parse(message.data) as AttendanceUpdateEvent | ActivityUpdateEvent;
+        if (data.kind === "activity") {
+          handlers.onActivity?.(data);
+        } else {
+          handlers.onUpdate(data);
+        }
       } catch {
         // Ignore malformed messages rather than crashing the socket handler.
       }
