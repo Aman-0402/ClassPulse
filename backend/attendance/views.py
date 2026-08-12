@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError
-from attendance.models import AttendanceSession, Attendance
+from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
 from attendance.services import get_current_qr_token, mark_attendance
 
@@ -76,3 +76,24 @@ class SessionLiveView(APIView):
         ]
         present_count = Attendance.objects.filter(session=session).count()
         return Response({"present_count": present_count, "recent": recent})
+
+
+class SessionActivityView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request, session_id):
+        session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        logs = (
+            ActivityLog.objects.filter(session=session)
+            .exclude(activity_type=ActivityLog.TYPE_SUCCESS)
+            .select_related("student")[:50]
+        )
+        data = [
+            {
+                "activity_type": log.activity_type,
+                "student": log.student.get_full_name() or log.student.username,
+                "created_at": log.created_at,
+            }
+            for log in logs
+        ]
+        return Response({"logs": data})
