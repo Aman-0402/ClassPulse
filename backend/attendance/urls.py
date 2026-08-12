@@ -1,5 +1,6 @@
 from django.urls import path
 from attendance.views import (
+    AnalyticsView,
     MarkAttendanceView,
     SessionActivityView,
     SessionLiveView,
@@ -17,4 +18,5 @@ urlpatterns = [
     path("sessions/<int:session_id>/activity/", SessionActivityView.as_view(), name="session-activity"),
     path("mark/", MarkAttendanceView.as_view(), name="attendance-mark"),
     path("student/history/", StudentHistoryView.as_view(), name="student-attendance-history"),
+    path("analytics/", AnalyticsView.as_view(), name="attendance-analytics"),
 ]

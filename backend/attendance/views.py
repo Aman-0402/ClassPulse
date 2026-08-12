@@ -8,7 +8,13 @@ from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError
 from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
-from attendance.services import attendance_percentage, get_closed_sessions, get_current_qr_token, mark_attendance
+from attendance.services import (
+    attendance_percentage,
+    build_attendance_matrix,
+    get_closed_sessions,
+    get_current_qr_token,
+    mark_attendance,
+)
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -122,3 +128,35 @@ class StudentHistoryView(APIView):
         present = len(present_session_ids)
         percentage = attendance_percentage(present, total)
         return Response({"total": total, "present": present, "percentage": percentage, "history": history})
+
+
+class AnalyticsView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        sessions, rows = build_attendance_matrix()
+        total_sessions = len(sessions)
+        total_students = len(rows)
+        overall_present = sum(r["present_count"] for r in rows)
+        overall_possible = total_students * total_sessions
+        overall_rate = round((overall_present / overall_possible) * 100, 1) if overall_possible else 0.0
+        students_data = [
+            {
+                "name": r["name"],
+                "crn": r["crn"],
+                "present": r["present_count"],
+                "total": r["total"],
+                "percentage": r["percentage"],
+            }
+            for r in rows
+        ]
+        below_threshold = [s for s in students_data if s["percentage"] < 75]
+        return Response(
+            {
+                "total_sessions": total_sessions,
+                "total_students": total_students,
+                "overall_rate": overall_rate,
+                "students": students_data,
+                "below_threshold": below_threshold,
+            }
+        )
