@@ -3,6 +3,7 @@ from attendance.views import (
     AnalyticsView,
     ExportCSVView,
     ExportExcelView,
+    ExportPDFView,
     MarkAttendanceView,
     SessionActivityView,
     SessionLiveView,
@@ -23,4 +24,5 @@ urlpatterns = [
     path("analytics/", AnalyticsView.as_view(), name="attendance-analytics"),
     path("export/csv/", ExportCSVView.as_view(), name="export-csv"),
     path("export/excel/", ExportExcelView.as_view(), name="export-excel"),
+    path("export/pdf/", ExportPDFView.as_view(), name="export-pdf"),
 ]

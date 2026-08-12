@@ -107,3 +107,11 @@ class ExportTest(APITestCase):
         risky_row = next(r for r in rows if str(r[0]).endswith("103"))
         self.assertTrue(str(risky_row[0]).startswith("'"))
         self.assertTrue(str(risky_row[1]).startswith("'"))
+
+    def test_pdf_export_shape(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-pdf"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertTrue(response.content.startswith(b"%PDF"))
