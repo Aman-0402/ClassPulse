@@ -43,7 +43,7 @@ class ExportTest(APITestCase):
         self.assertEqual(response["Content-Type"], "text/csv")
         self.assertIn("attachment", response["Content-Disposition"])
 
-        content = response.content.decode("utf-8")
+        content = response.content.decode("utf-8-sig")
         rows = list(csv.reader(io.StringIO(content)))
         header = rows[0]
         self.assertEqual(header[0], "CRN")

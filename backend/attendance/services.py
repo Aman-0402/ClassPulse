@@ -176,3 +176,26 @@ def build_attendance_matrix() -> AttendanceMatrix:
             }
         )
     return AttendanceMatrix(sessions=sessions, rows=rows)
+
+
+def sanitize_report_cell(value):
+    """Prefix leading =+-@ with a quote so spreadsheet apps never parse a cell as a formula.
+
+    CRN and name are free-text at student self-registration, so this is the export's
+    only defense against CSV/formula injection (CWE-1236) into a teacher's report.
+    """
+    text = str(value)
+    if text[:1] in ("=", "+", "-", "@"):
+        return "'" + text
+    return text
+
+
+def build_report_rows(sessions, rows):
+    header = ["CRN", "Name"] + [s.date.isoformat() for s in sessions] + ["%"]
+    data_rows = [
+        [sanitize_report_cell(r["crn"]), sanitize_report_cell(r["name"])]
+        + ["P" if r["presents"][s.id] else "A" for s in sessions]
+        + [r["percentage"]]
+        for r in rows
+    ]
+    return header, data_rows

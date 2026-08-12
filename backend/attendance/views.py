@@ -14,6 +14,7 @@ from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSe
 from attendance.services import (
     attendance_percentage,
     build_attendance_matrix,
+    build_report_rows,
     get_closed_sessions,
     get_current_qr_token,
     mark_attendance,
@@ -170,16 +171,11 @@ class ExportCSVView(APIView):
 
     def get(self, request):
         sessions, rows = build_attendance_matrix()
+        header, data_rows = build_report_rows(sessions, rows)
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=attendance_report.csv"
+        response.write("﻿")  # UTF-8 BOM so Excel renders non-ASCII names correctly
         writer = csv.writer(response)
-        header = ["CRN", "Name"] + [s.date.isoformat() for s in sessions] + ["%"]
         writer.writerow(header)
-        for r in rows:
-            row = (
-                [r["crn"], r["name"]]
-                + ["P" if r["presents"][s.id] else "A" for s in sessions]
-                + [str(r["percentage"])]
-            )
-            writer.writerow(row)
+        writer.writerows(data_rows)
         return response
