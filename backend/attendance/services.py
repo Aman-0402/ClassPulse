@@ -139,6 +139,10 @@ def get_closed_sessions():
     return AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED).order_by("date", "start_time")
 
 
+def attendance_percentage(present: int, total: int) -> float:
+    return round((present / total) * 100, 1) if total else 0.0
+
+
 class AttendanceMatrix(NamedTuple):
     sessions: list
     rows: list
@@ -159,7 +163,7 @@ def build_attendance_matrix() -> AttendanceMatrix:
         presents = {s.id: (student.id, s.id) in present_pairs for s in sessions}
         present_count = sum(presents.values())
         total = len(sessions)
-        percentage = round((present_count / total) * 100, 1) if total else 0.0
+        percentage = attendance_percentage(present_count, total)
         rows.append(
             {
                 "student": student,

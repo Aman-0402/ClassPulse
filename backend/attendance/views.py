@@ -8,7 +8,7 @@ from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError
 from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
-from attendance.services import get_closed_sessions, get_current_qr_token, mark_attendance
+from attendance.services import attendance_percentage, get_closed_sessions, get_current_qr_token, mark_attendance
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -120,5 +120,5 @@ class StudentHistoryView(APIView):
         ]
         total = len(history)
         present = len(present_session_ids)
-        percentage = round((present / total) * 100, 1) if total else 0.0
+        percentage = attendance_percentage(present, total)
         return Response({"total": total, "present": present, "percentage": percentage, "history": history})
