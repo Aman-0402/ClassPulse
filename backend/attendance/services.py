@@ -1,4 +1,5 @@
 import logging
+from typing import NamedTuple
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -138,7 +139,12 @@ def get_closed_sessions():
     return AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED).order_by("date", "start_time")
 
 
-def build_attendance_matrix():
+class AttendanceMatrix(NamedTuple):
+    sessions: list
+    rows: list
+
+
+def build_attendance_matrix() -> AttendanceMatrix:
     sessions = list(get_closed_sessions())
     students = (
         User.objects.filter(role=User.ROLE_STUDENT, student_profile__isnull=False)
@@ -165,4 +171,4 @@ def build_attendance_matrix():
                 "percentage": percentage,
             }
         )
-    return sessions, rows
+    return AttendanceMatrix(sessions=sessions, rows=rows)
