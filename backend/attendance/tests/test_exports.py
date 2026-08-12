@@ -88,3 +88,22 @@ class ExportTest(APITestCase):
         self.assertEqual(header[-1], "%")
         data_row = [cell.value for cell in ws[2]]
         self.assertEqual(data_row[0], "101")
+
+    def test_excel_export_sanitizes_formula_like_names(self):
+        from openpyxl import load_workbook
+        import io as io_module
+
+        risky_student = User.objects.create_user(
+            username="stud3", password="pw12345678", role=User.ROLE_STUDENT, first_name="=cmd|'/c calc'"
+        )
+        StudentProfile.objects.create(user=risky_student, crn="=103", course="CSE", semester=5, section="A")
+        Attendance.objects.create(student=risky_student, session=self.closed)
+
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-excel"))
+        wb = load_workbook(io_module.BytesIO(response.content))
+        ws = wb.active
+        rows = [[cell.value for cell in row] for row in ws.iter_rows(min_row=2)]
+        risky_row = next(r for r in rows if str(r[0]).endswith("103"))
+        self.assertTrue(str(risky_row[0]).startswith("'"))
+        self.assertTrue(str(risky_row[1]).startswith("'"))
