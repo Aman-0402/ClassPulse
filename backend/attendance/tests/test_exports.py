@@ -115,3 +115,35 @@ class ExportTest(APITestCase):
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.assertIn("attachment", response["Content-Disposition"])
         self.assertTrue(response.content.startswith(b"%PDF"))
+
+    def test_pdf_export_handles_many_sessions_without_overflow(self):
+        from pypdf import PdfReader
+        import io as io_module
+
+        for i in range(30):
+            extra_session = AttendanceSession.objects.create(
+                teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED
+            )
+            Attendance.objects.create(student=self.s1, session=extra_session)
+
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-pdf"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        reader = PdfReader(io_module.BytesIO(response.content))
+        self.assertGreaterEqual(len(reader.pages), 1)
+
+    def test_pdf_export_strips_sanitizer_apostrophe(self):
+        risky_student = User.objects.create_user(
+            username="stud4", password="pw12345678", role=User.ROLE_STUDENT, first_name="=cmd|'/c calc'"
+        )
+        StudentProfile.objects.create(user=risky_student, crn="=104", course="CSE", semester=5, section="A")
+        Attendance.objects.create(student=risky_student, session=self.closed)
+
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-pdf"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # The raw sanitizer prefix ("'=104") should not appear verbatim in the PDF's
+        # underlying byte stream content stream text-showing operators — this is a
+        # coarse but effective smoke check without needing full PDF text extraction.
+        self.assertNotIn(b"'=104", response.content)

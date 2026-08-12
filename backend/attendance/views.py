@@ -209,6 +209,15 @@ class ExportExcelView(APIView):
         return response
 
 
+def _strip_pdf_display_prefix(value):
+    """CSV/Excel's formula-injection quote-prefix is a spreadsheet-only convention;
+    PDF isn't a spreadsheet, so drop the leading quote here rather than showing it."""
+    text = str(value)
+    if text.startswith("'"):
+        return text[1:]
+    return text
+
+
 class ExportPDFView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
@@ -216,14 +225,27 @@ class ExportPDFView(APIView):
         sessions, rows = build_attendance_matrix()
         header, data_rows = build_report_rows(sessions, rows)
         buffer = BytesIO()
+        page_width, _ = landscape(A4)
+        usable_width = page_width - 72  # 36pt margin on each side
+        crn_width = 60
+        name_width = 120
+        remaining_columns = len(header) - 2  # everything except CRN, Name
+        remaining_width = max(usable_width - crn_width - name_width, remaining_columns * 24)
+        other_width = remaining_width / remaining_columns
+        col_widths = [crn_width, name_width] + [other_width] * remaining_columns
+
+        pdf_header = [_strip_pdf_display_prefix(cell) for cell in header]
+        pdf_rows = [[_strip_pdf_display_prefix(cell) for cell in row] for row in data_rows]
+        data = [pdf_header] + pdf_rows
+
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
-        data = [header] + [[str(cell) for cell in row] for row in data_rows]
-        table = Table(data)
+        table = Table(data, colWidths=col_widths, repeatRows=1)
         table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7),
                 ]
             )
         )
