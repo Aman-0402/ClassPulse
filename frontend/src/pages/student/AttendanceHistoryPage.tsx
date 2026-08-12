@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Spinner, Table, Badge } from "react-bootstrap";
-import { getStudentHistory, logout } from "../../api/client";
+import { ATTENDANCE_THRESHOLD, getStudentHistory, logout } from "../../api/client";
 import type { AttendanceHistoryResponse } from "../../api/client";
 
 export default function AttendanceHistoryPage() {
@@ -25,7 +25,8 @@ export default function AttendanceHistoryPage() {
       <p className="mb-1">Total Classes: {data.total}</p>
       <p className="mb-1">Present: {data.present}</p>
       <p className="mb-3">
-        Attendance: <Badge bg={data.percentage >= 75 ? "success" : "danger"}>{data.percentage}%</Badge>
+        Attendance:{" "}
+        <Badge bg={data.percentage >= ATTENDANCE_THRESHOLD ? "success" : "danger"}>{data.percentage}%</Badge>
       </p>
       <Table striped bordered>
         <thead>

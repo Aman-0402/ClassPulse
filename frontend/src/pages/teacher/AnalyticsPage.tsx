@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Spinner, Table, Badge, Button, ButtonGroup, Alert } from "react-bootstrap";
-import { getAnalytics, downloadReport, logout } from "../../api/client";
+import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../../api/client";
 import type { AnalyticsResponse } from "../../api/client";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<"csv" | "excel" | "pdf" | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,11 +20,15 @@ export default function AnalyticsPage() {
   }, [navigate]);
 
   const handleDownload = async (format: "csv" | "excel" | "pdf") => {
+    if (downloadingFormat) return;
     setDownloadError(null);
+    setDownloadingFormat(format);
     try {
       await downloadReport(format);
     } catch {
       setDownloadError("Could not download the report. Please try again.");
+    } finally {
+      setDownloadingFormat(null);
     }
   };
 
@@ -40,20 +45,20 @@ export default function AnalyticsPage() {
 
       {downloadError && <Alert variant="danger">{downloadError}</Alert>}
       <ButtonGroup className="mb-3">
-        <Button variant="outline-secondary" onClick={() => handleDownload("csv")}>
-          Export CSV
+        <Button variant="outline-secondary" disabled={!!downloadingFormat} onClick={() => handleDownload("csv")}>
+          {downloadingFormat === "csv" ? "Exporting..." : "Export CSV"}
         </Button>
-        <Button variant="outline-secondary" onClick={() => handleDownload("excel")}>
-          Export Excel
+        <Button variant="outline-secondary" disabled={!!downloadingFormat} onClick={() => handleDownload("excel")}>
+          {downloadingFormat === "excel" ? "Exporting..." : "Export Excel"}
         </Button>
-        <Button variant="outline-secondary" onClick={() => handleDownload("pdf")}>
-          Export PDF
+        <Button variant="outline-secondary" disabled={!!downloadingFormat} onClick={() => handleDownload("pdf")}>
+          {downloadingFormat === "pdf" ? "Exporting..." : "Export PDF"}
         </Button>
       </ButtonGroup>
 
       {data.below_threshold.length > 0 && (
         <Alert variant="warning">
-          {data.below_threshold.length} student(s) below 75% attendance:{" "}
+          {data.below_threshold.length} student(s) below {ATTENDANCE_THRESHOLD}% attendance:{" "}
           {data.below_threshold.map((s) => s.name).join(", ")}
         </Alert>
       )}
@@ -76,7 +81,7 @@ export default function AnalyticsPage() {
               <td>{s.present}</td>
               <td>{s.total}</td>
               <td>
-                <Badge bg={s.percentage >= 75 ? "success" : "danger"}>{s.percentage}%</Badge>
+                <Badge bg={s.percentage >= ATTENDANCE_THRESHOLD ? "success" : "danger"}>{s.percentage}%</Badge>
               </td>
             </tr>
           ))}

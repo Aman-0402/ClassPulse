@@ -2,6 +2,11 @@ import axios from "axios";
 
 const BASE_URL = "http://localhost:8000/api";
 
+// Matches the backend's attendance_percentage() convention (see attendance/views.py's
+// AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and
+// the backend's below-threshold list can't silently drift apart.
+export const ATTENDANCE_THRESHOLD = 75;
+
 export const api = axios.create({ baseURL: BASE_URL });
 
 api.interceptors.request.use((config) => {
@@ -171,5 +176,7 @@ export async function downloadReport(format: "csv" | "excel" | "pdf"): Promise<v
   document.body.appendChild(link);
   link.click();
   link.remove();
-  window.URL.revokeObjectURL(url);
+  // Revoking synchronously can abort the download handoff in Safari/WebKit, where it's
+  // asynchronous; a short delay costs nothing and removes the cross-browser risk.
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 }
