@@ -139,7 +139,7 @@ class AnalyticsView(APIView):
         total_students = len(rows)
         overall_present = sum(r["present_count"] for r in rows)
         overall_possible = total_students * total_sessions
-        overall_rate = round((overall_present / overall_possible) * 100, 1) if overall_possible else 0.0
+        overall_rate = attendance_percentage(overall_present, overall_possible)
         students_data = [
             {
                 "name": r["name"],
