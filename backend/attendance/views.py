@@ -209,6 +209,20 @@ class ExportExcelView(APIView):
         return response
 
 
+def compute_pdf_column_widths(num_columns, usable_width):
+    """Column widths for the export PDF's table, guaranteed to sum to <= usable_width.
+
+    CRN and Name get fixed widths; every remaining column (one per session, plus %)
+    shares whatever space is left, shrinking toward unreadable rather than ever pushing
+    the table wider than the page can actually hold.
+    """
+    crn_width = 60
+    name_width = 120
+    remaining_columns = num_columns - 2
+    other_width = max(usable_width - crn_width - name_width, 0) / remaining_columns
+    return [crn_width, name_width] + [other_width] * remaining_columns
+
+
 def _strip_pdf_display_prefix(value):
     """CSV/Excel's formula-injection quote-prefix is a spreadsheet-only convention;
     PDF isn't a spreadsheet, so drop the leading quote here rather than showing it."""
@@ -226,13 +240,8 @@ class ExportPDFView(APIView):
         header, data_rows = build_report_rows(sessions, rows)
         buffer = BytesIO()
         page_width, _ = landscape(A4)
-        usable_width = page_width - 72  # 36pt margin on each side
-        crn_width = 60
-        name_width = 120
-        remaining_columns = len(header) - 2  # everything except CRN, Name
-        remaining_width = max(usable_width - crn_width - name_width, remaining_columns * 24)
-        other_width = remaining_width / remaining_columns
-        col_widths = [crn_width, name_width] + [other_width] * remaining_columns
+        usable_width = page_width - 144  # SimpleDocTemplate's default 72pt margin on each side
+        col_widths = compute_pdf_column_widths(len(header), usable_width)
 
         pdf_header = [_strip_pdf_display_prefix(cell) for cell in header]
         pdf_rows = [[_strip_pdf_display_prefix(cell) for cell in row] for row in data_rows]

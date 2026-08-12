@@ -120,7 +120,7 @@ class ExportTest(APITestCase):
         from pypdf import PdfReader
         import io as io_module
 
-        for i in range(30):
+        for i in range(60):
             extra_session = AttendanceSession.objects.create(
                 teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED
             )
@@ -132,6 +132,15 @@ class ExportTest(APITestCase):
 
         reader = PdfReader(io_module.BytesIO(response.content))
         self.assertGreaterEqual(len(reader.pages), 1)
+
+    def test_pdf_column_widths_never_exceed_usable_width(self):
+        from attendance.views import compute_pdf_column_widths
+
+        for num_columns in (3, 10, 24, 60, 100, 200):
+            widths = compute_pdf_column_widths(num_columns, usable_width=697.9)
+            self.assertEqual(len(widths), num_columns)
+            self.assertLessEqual(sum(widths), 697.9 + 1e-6)
+            self.assertTrue(all(w >= 0 for w in widths))
 
     def test_pdf_export_strips_sanitizer_apostrophe(self):
         risky_student = User.objects.create_user(
