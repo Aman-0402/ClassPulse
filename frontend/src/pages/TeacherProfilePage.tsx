@@ -31,6 +31,9 @@ export default function TeacherProfilePage() {
       <Link to="/teacher/start-attendance" className="btn btn-primary">
         Start Attendance
       </Link>
+      <Link to="/teacher/analytics" className="btn btn-outline-primary ms-2">
+        Analytics
+      </Link>
     </Container>
   );
 }

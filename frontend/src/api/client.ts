@@ -138,3 +138,38 @@ export async function getStudentHistory(): Promise<AttendanceHistoryResponse> {
   const { data } = await api.get<AttendanceHistoryResponse>("/attendance/student/history/");
   return data;
 }
+
+export interface StudentAnalyticsRow {
+  name: string;
+  crn: string;
+  present: number;
+  total: number;
+  percentage: number;
+}
+
+export interface AnalyticsResponse {
+  total_sessions: number;
+  total_students: number;
+  overall_rate: number;
+  students: StudentAnalyticsRow[];
+  below_threshold: StudentAnalyticsRow[];
+}
+
+export async function getAnalytics(): Promise<AnalyticsResponse> {
+  const { data } = await api.get<AnalyticsResponse>("/attendance/analytics/");
+  return data;
+}
+
+export async function downloadReport(format: "csv" | "excel" | "pdf"): Promise<void> {
+  const response = await api.get(`/attendance/export/${format}/`, { responseType: "blob" });
+  const extension = format === "excel" ? "xlsx" : format;
+  const blob = new Blob([response.data]);
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `attendance_report.${extension}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
