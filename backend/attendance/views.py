@@ -86,7 +86,8 @@ class SessionActivityView(APIView):
         logs = (
             ActivityLog.objects.filter(session=session)
             .exclude(activity_type=ActivityLog.TYPE_SUCCESS)
-            .select_related("student")[:50]
+            .select_related("student")
+            .order_by("-created_at", "-id")[:50]
         )
         data = [
             {
