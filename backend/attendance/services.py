@@ -10,6 +10,7 @@ from attendance.exceptions import (
     InvalidTokenError,
     SessionClosedError,
 )
+from accounts.models import User
 from attendance.models import ActivityLog, AttendanceSession, QRToken, Attendance
 
 logger = logging.getLogger(__name__)
@@ -131,3 +132,37 @@ def mark_attendance(student, token_value, ip_address, device_info):
     log_activity(student, session, ActivityLog.TYPE_SUCCESS, ip_address, device_info)
     broadcast_attendance_update(attendance)
     return attendance
+
+
+def get_closed_sessions():
+    return AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED).order_by("date", "start_time")
+
+
+def build_attendance_matrix():
+    sessions = list(get_closed_sessions())
+    students = (
+        User.objects.filter(role=User.ROLE_STUDENT, student_profile__isnull=False)
+        .select_related("student_profile")
+        .order_by("student_profile__crn")
+    )
+    present_pairs = set(
+        Attendance.objects.filter(session__in=sessions).values_list("student_id", "session_id")
+    )
+    rows = []
+    for student in students:
+        presents = {s.id: (student.id, s.id) in present_pairs for s in sessions}
+        present_count = sum(presents.values())
+        total = len(sessions)
+        percentage = round((present_count / total) * 100, 1) if total else 0.0
+        rows.append(
+            {
+                "student": student,
+                "crn": student.student_profile.crn,
+                "name": student.get_full_name() or student.username,
+                "presents": presents,
+                "present_count": present_count,
+                "total": total,
+                "percentage": percentage,
+            }
+        )
+    return sessions, rows
