@@ -25,6 +25,7 @@ export default function LiveQRPage() {
   const [presentCount, setPresentCount] = useState(0);
   const [recent, setRecent] = useState<AttendanceRecord[]>([]);
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [activityError, setActivityError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
   const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
@@ -73,10 +74,14 @@ export default function LiveQRPage() {
 
     getSessionActivity(id)
       .then((data) => {
-        if (active) setActivityLog(data.logs);
+        if (active) {
+          setActivityLog(data.logs);
+          setActivityError(null);
+        }
       })
       .catch(() => {
-        // Non-critical panel — a failed initial fetch just leaves it empty; the live WS feed will still populate it going forward.
+        // Security panel — an empty list must never be confused with "checked, nothing found."
+        if (active) setActivityError("Could not load suspicious activity.");
       });
 
     const handle = connectToAttendanceSocket(id, {
@@ -145,12 +150,13 @@ export default function LiveQRPage() {
           </ListGroup>
         </Col>
       </Row>
-      {activityLog.length > 0 && (
+      {(activityLog.length > 0 || activityError) && (
         <div className="mt-4">
           <h5>Suspicious Activity</h5>
+          {activityError && <Alert variant="warning">{activityError}</Alert>}
           <ListGroup>
             {activityLog.map((entry, index) => {
-              const meta = ACTIVITY_LABELS[entry.activity_type];
+              const meta = ACTIVITY_LABELS[entry.activity_type] ?? { label: entry.activity_type, variant: "dark" };
               return (
                 <ListGroup.Item key={`${entry.student}-${entry.created_at}-${index}`}>
                   <Badge bg={meta.variant} className="me-2">
