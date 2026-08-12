@@ -52,3 +52,18 @@ class ExportTest(APITestCase):
         data_row = rows[1]
         self.assertEqual(data_row[0], "101")
         self.assertEqual(data_row[-1], "100.0")
+
+    def test_csv_export_sanitizes_formula_like_names(self):
+        risky_student = User.objects.create_user(
+            username="stud2", password="pw12345678", role=User.ROLE_STUDENT, first_name="=cmd|'/c calc'"
+        )
+        StudentProfile.objects.create(user=risky_student, crn="=102", course="CSE", semester=5, section="A")
+        Attendance.objects.create(student=risky_student, session=self.closed)
+
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-csv"))
+        content = response.content.decode("utf-8-sig")
+        rows = list(csv.reader(io.StringIO(content)))
+        risky_row = next(r for r in rows if r[0].endswith("102"))
+        self.assertTrue(risky_row[0].startswith("'"))
+        self.assertTrue(risky_row[1].startswith("'"))
