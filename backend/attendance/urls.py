@@ -6,6 +6,7 @@ from attendance.views import (
     SessionQRView,
     StartSessionView,
     StopSessionView,
+    StudentHistoryView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path("sessions/<int:session_id>/live/", SessionLiveView.as_view(), name="session-live"),
     path("sessions/<int:session_id>/activity/", SessionActivityView.as_view(), name="session-activity"),
     path("mark/", MarkAttendanceView.as_view(), name="attendance-mark"),
+    path("student/history/", StudentHistoryView.as_view(), name="student-attendance-history"),
 ]

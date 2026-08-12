@@ -8,7 +8,7 @@ from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError
 from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
-from attendance.services import get_current_qr_token, mark_attendance
+from attendance.services import get_closed_sessions, get_current_qr_token, mark_attendance
 
 
 class StartSessionView(generics.CreateAPIView):
@@ -98,3 +98,27 @@ class SessionActivityView(APIView):
             for log in logs
         ]
         return Response({"logs": data})
+
+
+class StudentHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def get(self, request):
+        sessions = get_closed_sessions()
+        present_session_ids = set(
+            Attendance.objects.filter(student=request.user, session__in=sessions).values_list(
+                "session_id", flat=True
+            )
+        )
+        history = [
+            {
+                "date": s.date,
+                "subject": s.subject,
+                "status": "present" if s.id in present_session_ids else "absent",
+            }
+            for s in sessions
+        ]
+        total = len(history)
+        present = len(present_session_ids)
+        percentage = round((present / total) * 100, 1) if total else 0.0
+        return Response({"total": total, "present": present, "percentage": percentage, "history": history})
