@@ -1,3 +1,6 @@
+import csv
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, permissions
@@ -160,3 +163,23 @@ class AnalyticsView(APIView):
                 "below_threshold": below_threshold,
             }
         )
+
+
+class ExportCSVView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        sessions, rows = build_attendance_matrix()
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename=attendance_report.csv"
+        writer = csv.writer(response)
+        header = ["CRN", "Name"] + [s.date.isoformat() for s in sessions] + ["%"]
+        writer.writerow(header)
+        for r in rows:
+            row = (
+                [r["crn"], r["name"]]
+                + ["P" if r["presents"][s.id] else "A" for s in sessions]
+                + [str(r["percentage"])]
+            )
+            writer.writerow(row)
+        return response
