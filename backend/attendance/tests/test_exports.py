@@ -67,3 +67,24 @@ class ExportTest(APITestCase):
         risky_row = next(r for r in rows if r[0].endswith("102"))
         self.assertTrue(risky_row[0].startswith("'"))
         self.assertTrue(risky_row[1].startswith("'"))
+
+    def test_excel_export_shape(self):
+        from openpyxl import load_workbook
+        import io as io_module
+
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("export-excel"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        self.assertIn("attachment", response["Content-Disposition"])
+
+        wb = load_workbook(io_module.BytesIO(response.content))
+        ws = wb.active
+        header = [cell.value for cell in ws[1]]
+        self.assertEqual(header[0], "CRN")
+        self.assertEqual(header[-1], "%")
+        data_row = [cell.value for cell in ws[2]]
+        self.assertEqual(data_row[0], "101")

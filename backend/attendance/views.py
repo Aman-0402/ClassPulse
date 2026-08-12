@@ -1,8 +1,10 @@
 import csv
+from io import BytesIO
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from openpyxl import Workbook
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -178,4 +180,27 @@ class ExportCSVView(APIView):
         writer = csv.writer(response)
         writer.writerow(header)
         writer.writerows(data_rows)
+        return response
+
+
+class ExportExcelView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        sessions, rows = build_attendance_matrix()
+        header, data_rows = build_report_rows(sessions, rows)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Attendance"
+        ws.append(header)
+        for row in data_rows:
+            ws.append(row)
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        response = HttpResponse(
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = "attachment; filename=attendance_report.xlsx"
         return response
