@@ -38,6 +38,9 @@ export default function StudentProfilePage() {
       <Link to="/student/scan" className="btn btn-primary mt-2">
         Scan Attendance QR
       </Link>
+      <Link to="/student/history" className="btn btn-outline-primary mt-2 ms-2">
+        Attendance History
+      </Link>
     </Container>
   );
 }

@@ -120,3 +120,21 @@ export async function getSessionActivity(sessionId: number): Promise<ActivityLog
   const { data } = await api.get<ActivityLogResponse>(`/attendance/sessions/${sessionId}/activity/`);
   return data;
 }
+
+export interface AttendanceHistoryEntry {
+  date: string;
+  subject: string;
+  status: "present" | "absent";
+}
+
+export interface AttendanceHistoryResponse {
+  total: number;
+  present: number;
+  percentage: number;
+  history: AttendanceHistoryEntry[];
+}
+
+export async function getStudentHistory(): Promise<AttendanceHistoryResponse> {
+  const { data } = await api.get<AttendanceHistoryResponse>("/attendance/student/history/");
+  return data;
+}
