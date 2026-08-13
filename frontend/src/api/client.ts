@@ -152,6 +152,7 @@ export interface LiveSessionResponse {
   recent: AttendanceRecord[];
   status: "active" | "closed";
   closes_at: string;
+  section: string;
 }
 
 export async function getSessionLive(sessionId: number): Promise<LiveSessionResponse> {

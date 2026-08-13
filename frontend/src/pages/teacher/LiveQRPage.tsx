@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Spinner, Alert, ListGroup, Toast, ToastContainer, Row, Col } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
@@ -29,10 +29,13 @@ export default function LiveQRPage() {
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<"success" | "warning">("success");
   const [toastKey, setToastKey] = useState(0);
   const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
   const [closesAt, setClosesAt] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | null>(null);
+  const [sessionSection, setSessionSection] = useState("");
+  const sessionSectionRef = useRef("");
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
@@ -78,6 +81,8 @@ export default function LiveQRPage() {
           setRecent(data.recent);
           setClosesAt(data.closes_at);
           setSessionStatus(data.status);
+          setSessionSection(data.section);
+          sessionSectionRef.current = data.section;
         }
       })
       .catch(() => {
@@ -101,6 +106,7 @@ export default function LiveQRPage() {
         if (!active) return;
         setPresentCount(update.present_count);
         setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
+        setToastVariant("success");
         setToast(`${update.name} marked present`);
         setToastKey((key) => key + 1);
       },
@@ -109,6 +115,14 @@ export default function LiveQRPage() {
         setActivityLog((prev) =>
           [{ activity_type: event.activity_type, student: event.student, created_at: event.created_at }, ...prev].slice(0, 20)
         );
+        if (event.activity_type === "wrong_section") {
+          const expected = sessionSectionRef.current;
+          setToastVariant("warning");
+          setToast(
+            `${event.student} scanned this QR but isn't in Section ${expected || "this session's section"}`
+          );
+          setToastKey((key) => key + 1);
+        }
       },
       onStatusChange: (status) => {
         if (active) setWsStatus(status);
@@ -194,10 +208,17 @@ export default function LiveQRPage() {
         </Button>
       </div>
       <ToastContainer position="top-end" className="p-3">
-        <Toast key={toastKey} show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
+        <Toast
+          key={toastKey}
+          show={!!toast}
+          onClose={() => setToast(null)}
+          delay={toastVariant === "warning" ? 5000 : 3000}
+          autohide
+          bg={toastVariant}
+        >
           <Toast.Body className="text-white d-flex align-items-center gap-2">
             <span className="stamp stamp-animated" style={{ borderColor: "#fff", color: "#fff" }}>
-              Present
+              {toastVariant === "warning" ? "Wrong section" : "Present"}
             </span>
             {toast}
           </Toast.Body>

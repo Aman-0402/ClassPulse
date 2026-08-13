@@ -143,6 +143,7 @@ class SessionLiveView(APIView):
                 "recent": recent,
                 "status": session.status,
                 "closes_at": session.closes_at,
+                "section": session.section,
             }
         )
 

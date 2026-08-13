@@ -47,6 +47,25 @@ class ActivityBroadcastTest(APITestCase):
         mock_layer.group_send.assert_not_called()
 
     @patch("attendance.services.get_channel_layer")
+    def test_wrong_section_broadcasts_activity_event(self, mock_get_layer):
+        from accounts.models import StudentProfile
+
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="B")
+        self.session.section = "A"
+        self.session.save()
+        mock_layer = AsyncMock()
+        mock_get_layer.return_value = mock_layer
+        self._auth()
+
+        self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+
+        mock_layer.group_send.assert_called_once()
+        group_name, event = mock_layer.group_send.call_args[0]
+        self.assertEqual(group_name, f"attendance_session_{self.session.id}")
+        self.assertEqual(event["type"], "activity.update")
+        self.assertEqual(event["data"]["activity_type"], "wrong_section")
+
+    @patch("attendance.services.get_channel_layer")
     def test_successful_mark_broadcasts_attendance_not_activity(self, mock_get_layer):
         mock_layer = AsyncMock()
         mock_get_layer.return_value = mock_layer
