@@ -2,6 +2,7 @@ from django.urls import path
 from attendance.views import (
     AnalyticsView,
     CurrentScheduleView,
+    DayAttendanceView,
     ExportCSVView,
     ExportExcelView,
     ExportPDFView,
@@ -26,6 +27,7 @@ urlpatterns = [
     path("mark/", MarkAttendanceView.as_view(), name="attendance-mark"),
     path("student/history/", StudentHistoryView.as_view(), name="student-attendance-history"),
     path("analytics/", AnalyticsView.as_view(), name="attendance-analytics"),
+    path("day/", DayAttendanceView.as_view(), name="day-attendance"),
     path("export/csv/", ExportCSVView.as_view(), name="export-csv"),
     path("export/excel/", ExportExcelView.as_view(), name="export-excel"),
     path("export/pdf/", ExportPDFView.as_view(), name="export-pdf"),

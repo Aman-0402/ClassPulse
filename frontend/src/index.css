@@ -165,6 +165,9 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   border-bottom: 3px solid var(--brass);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
 }
 .app-shell-brand {
   display: flex;

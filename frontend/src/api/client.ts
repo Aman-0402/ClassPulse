@@ -219,6 +219,36 @@ export async function getAnalytics(section?: string): Promise<AnalyticsResponse>
   return data;
 }
 
+export interface DayAttendanceSession {
+  id: number;
+  start_time: string;
+  periods: number;
+  status: "active" | "closed";
+}
+
+export interface DayAttendanceStudent {
+  crn: string;
+  roll_number: string;
+  name: string;
+  present: boolean;
+}
+
+export interface DayAttendanceResponse {
+  date: string;
+  section: string;
+  sessions: DayAttendanceSession[];
+  present_count: number;
+  total_students: number;
+  students: DayAttendanceStudent[];
+}
+
+export async function getDayAttendance(section: string, date: string): Promise<DayAttendanceResponse> {
+  const { data } = await api.get<DayAttendanceResponse>("/attendance/day/", {
+    params: { section, date },
+  });
+  return data;
+}
+
 export async function downloadReport(format: "csv" | "excel" | "pdf", section?: string): Promise<void> {
   const response = await api.get(`/attendance/export/${format}/`, {
     responseType: "blob",

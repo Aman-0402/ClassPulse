@@ -35,6 +35,9 @@ export default function AppShell({ children }: AppShellProps) {
               <Link to="/teacher/analytics" className="btn btn-outline-light btn-sm">
                 Analytics
               </Link>
+              <Link to="/teacher/day-attendance" className="btn btn-outline-light btn-sm">
+                Day-wise
+              </Link>
             </>
           ) : (
             <>

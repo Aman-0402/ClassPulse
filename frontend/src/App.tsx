@@ -8,6 +8,7 @@ import LiveQRPage from "./pages/teacher/LiveQRPage";
 import ScanQRPage from "./pages/student/ScanQRPage";
 import AttendanceHistoryPage from "./pages/student/AttendanceHistoryPage";
 import AnalyticsPage from "./pages/teacher/AnalyticsPage";
+import DayAttendancePage from "./pages/teacher/DayAttendancePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/teacher/start-attendance" element={<StartAttendancePage />} />
           <Route path="/teacher/session/:sessionId" element={<LiveQRPage />} />
           <Route path="/teacher/analytics" element={<AnalyticsPage />} />
+          <Route path="/teacher/day-attendance" element={<DayAttendancePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

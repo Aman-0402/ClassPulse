@@ -23,6 +23,7 @@ from attendance.services import (
     close_session_if_window_expired,
     get_available_sections,
     get_closed_sessions,
+    get_day_attendance,
     get_current_qr_token,
     get_current_schedule_slot,
     get_today_schedule,
@@ -227,6 +228,36 @@ class AnalyticsView(APIView):
                 "below_threshold": below_threshold,
                 "available_sections": get_available_sections(),
                 "section": section,
+            }
+        )
+
+
+class DayAttendanceView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        section = request.query_params.get("section", "")
+        date_str = request.query_params.get("date", "")
+        if not section or not date_str:
+            return Response({"detail": "section and date are both required."}, status=400)
+        try:
+            date = timezone.datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "date must be in YYYY-MM-DD format."}, status=400)
+
+        sessions, rows = get_day_attendance(section, date)
+        present_count = sum(1 for r in rows if r["present"])
+        return Response(
+            {
+                "date": date,
+                "section": section,
+                "sessions": [
+                    {"id": s.id, "start_time": s.start_time, "periods": s.periods, "status": s.status}
+                    for s in sessions
+                ],
+                "present_count": present_count,
+                "total_students": len(rows),
+                "students": rows,
             }
         )
 

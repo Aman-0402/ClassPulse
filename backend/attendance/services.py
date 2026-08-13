@@ -158,6 +158,37 @@ def mark_attendance(student, token_value, ip_address, device_info):
     return attendance
 
 
+def get_day_attendance(section, date):
+    """Per-student present/absent for a specific section on a specific date.
+
+    A student counts as present if they attended ANY of that section's sessions
+    on that date (usually one, but a teacher could start an extra ad-hoc session
+    the same day) — mirrors the "attended this session" semantics used everywhere
+    else rather than introducing a new per-slot concept.
+    """
+    sessions = list(
+        AttendanceSession.objects.filter(section=section, date=date).order_by("start_time")
+    )
+    students = (
+        User.objects.filter(role=User.ROLE_STUDENT, student_profile__section=section)
+        .select_related("student_profile")
+        .order_by("student_profile__crn")
+    )
+    present_student_ids = set(
+        Attendance.objects.filter(session__in=sessions).values_list("student_id", flat=True)
+    )
+    rows = [
+        {
+            "crn": student.student_profile.crn,
+            "roll_number": student.username,
+            "name": student.get_full_name() or student.username,
+            "present": student.id in present_student_ids,
+        }
+        for student in students
+    ]
+    return sessions, rows
+
+
 def get_available_sections():
     return list(
         StudentProfile.objects.exclude(section="")
