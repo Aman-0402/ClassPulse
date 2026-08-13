@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
 from accounts.serializers import StudentRegistrationSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -26,7 +27,7 @@ from accounts.models import StudentProfile
 
 class StudentProfileView(APIView):
     def get(self, request):
-        profile = StudentProfile.objects.select_related("user").get(user=request.user)
+        profile = get_object_or_404(StudentProfile.objects.select_related("user"), user=request.user)
         return Response(StudentProfileSerializer(profile).data)
 
 

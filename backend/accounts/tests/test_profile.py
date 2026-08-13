@@ -29,3 +29,13 @@ class ProfileTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["crn"], "22030145")
+
+    def test_authenticated_user_without_profile_gets_404_not_500(self):
+        # Covers superusers/teachers/any account with no StudentProfile row hitting
+        # this endpoint by mistake (e.g. logging into the app with a Django-admin-only
+        # account) — must not crash with an unhandled 500.
+        no_profile_user = User.objects.create_user(username="noprofile", password="pw12345678")
+        token = Token.objects.create(user=no_profile_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        response = self.client.get(reverse("student-profile"))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
