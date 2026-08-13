@@ -160,7 +160,7 @@ export async function getSessionLive(sessionId: number): Promise<LiveSessionResp
 }
 
 export interface ActivityLogEntry {
-  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device";
+  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device" | "wrong_section";
   student: string;
   created_at: string;
 }

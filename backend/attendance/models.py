@@ -117,6 +117,7 @@ class ActivityLog(models.Model):
     TYPE_INVALID_TOKEN = "invalid_token"
     TYPE_SESSION_CLOSED = "session_closed"
     TYPE_NEW_DEVICE = "new_device"
+    TYPE_WRONG_SECTION = "wrong_section"
     TYPE_CHOICES = [
         (TYPE_SUCCESS, "Success"),
         (TYPE_DUPLICATE, "Duplicate Attempt"),
@@ -124,6 +125,7 @@ class ActivityLog(models.Model):
         (TYPE_INVALID_TOKEN, "Invalid QR"),
         (TYPE_SESSION_CLOSED, "Session Closed"),
         (TYPE_NEW_DEVICE, "New Device"),
+        (TYPE_WRONG_SECTION, "Wrong Section"),
     ]
 
     student = models.ForeignKey(

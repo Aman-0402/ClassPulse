@@ -11,6 +11,7 @@ from attendance.exceptions import (
     ExpiredTokenError,
     InvalidTokenError,
     SessionClosedError,
+    WrongSectionError,
 )
 from accounts.models import User, StudentProfile
 from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, QRToken, Attendance
@@ -119,6 +120,11 @@ def mark_attendance(student, token_value, ip_address, device_info):
     if session.status != AttendanceSession.STATUS_ACTIVE:
         log_activity(student, session, ActivityLog.TYPE_SESSION_CLOSED, ip_address, device_info)
         raise SessionClosedError()
+
+    student_section = getattr(getattr(student, "student_profile", None), "section", "")
+    if session.section and student_section != session.section:
+        log_activity(student, session, ActivityLog.TYPE_WRONG_SECTION, ip_address, device_info)
+        raise WrongSectionError(session.section)
 
     if qr_token.is_expired():
         log_activity(student, session, ActivityLog.TYPE_EXPIRED_TOKEN, ip_address, device_info)

@@ -21,3 +21,11 @@ class ExpiredTokenError(AttendanceError):
 class DuplicateAttendanceError(AttendanceError):
     activity_type = "duplicate"
     message = "Attendance already marked for this session."
+
+
+class WrongSectionError(AttendanceError):
+    activity_type = "wrong_section"
+
+    def __init__(self, session_section):
+        self.message = f"This QR code is for Section {session_section} only."
+        super().__init__(self.message)

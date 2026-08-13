@@ -65,6 +65,37 @@ class MarkAttendanceTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)
 
+    def test_student_from_wrong_section_rejected_and_logged(self):
+        from accounts.models import StudentProfile
+
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="B")
+        self.session.section = "A"
+        self.session.save()
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Section A", response.data["detail"])
+        self.assertEqual(Attendance.objects.count(), 0)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_WRONG_SECTION).count(), 1)
+
+    def test_student_from_correct_section_allowed(self):
+        from accounts.models import StudentProfile
+
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="A")
+        self.session.section = "A"
+        self.session.save()
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Attendance.objects.count(), 1)
+
+    def test_sessionless_of_section_allows_any_student(self):
+        # session.section defaults to "" (e.g. started without picking a timetable slot) —
+        # no section restriction should apply in that case.
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_expired_attendance_window_auto_closes_and_rejects(self):
         self.session.duration_minutes = 5
         self.session.start_time = timezone.now() - timezone.timedelta(minutes=6)

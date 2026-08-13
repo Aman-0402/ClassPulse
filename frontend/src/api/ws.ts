@@ -11,7 +11,7 @@ export interface AttendanceUpdateEvent {
 
 export interface ActivityUpdateEvent {
   kind: "activity";
-  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device";
+  activity_type: "duplicate" | "expired_token" | "invalid_token" | "session_closed" | "new_device" | "wrong_section";
   student: string;
   created_at: string;
 }

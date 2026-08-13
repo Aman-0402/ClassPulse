@@ -16,6 +16,7 @@ const ACTIVITY_LABELS: Record<ActivityLogEntry["activity_type"], { label: string
   invalid_token: { label: "Invalid QR", stampClass: "stamp-absent" },
   session_closed: { label: "Closed-session attempt", stampClass: "stamp-neutral" },
   new_device: { label: "New device", stampClass: "stamp-neutral" },
+  wrong_section: { label: "Wrong section", stampClass: "stamp-absent" },
 };
 
 export default function LiveQRPage() {
