@@ -106,13 +106,6 @@ export default function AnalyticsPage() {
         </Button>
       </ButtonGroup>
 
-      {data.below_threshold.length > 0 && (
-        <Alert variant="warning">
-          {data.below_threshold.length} student(s) below {ATTENDANCE_THRESHOLD}% attendance:{" "}
-          {data.below_threshold.map((s) => s.name).join(", ")}
-        </Alert>
-      )}
-
       {data.students.length === 0 ? (
         <p className="text-muted">No students in this section yet.</p>
       ) : (
