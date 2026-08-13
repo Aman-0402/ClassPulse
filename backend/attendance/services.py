@@ -167,6 +167,28 @@ def get_today_schedule():
     return ClassSchedule.objects.filter(day_of_week=today.weekday()).order_by("start_time")
 
 
+def merge_consecutive_slots(slots):
+    """Collapse back-to-back periods for the same section/subject into one block.
+
+    Two periods are the same class continued (e.g. 10:05-10:55 and 11:05-11:55 for
+    BBA III D) when they're adjacent in the day's ordered timetable and share a
+    section and subject — the real timetable leaves a short break between periods
+    (10:55 to 11:05), so this merges on adjacency, not on an exact zero-gap
+    boundary. Merging means a teacher sees "10:05 AM - 11:55 AM" once instead of
+    two separate rows, and one attendance session naturally covers the double
+    period.
+    """
+    merged = []
+    for slot in slots:
+        if merged and merged[-1]["section"] == slot.section and merged[-1]["subject"] == slot.subject:
+            merged[-1]["end_time"] = slot.end_time
+        else:
+            merged.append(
+                {"subject": slot.subject, "section": slot.section, "start_time": slot.start_time, "end_time": slot.end_time}
+            )
+    return merged
+
+
 def get_current_schedule_slot():
     """The timetable slot covering right now, if any (local time, current weekday)."""
     now = timezone.localtime()

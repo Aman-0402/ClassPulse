@@ -27,6 +27,7 @@ from attendance.services import (
     get_current_schedule_slot,
     get_today_schedule,
     mark_attendance,
+    merge_consecutive_slots,
 )
 
 
@@ -61,15 +62,7 @@ class TodayScheduleView(APIView):
         return Response(
             {
                 "day": timezone.localdate().strftime("%A"),
-                "slots": [
-                    {
-                        "subject": slot.subject,
-                        "section": slot.section,
-                        "start_time": slot.start_time,
-                        "end_time": slot.end_time,
-                    }
-                    for slot in slots
-                ],
+                "slots": merge_consecutive_slots(slots),
             }
         )
 

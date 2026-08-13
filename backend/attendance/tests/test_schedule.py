@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from attendance.models import ClassSchedule
-from attendance.services import get_current_schedule_slot, get_today_schedule
+from attendance.services import get_current_schedule_slot, get_today_schedule, merge_consecutive_slots
 
 User = get_user_model()
 
@@ -66,6 +66,62 @@ class TodayScheduleServiceTest(APITestCase):
         with patch("attendance.services.timezone.localdate", return_value=_monday_date()):
             slots = list(get_today_schedule())
         self.assertEqual(slots, [self.monday_a, self.monday_b])
+
+
+class MergeConsecutiveSlotsTest(APITestCase):
+    def setUp(self):
+        ClassSchedule.objects.all().delete()
+
+    def _slot(self, start, end, section, subject="Training II"):
+        return ClassSchedule.objects.create(
+            day_of_week=ClassSchedule.MONDAY, start_time=start, end_time=end, section=section, subject=subject
+        )
+
+    def test_back_to_back_same_section_merges_into_one_block(self):
+        first = self._slot(time(10, 5), time(10, 55), "D")
+        second = self._slot(time(11, 5), time(11, 55), "D")
+        merged = merge_consecutive_slots([first, second])
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["start_time"], time(10, 5))
+        self.assertEqual(merged[0]["end_time"], time(11, 55))
+        self.assertEqual(merged[0]["section"], "D")
+
+    def test_short_break_between_periods_still_merges(self):
+        # Real timetable leaves a 10-minute break (10:55 -> 11:05) between periods
+        # of the same double-length class — still one continuous session.
+        first = self._slot(time(10, 5), time(10, 55), "D")
+        second = self._slot(time(11, 5), time(11, 55), "D")
+        merged = merge_consecutive_slots([first, second])
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["start_time"], time(10, 5))
+        self.assertEqual(merged[0]["end_time"], time(11, 55))
+
+    def test_different_section_between_same_section_slots_stops_merge(self):
+        first = self._slot(time(10, 5), time(10, 55), "D")
+        middle = self._slot(time(11, 5), time(11, 55), "E")
+        last = self._slot(time(12, 5), time(12, 55), "D")
+        merged = merge_consecutive_slots([first, middle, last])
+        self.assertEqual([m["section"] for m in merged], ["D", "E", "D"])
+
+    def test_different_section_does_not_merge(self):
+        first = self._slot(time(10, 5), time(10, 55), "D")
+        second = self._slot(time(10, 55), time(11, 45), "E")
+        merged = merge_consecutive_slots([first, second])
+        self.assertEqual(len(merged), 2)
+
+    def test_full_thursday_schedule_merges_into_three_double_periods(self):
+        slots = [
+            self._slot(time(10, 5), time(10, 55), "D"),
+            self._slot(time(11, 5), time(11, 55), "D"),
+            self._slot(time(12, 45), time(13, 35), "E"),
+            self._slot(time(13, 35), time(14, 25), "E"),
+            self._slot(time(14, 35), time(15, 25), "F"),
+            self._slot(time(15, 25), time(16, 15), "F"),
+        ]
+        merged = merge_consecutive_slots(slots)
+        self.assertEqual([m["section"] for m in merged], ["D", "E", "F"])
+        self.assertEqual(merged[0]["start_time"], time(10, 5))
+        self.assertEqual(merged[0]["end_time"], time(11, 55))
 
 
 class CurrentScheduleViewTest(APITestCase):
