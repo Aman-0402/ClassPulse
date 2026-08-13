@@ -4,11 +4,12 @@ from attendance.models import AttendanceSession, QRToken
 
 class StartSessionSerializer(serializers.ModelSerializer):
     duration_minutes = serializers.IntegerField(required=False, min_value=1, max_value=180, default=5)
+    periods = serializers.IntegerField(required=False, min_value=1, max_value=2, default=1)
     closes_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = AttendanceSession
-        fields = ["id", "subject", "date", "start_time", "duration_minutes", "closes_at", "status"]
+        fields = ["id", "subject", "date", "start_time", "duration_minutes", "periods", "closes_at", "status"]
         read_only_fields = ["id", "date", "start_time", "status"]
 
     def create(self, validated_data):
@@ -20,7 +21,17 @@ class SessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AttendanceSession
-        fields = ["id", "subject", "date", "start_time", "end_time", "duration_minutes", "closes_at", "status"]
+        fields = [
+            "id",
+            "subject",
+            "date",
+            "start_time",
+            "end_time",
+            "duration_minutes",
+            "periods",
+            "closes_at",
+            "status",
+        ]
 
 
 class QRTokenSerializer(serializers.ModelSerializer):

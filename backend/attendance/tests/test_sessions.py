@@ -46,6 +46,24 @@ class SessionLifecycleTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_start_session_defaults_periods_to_1(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")
+        self.assertEqual(response.data["periods"], 1)
+
+    def test_teacher_can_start_merged_double_period_session(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(
+            reverse("session-start"), {"subject": "AI", "periods": 2}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(AttendanceSession.objects.get().periods, 2)
+
+    def test_periods_out_of_range_rejected(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(reverse("session-start"), {"subject": "AI", "periods": 3}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_student_cannot_start_session(self):
         self._auth(self.student_token)
         response = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")

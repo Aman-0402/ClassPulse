@@ -222,11 +222,13 @@ def build_attendance_matrix(section: str = "") -> AttendanceMatrix:
     present_pairs = set(
         Attendance.objects.filter(session__in=sessions).values_list("student_id", "session_id")
     )
+    total = sum(s.periods for s in sessions)
     rows = []
     for student in students:
         presents = {s.id: (student.id, s.id) in present_pairs for s in sessions}
-        present_count = sum(presents.values())
-        total = len(sessions)
+        # A merged double-period session (periods=2) counts as 2 towards both the
+        # numerator and denominator — one QR scan, but it covers two timetable slots.
+        present_count = sum(s.periods for s in sessions if presents[s.id])
         percentage = attendance_percentage(present_count, total)
         rows.append(
             {
@@ -255,7 +257,11 @@ def sanitize_report_cell(value):
 
 
 def build_report_rows(sessions, rows):
-    header = ["CRN", "Name"] + [s.date.isoformat() for s in sessions] + ["%"]
+    header = (
+        ["CRN", "Name"]
+        + [f"{s.date.isoformat()} (x{s.periods})" if s.periods > 1 else s.date.isoformat() for s in sessions]
+        + ["%"]
+    )
     data_rows = [
         [sanitize_report_cell(r["crn"]), sanitize_report_cell(r["name"])]
         + ["P" if r["presents"][s.id] else "A" for s in sessions]

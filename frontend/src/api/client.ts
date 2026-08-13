@@ -68,6 +68,7 @@ export interface SessionResponse {
   start_time: string;
   end_time?: string | null;
   duration_minutes: number;
+  periods: number;
   closes_at: string;
   status: "active" | "closed";
 }
@@ -107,10 +108,15 @@ export async function getTodaySchedule(): Promise<TodayScheduleResponse> {
   return data;
 }
 
-export async function startSession(subject: string, durationMinutes: number): Promise<SessionResponse> {
+export async function startSession(
+  subject: string,
+  durationMinutes: number,
+  periods: number = 1
+): Promise<SessionResponse> {
   const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", {
     subject,
     duration_minutes: durationMinutes,
+    periods,
   });
   return data;
 }

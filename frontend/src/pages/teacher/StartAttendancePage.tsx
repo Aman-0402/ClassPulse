@@ -9,6 +9,7 @@ const DURATION_OPTIONS = [5, 10, 15, 30, 60];
 export default function StartAttendancePage() {
   const [subject, setSubject] = useState("");
   const [duration, setDuration] = useState(5);
+  const [merged, setMerged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduleHint, setScheduleHint] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function StartAttendancePage() {
     e.preventDefault();
     setError(null);
     try {
-      const session = await startSession(subject, duration);
+      const session = await startSession(subject, duration, merged ? 2 : 1);
       navigate(`/teacher/session/${session.id}`);
     } catch {
       setError("Could not start attendance session.");
@@ -61,6 +62,18 @@ export default function StartAttendancePage() {
               </Form.Select>
               <Form.Text className="text-muted">
                 Students can mark attendance until this window closes.
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="merged">
+              <Form.Check
+                type="checkbox"
+                label="Merge with next continuous period (double period)"
+                checked={merged}
+                onChange={(e) => setMerged(e.target.checked)}
+              />
+              <Form.Text className="text-muted">
+                One QR scan marks attendance for both periods, and it counts as 2 sessions in
+                reports.
               </Form.Text>
             </Form.Group>
             <Button type="submit" className="w-100">

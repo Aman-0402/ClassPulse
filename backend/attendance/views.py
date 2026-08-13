@@ -180,8 +180,8 @@ class StudentHistoryView(APIView):
             }
             for s in sessions
         ]
-        total = len(history)
-        present = len(present_session_ids)
+        total = sum(s.periods for s in sessions)
+        present = sum(s.periods for s in sessions if s.id in present_session_ids)
         percentage = attendance_percentage(present, total)
         return Response({"total": total, "present": present, "percentage": percentage, "history": history})
 

@@ -59,3 +59,30 @@ class AttendanceMatrixTest(TestCase):
         row = next(r for r in rows if r["crn"] == "102")
         self.assertTrue(row["presents"][self.closed1.id])
         self.assertFalse(row["presents"][self.closed2.id])
+
+
+class MergedDoublePeriodMatrixTest(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
+        self.student = User.objects.create_user(
+            username="stud1", password="pw12345678", role=User.ROLE_STUDENT, first_name="Aman Raj"
+        )
+        from accounts.models import StudentProfile
+
+        StudentProfile.objects.create(user=self.student, crn="101", course="CSE", semester=5, section="A")
+
+        self.merged_session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED, periods=2
+        )
+        self.single_session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED, periods=1
+        )
+        # Present for the merged (double) session, absent from the single one.
+        Attendance.objects.create(student=self.student, session=self.merged_session)
+
+    def test_merged_session_counts_double_towards_total_and_present(self):
+        sessions, rows = build_attendance_matrix()
+        row = rows[0]
+        # total = 2 (merged) + 1 (single) = 3; present = 2 (merged, attended) + 0 = 2
+        self.assertEqual(row["total"], 3)
+        self.assertEqual(row["present_count"], 2)

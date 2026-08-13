@@ -27,6 +27,10 @@ class AttendanceSession(models.Model):
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
     duration_minutes = models.PositiveSmallIntegerField(default=5)
+    periods = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Number of continuous timetable periods this single session covers (2 for a merged double period).",
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
 
