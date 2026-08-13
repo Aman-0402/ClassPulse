@@ -72,7 +72,7 @@ class MergeConsecutiveSlotsTest(APITestCase):
     def setUp(self):
         ClassSchedule.objects.all().delete()
 
-    def _slot(self, start, end, section, subject="Training II"):
+    def _slot(self, start, end, section, subject="AI Training"):
         return ClassSchedule.objects.create(
             day_of_week=ClassSchedule.MONDAY, start_time=start, end_time=end, section=section, subject=subject
         )
@@ -132,7 +132,7 @@ class CurrentScheduleViewTest(APITestCase):
             start_time=time(10, 5),
             end_time=time(10, 55),
             section="A",
-            subject="Training II",
+            subject="AI Training",
         )
         self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
         self.token = Token.objects.create(user=self.teacher)
@@ -143,7 +143,7 @@ class CurrentScheduleViewTest(APITestCase):
             response = self.client.get(reverse("schedule-current"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["matched"])
-        self.assertEqual(response.data["subject"], "Training II")
+        self.assertEqual(response.data["subject"], "AI Training")
         self.assertEqual(response.data["section"], "A")
 
     def test_no_slot_returns_matched_false(self):
@@ -168,14 +168,14 @@ class TodayScheduleViewTest(APITestCase):
             start_time=time(10, 5),
             end_time=time(10, 55),
             section="A",
-            subject="Training II",
+            subject="AI Training",
         )
         ClassSchedule.objects.create(
             day_of_week=ClassSchedule.MONDAY,
             start_time=time(12, 45),
             end_time=time(13, 35),
             section="B",
-            subject="Training II",
+            subject="AI Training",
         )
         self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
         self.student = User.objects.create_user(username="stud", password="pw12345678", role=User.ROLE_STUDENT)
@@ -208,14 +208,14 @@ class TodayScheduleSessionLinkingTest(APITestCase):
             start_time=time(10, 5),
             end_time=time(10, 55),
             section="A",
-            subject="Training II",
+            subject="AI Training",
         )
         ClassSchedule.objects.create(
             day_of_week=ClassSchedule.MONDAY,
             start_time=time(12, 45),
             end_time=time(13, 35),
             section="B",
-            subject="Training II",
+            subject="AI Training",
         )
         self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
         token = Token.objects.create(user=self.teacher)
@@ -233,7 +233,7 @@ class TodayScheduleSessionLinkingTest(APITestCase):
 
     def test_slot_with_a_started_session_links_to_it(self):
         session = AttendanceSession.objects.create(
-            teacher=self.teacher, subject="Training II", section="A", date=_monday_date()
+            teacher=self.teacher, subject="AI Training", section="A", date=_monday_date()
         )
         response = self._get_today()
         section_a = next(s for s in response.data["slots"] if s["section"] == "A")
@@ -243,7 +243,7 @@ class TodayScheduleSessionLinkingTest(APITestCase):
     def test_another_teachers_session_does_not_link(self):
         other_teacher = User.objects.create_user(username="prof2", password="pw12345678", role=User.ROLE_TEACHER)
         AttendanceSession.objects.create(
-            teacher=other_teacher, subject="Training II", section="A", date=_monday_date()
+            teacher=other_teacher, subject="AI Training", section="A", date=_monday_date()
         )
         response = self._get_today()
         section_a = next(s for s in response.data["slots"] if s["section"] == "A")

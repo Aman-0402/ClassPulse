@@ -66,7 +66,7 @@ class ClassSchedule(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     section = models.CharField(max_length=10)
-    subject = models.CharField(max_length=100, default="Training II")
+    subject = models.CharField(max_length=100, default="AI Training")
 
     class Meta:
         ordering = ["day_of_week", "start_time"]

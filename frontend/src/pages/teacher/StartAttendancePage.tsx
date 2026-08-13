@@ -4,6 +4,7 @@ import { Card, Form, Button, Alert } from "react-bootstrap";
 import { getCurrentSchedule, startSession } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
+const SUBJECT = "AI Training";
 const DURATION_OPTIONS = [5, 10, 15, 30, 60];
 
 interface PrefillState {
@@ -16,7 +17,6 @@ export default function StartAttendancePage() {
   const location = useLocation();
   const prefill = location.state as PrefillState | null;
 
-  const [subject, setSubject] = useState(prefill?.subject ?? "");
   const [section, setSection] = useState(prefill?.section ?? "");
   const [duration, setDuration] = useState(5);
   const [merged, setMerged] = useState(prefill?.periods === 2);
@@ -26,16 +26,14 @@ export default function StartAttendancePage() {
 
   useEffect(() => {
     if (prefill) {
-      setScheduleHint(`From today's timetable: ${prefill.subject} — BBA III ${prefill.section}`);
+      setScheduleHint(`From today's timetable: BBA III ${prefill.section}`);
       return;
     }
     getCurrentSchedule()
       .then((data) => {
-        if (data.matched && data.subject && data.section) {
-          const label = `${data.subject} — BBA III ${data.section}`;
-          setSubject(label);
-          setSection(data.section as string);
-          setScheduleHint(`Auto-filled from today's timetable: ${label}`);
+        if (data.matched && data.section) {
+          setSection(data.section);
+          setScheduleHint(`Auto-filled from today's timetable: BBA III ${data.section}`);
         }
       })
       .catch(() => {
@@ -49,7 +47,7 @@ export default function StartAttendancePage() {
     e.preventDefault();
     setError(null);
     try {
-      const session = await startSession(subject, duration, merged ? 2 : 1, section);
+      const session = await startSession(SUBJECT, duration, merged ? 2 : 1, section);
       navigate(`/teacher/session/${session.id}`);
     } catch {
       setError("Could not start attendance session.");
@@ -66,7 +64,7 @@ export default function StartAttendancePage() {
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="subject">
               <Form.Label>Subject</Form.Label>
-              <Form.Control value={subject} onChange={(e) => setSubject(e.target.value)} required />
+              <Form.Control value={SUBJECT} disabled readOnly />
             </Form.Group>
             <Form.Group className="mb-3" controlId="duration">
               <Form.Label>Attendance window</Form.Label>
