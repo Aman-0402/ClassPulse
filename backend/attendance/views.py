@@ -12,6 +12,7 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import StudentProfile
 from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError
 from attendance.models import AttendanceSession, Attendance, ActivityLog
@@ -24,6 +25,7 @@ from attendance.services import (
     get_available_sections,
     get_closed_sessions,
     get_day_attendance,
+    set_manual_attendance,
     get_current_qr_token,
     get_current_schedule_slot,
     get_today_schedule,
@@ -260,6 +262,27 @@ class DayAttendanceView(APIView):
                 "students": rows,
             }
         )
+
+
+class ManualAttendanceView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def post(self, request, session_id):
+        session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        crn = request.data.get("crn")
+        present = request.data.get("present")
+        if not crn or not isinstance(present, bool):
+            return Response({"detail": "crn and present (boolean) are both required."}, status=400)
+
+        profile = get_object_or_404(StudentProfile.objects.select_related("user"), crn=crn)
+        if session.section and profile.section != session.section:
+            return Response(
+                {"detail": f"{profile.user.get_full_name() or profile.user.username} is not in Section {session.section}."},
+                status=400,
+            )
+
+        set_manual_attendance(session, profile.user, present, device_info="manual override by teacher")
+        return Response({"crn": crn, "present": present})
 
 
 class ExportCSVView(APIView):

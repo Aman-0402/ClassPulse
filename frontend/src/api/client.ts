@@ -249,6 +249,10 @@ export async function getDayAttendance(section: string, date: string): Promise<D
   return data;
 }
 
+export async function setManualAttendance(sessionId: number, crn: string, present: boolean): Promise<void> {
+  await api.post(`/attendance/sessions/${sessionId}/manual/`, { crn, present });
+}
+
 export async function downloadReport(format: "csv" | "excel" | "pdf", section?: string): Promise<void> {
   const response = await api.get(`/attendance/export/${format}/`, {
     responseType: "blob",

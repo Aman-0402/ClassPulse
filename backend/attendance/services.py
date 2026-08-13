@@ -158,6 +158,23 @@ def mark_attendance(student, token_value, ip_address, device_info):
     return attendance
 
 
+def set_manual_attendance(session, student, present, device_info=""):
+    """Teacher-initiated correction — bypasses QR/section checks by design.
+
+    A teacher marking someone present/absent by hand is an authorized override,
+    not a suspicious event, so this doesn't go through ActivityLog the way scans
+    do; it just creates or removes the Attendance row directly.
+    """
+    if present:
+        attendance, created = Attendance.objects.get_or_create(
+            student=student, session=session, defaults={"device_info": device_info or "manual override"}
+        )
+        if created:
+            broadcast_attendance_update(attendance)
+    else:
+        Attendance.objects.filter(student=student, session=session).delete()
+
+
 def get_day_attendance(section, date):
     """Per-student present/absent for a specific section on a specific date.
 

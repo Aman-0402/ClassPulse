@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, Card, Form, Spinner, Table } from "react-bootstrap";
-import { getAnalytics, getDayAttendance, logout } from "../../api/client";
+import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
 import type { DayAttendanceResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
-import { formatTime } from "../../utils/time";
+
+function formatSessionTime(isoDatetime: string): string {
+  return new Date(isoDatetime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -19,6 +22,8 @@ export default function DayAttendancePage() {
   const [data, setData] = useState<DayAttendanceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savingCrn, setSavingCrn] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,6 +71,24 @@ export default function DayAttendancePage() {
     };
   }, [section, date, navigate]);
 
+  const canToggle = data?.sessions.length === 1;
+
+  const handleToggle = async (crn: string, currentlyPresent: boolean) => {
+    if (!canToggle || !data) return;
+    const sessionId = data.sessions[0].id;
+    setSavingCrn(crn);
+    setSaveError(null);
+    try {
+      await setManualAttendance(sessionId, crn, !currentlyPresent);
+      const refreshed = await getDayAttendance(section, date);
+      setData(refreshed);
+    } catch {
+      setSaveError("Could not update attendance. Please try again.");
+    } finally {
+      setSavingCrn(null);
+    }
+  };
+
   return (
     <AppShell>
       <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
@@ -106,11 +129,20 @@ export default function DayAttendancePage() {
                 <span className="stamp stamp-neutral">No session this day</span>
               ) : (
                 <span className="stamp stamp-neutral">
-                  {data.sessions.map((s) => formatTime(s.start_time)).join(", ")}
+                  {data.sessions.map((s) => formatSessionTime(s.start_time)).join(", ")}
                 </span>
               )}
             </Card.Body>
           </Card>
+
+          {saveError && <Alert variant="danger">{saveError}</Alert>}
+
+          {data.sessions.length > 1 && (
+            <p className="text-muted small">
+              Multiple sessions this day — manual correction is disabled to avoid ambiguity. Use the exports on
+              Analytics for a full breakdown.
+            </p>
+          )}
 
           {data.students.length === 0 ? (
             <p className="text-muted">No students in this section.</p>
@@ -133,9 +165,20 @@ export default function DayAttendancePage() {
                     <td className="font-mono">{s.roll_number}</td>
                     <td>{s.name}</td>
                     <td>
-                      <span className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}>
-                        {s.present ? "Present" : "Absent"}
-                      </span>
+                      <button
+                        type="button"
+                        className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
+                        style={{
+                          border: "none",
+                          cursor: canToggle ? "pointer" : "default",
+                          opacity: savingCrn === s.crn ? 0.5 : 1,
+                        }}
+                        disabled={!canToggle || savingCrn !== null}
+                        title={canToggle ? "Click to toggle present/absent" : "Only editable when there's exactly one session this day"}
+                        onClick={() => handleToggle(s.crn, s.present)}
+                      >
+                        {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
+                      </button>
                     </td>
                   </tr>
                 ))}
