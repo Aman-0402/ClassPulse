@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Form, Button, Alert } from "react-bootstrap";
+import { Card, Form, Button, Alert } from "react-bootstrap";
 import { startSession } from "../../api/client";
+import AppShell from "../../components/AppShell";
 
 export default function StartAttendancePage() {
   const [subject, setSubject] = useState("");
@@ -20,16 +21,22 @@ export default function StartAttendancePage() {
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 400 }}>
-      <h2>Start Attendance</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="subject">
-          <Form.Label>Subject</Form.Label>
-          <Form.Control value={subject} onChange={(e) => setSubject(e.target.value)} required />
-        </Form.Group>
-        <Button type="submit">Start</Button>
-      </Form>
-    </Container>
+    <AppShell>
+      <h1 className="h3 mb-4">Start Attendance</h1>
+      <Card style={{ maxWidth: 400 }}>
+        <Card.Body>
+          {error && <Alert variant="danger">{error}</Alert>}
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="subject">
+              <Form.Label>Subject</Form.Label>
+              <Form.Control value={subject} onChange={(e) => setSubject(e.target.value)} required />
+            </Form.Group>
+            <Button type="submit" className="w-100">
+              Start Session
+            </Button>
+          </Form>
+        </Card.Body>
+      </Card>
+    </AppShell>
   );
 }

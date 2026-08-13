@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Container, Button, Spinner, Alert, Badge, ListGroup, Toast, ToastContainer, Row, Col } from "react-bootstrap";
+import { Button, Spinner, Alert, ListGroup, Toast, ToastContainer, Row, Col } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import { getSessionQR, getSessionLive, stopSession, getSessionActivity } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry } from "../../api/client";
 import { connectToAttendanceSocket } from "../../api/ws";
 import type { AttendanceUpdateEvent, ActivityUpdateEvent } from "../../api/ws";
+import AppShell from "../../components/AppShell";
 
 const QR_REFRESH_MS = 15000;
 
-const ACTIVITY_LABELS: Record<ActivityLogEntry["activity_type"], { label: string; variant: string }> = {
-  duplicate: { label: "Duplicate scan", variant: "warning" },
-  expired_token: { label: "Expired QR", variant: "danger" },
-  invalid_token: { label: "Invalid QR", variant: "danger" },
-  session_closed: { label: "Closed-session attempt", variant: "secondary" },
-  new_device: { label: "New device", variant: "info" },
+const ACTIVITY_LABELS: Record<ActivityLogEntry["activity_type"], { label: string; stampClass: string }> = {
+  duplicate: { label: "Duplicate scan", stampClass: "stamp-absent" },
+  expired_token: { label: "Expired QR", stampClass: "stamp-absent" },
+  invalid_token: { label: "Invalid QR", stampClass: "stamp-absent" },
+  session_closed: { label: "Closed-session attempt", stampClass: "stamp-neutral" },
+  new_device: { label: "New device", stampClass: "stamp-neutral" },
 };
 
 export default function LiveQRPage() {
@@ -120,8 +121,8 @@ export default function LiveQRPage() {
   };
 
   return (
-    <Container className="py-4">
-      <h2 className="text-center">Attendance Live</h2>
+    <AppShell>
+      <h1 className="h3 text-center mb-1">Attendance Live</h1>
       {error && (
         <Alert variant="warning" className="mt-3">
           {error}
@@ -133,18 +134,17 @@ export default function LiveQRPage() {
           <p className="mt-3 text-muted">QR refreshes every 15 seconds</p>
         </Col>
         <Col md={6}>
-          <h4>
-            Present: <Badge bg="success">{presentCount}</Badge>{" "}
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <span className="text-muted">Present:</span>
+            <span className="stamp stamp-present">{presentCount}</span>
             {wsStatus !== "connected" && (
-              <Badge bg="warning" className="ms-2">
-                {wsStatus === "reconnecting" ? "Reconnecting..." : "Disconnected"}
-              </Badge>
+              <span className="stamp stamp-neutral">{wsStatus === "reconnecting" ? "Reconnecting" : "Disconnected"}</span>
             )}
-          </h4>
-          <ListGroup className="mt-3">
+          </div>
+          <ListGroup>
             {recent.map((record) => (
               <ListGroup.Item key={record.crn}>
-                {record.name} <span className="text-muted">({record.crn})</span>
+                {record.name} <span className="text-muted font-mono">({record.crn})</span>
               </ListGroup.Item>
             ))}
           </ListGroup>
@@ -152,16 +152,14 @@ export default function LiveQRPage() {
       </Row>
       {(activityLog.length > 0 || activityError) && (
         <div className="mt-4">
-          <h5>Suspicious Activity</h5>
+          <h2 className="h5">Suspicious Activity</h2>
           {activityError && <Alert variant="warning">{activityError}</Alert>}
           <ListGroup>
             {activityLog.map((entry, index) => {
-              const meta = ACTIVITY_LABELS[entry.activity_type] ?? { label: entry.activity_type, variant: "dark" };
+              const meta = ACTIVITY_LABELS[entry.activity_type] ?? { label: entry.activity_type, stampClass: "stamp-neutral" };
               return (
                 <ListGroup.Item key={`${entry.student}-${entry.created_at}-${index}`}>
-                  <Badge bg={meta.variant} className="me-2">
-                    {meta.label}
-                  </Badge>
+                  <span className={`stamp ${meta.stampClass} me-2`}>{meta.label}</span>
                   {entry.student}
                 </ListGroup.Item>
               );
@@ -176,9 +174,14 @@ export default function LiveQRPage() {
       </div>
       <ToastContainer position="top-end" className="p-3">
         <Toast key={toastKey} show={!!toast} onClose={() => setToast(null)} delay={3000} autohide bg="success">
-          <Toast.Body className="text-white">{toast}</Toast.Body>
+          <Toast.Body className="text-white d-flex align-items-center gap-2">
+            <span className="stamp stamp-animated" style={{ borderColor: "#fff", color: "#fff" }}>
+              Present
+            </span>
+            {toast}
+          </Toast.Body>
         </Toast>
       </ToastContainer>
-    </Container>
+    </AppShell>
   );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Container, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { markAttendance } from "../../api/client";
+import AppShell from "../../components/AppShell";
 
 const SCANNER_ELEMENT_ID = "qr-scanner";
 
@@ -50,10 +51,18 @@ export default function ScanQRPage() {
   }, []);
 
   return (
-    <Container className="py-4">
-      <h2>Scan Attendance QR</h2>
-      {message && <Alert variant={message.type}>{message.text}</Alert>}
-      <div id={SCANNER_ELEMENT_ID} style={{ width: "100%", maxWidth: 400 }} />
-    </Container>
+    <AppShell>
+      <h1 className="h3 mb-3">Scan Attendance QR</h1>
+      {message && (
+        <Alert variant={message.type}>
+          {message.type === "success" && <span className="stamp stamp-present stamp-animated me-2">Present</span>}
+          {message.text}
+        </Alert>
+      )}
+      <div
+        id={SCANNER_ELEMENT_ID}
+        style={{ width: "100%", maxWidth: 400, borderRadius: "0.75rem", overflow: "hidden" }}
+      />
+    </AppShell>
   );
 }

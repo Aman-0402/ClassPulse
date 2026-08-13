@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Spinner, Table, Badge, Button, ButtonGroup, Alert } from "react-bootstrap";
+import { Card, Spinner, Table, Button, ButtonGroup, Alert } from "react-bootstrap";
 import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../../api/client";
 import type { AnalyticsResponse } from "../../api/client";
+import AppShell from "../../components/AppShell";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
@@ -32,16 +33,32 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (!data) return <Spinner animation="border" className="m-4" />;
+  if (!data) {
+    return (
+      <AppShell>
+        <Spinner animation="border" />
+      </AppShell>
+    );
+  }
 
   return (
-    <Container className="py-4">
-      <h2>Attendance Analytics</h2>
-      <p className="mb-1">Total Sessions: {data.total_sessions}</p>
-      <p className="mb-1">Total Students: {data.total_students}</p>
-      <p className="mb-3">
-        Overall Rate: <Badge bg="info">{data.overall_rate}%</Badge>
-      </p>
+    <AppShell>
+      <h1 className="h3 mb-4">Attendance Analytics</h1>
+      <Card className="mb-4" style={{ maxWidth: 480 }}>
+        <Card.Body className="d-flex justify-content-between align-items-center">
+          <div>
+            <div className="text-muted small">Total Sessions</div>
+            <div className="fs-4 font-mono">{data.total_sessions}</div>
+          </div>
+          <div>
+            <div className="text-muted small">Total Students</div>
+            <div className="fs-4 font-mono">{data.total_students}</div>
+          </div>
+          <span className={`stamp ${data.overall_rate >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
+            {data.overall_rate}%
+          </span>
+        </Card.Body>
+      </Card>
 
       {downloadError && <Alert variant="danger">{downloadError}</Alert>}
       <ButtonGroup className="mb-3">
@@ -76,17 +93,19 @@ export default function AnalyticsPage() {
         <tbody>
           {data.students.map((s) => (
             <tr key={s.crn}>
-              <td>{s.crn}</td>
+              <td className="font-mono">{s.crn}</td>
               <td>{s.name}</td>
               <td>{s.present}</td>
               <td>{s.total}</td>
               <td>
-                <Badge bg={s.percentage >= ATTENDANCE_THRESHOLD ? "success" : "danger"}>{s.percentage}%</Badge>
+                <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
+                  {s.percentage}%
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
-    </Container>
+    </AppShell>
   );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Container, Spinner } from "react-bootstrap";
+import { Card, Spinner } from "react-bootstrap";
 import { getTeacherProfile, logout } from "../api/client";
+import AppShell from "../components/AppShell";
 
 interface TeacherProfile {
   full_name: string;
@@ -22,18 +23,29 @@ export default function TeacherProfilePage() {
       });
   }, [navigate]);
 
-  if (!profile) return <Spinner animation="border" className="m-4" />;
+  if (!profile) {
+    return (
+      <AppShell>
+        <Spinner animation="border" />
+      </AppShell>
+    );
+  }
 
   return (
-    <Container className="py-4">
-      <h2>Welcome, {profile.full_name || profile.username}</h2>
-      <p>Email: {profile.email}</p>
-      <Link to="/teacher/start-attendance" className="btn btn-primary">
+    <AppShell>
+      <h1 className="h3 mb-4">Welcome, {profile.full_name || profile.username}</h1>
+      <Card style={{ maxWidth: 480 }}>
+        <Card.Body>
+          <span className="stamp stamp-neutral mb-3 d-inline-block">Teacher</span>
+          <dl className="row mb-0">
+            <dt className="col-4 text-muted fw-normal">Email</dt>
+            <dd className="col-8 text-break">{profile.email}</dd>
+          </dl>
+        </Card.Body>
+      </Card>
+      <Link to="/teacher/start-attendance" className="btn btn-primary mt-3">
         Start Attendance
       </Link>
-      <Link to="/teacher/analytics" className="btn btn-outline-primary ms-2">
-        Analytics
-      </Link>
-    </Container>
+    </AppShell>
   );
 }

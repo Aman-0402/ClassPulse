@@ -1,111 +1,264 @@
+/* ===== ClassPulse design system =====
+   Direction: classroom attendance register meets rubber ink-stamp.
+   Chalkboard green + brass + paper cream; geometric display face,
+   humanist body, monospace for CRNs/timestamps/codes.
+   Signature element: the "stamp" badge (see .stamp below). */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --chalkboard: #1f3d33;
+  --chalkboard-2: #16302a;
+  --paper: #fbf8f1;
+  --card: #ffffff;
+  --ink: #232019;
+  --ink-soft: #5b5648;
+  --brass: #c08a34;
+  --brass-dark: #9c6f27;
+  --stamp-green: #2f7d53;
+  --stamp-red: #b0402c;
+  --line: #e3dcc8;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color-scheme: light;
+  color: var(--ink);
+  background: var(--paper);
+  font: 16px/1.5 var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* Retune Bootstrap 5's own CSS variables so every react-bootstrap
+     component (Button, Card, Form, Badge, Table, Alert...) inherits
+     the theme without needing per-component class overrides. */
+  --bs-body-bg: var(--paper);
+  --bs-body-color: var(--ink);
+  --bs-body-font-family: var(--font-body);
+  --bs-border-radius: 0.5rem;
+  --bs-border-radius-lg: 0.75rem;
+  --bs-border-color: var(--line);
+  --bs-link-color: var(--brass-dark);
+  --bs-link-hover-color: var(--brass);
+  --bs-primary: var(--chalkboard);
+  --bs-primary-rgb: 31, 61, 51;
+  --bs-secondary: var(--ink-soft);
+  --bs-success: var(--stamp-green);
+  --bs-success-rgb: 47, 125, 83;
+  --bs-danger: var(--stamp-red);
+  --bs-danger-rgb: 176, 64, 44;
+  --bs-warning: var(--brass);
+  --bs-warning-rgb: 192, 138, 52;
+  --bs-info: var(--chalkboard-2);
+  --bs-info-rgb: 22, 48, 42;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  background: var(--paper);
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.font-mono {
+  font-family: var(--font-mono);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+a {
+  color: var(--brass-dark);
+}
+a:hover {
+  color: var(--brass);
+}
+
+/* Buttons: solid ink-stamp press feel */
+.btn {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-width: 1.5px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+.btn-primary {
+  --bs-btn-bg: var(--chalkboard);
+  --bs-btn-border-color: var(--chalkboard);
+  --bs-btn-hover-bg: var(--chalkboard-2);
+  --bs-btn-hover-border-color: var(--chalkboard-2);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--chalkboard);
+  --bs-btn-border-color: var(--chalkboard);
+  --bs-btn-hover-bg: var(--chalkboard);
+  --bs-btn-hover-border-color: var(--chalkboard);
+}
+.btn-outline-secondary {
+  --bs-btn-color: var(--brass-dark);
+  --bs-btn-border-color: var(--brass);
+  --bs-btn-hover-bg: var(--brass);
+  --bs-btn-hover-border-color: var(--brass);
+}
+.btn-danger {
+  --bs-btn-bg: var(--stamp-red);
+  --bs-btn-border-color: var(--stamp-red);
+}
+
+/* Focus states: visible everywhere, brass ring */
+.form-control:focus,
+.form-select:focus,
+.btn:focus-visible,
+a:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(192, 138, 52, 0.35) !important;
+  border-color: var(--brass) !important;
+}
+
+/* ===== Auth shell: full-bleed chalkboard with a centered paper card ===== */
+.auth-shell {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at top, var(--chalkboard-2), var(--chalkboard) 70%);
+  padding: 2rem 1rem;
+}
+.auth-card {
+  background: var(--card);
+  border-radius: 1rem;
+  border-top: 4px solid var(--brass);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.5);
+  padding: 2.25rem 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+.auth-logo {
+  display: block;
+  height: 4rem;
+  width: auto;
+  margin: 0 auto 1rem;
+}
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== App shell: chalkboard top bar for authenticated pages ===== */
+.app-shell-header {
+  background: var(--chalkboard);
+  color: var(--paper);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--brass);
+}
+.app-shell-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.app-shell-logo {
+  height: 38px;
+  width: auto;
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+.app-shell-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.app-shell-nav .btn {
+  --bs-btn-color: var(--paper);
+  --bs-btn-border-color: rgba(251, 248, 241, 0.35);
+  --bs-btn-hover-bg: var(--brass);
+  --bs-btn-hover-border-color: var(--brass);
+}
+.app-shell-main {
+  padding: 2rem 1rem 3rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* ===== Signature element: the ink stamp ===== */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3em 0.75em;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  transform: rotate(-2deg);
+  background: transparent;
+}
+.stamp-present {
+  color: var(--stamp-green);
+}
+.stamp-absent {
+  color: var(--stamp-red);
+}
+.stamp-neutral {
+  color: var(--brass-dark);
+}
+
+@keyframes stamp-in {
+  0% {
+    transform: rotate(-2deg) scale(1.6);
+    opacity: 0;
+  }
+  60% {
+    transform: rotate(-2deg) scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+}
+.stamp-animated {
+  animation: stamp-in 0.32s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-animated {
+    animation: none;
+  }
+  .btn {
+    transition: none;
+  }
+}
+
+/* Cards: paper texture feel */
+.card {
+  border-color: var(--line);
+}
+
+/* Tables: hairline rules, mono numerics */
+.table td,
+.table th {
+  vertical-align: middle;
+}
+.table td.font-mono,
+.table th.font-mono {
+  font-family: var(--font-mono);
 }
