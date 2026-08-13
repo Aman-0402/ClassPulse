@@ -158,15 +158,22 @@ export interface AnalyticsResponse {
   overall_rate: number;
   students: StudentAnalyticsRow[];
   below_threshold: StudentAnalyticsRow[];
+  available_sections: string[];
+  section: string;
 }
 
-export async function getAnalytics(): Promise<AnalyticsResponse> {
-  const { data } = await api.get<AnalyticsResponse>("/attendance/analytics/");
+export async function getAnalytics(section?: string): Promise<AnalyticsResponse> {
+  const { data } = await api.get<AnalyticsResponse>("/attendance/analytics/", {
+    params: section ? { section } : undefined,
+  });
   return data;
 }
 
-export async function downloadReport(format: "csv" | "excel" | "pdf"): Promise<void> {
-  const response = await api.get(`/attendance/export/${format}/`, { responseType: "blob" });
+export async function downloadReport(format: "csv" | "excel" | "pdf", section?: string): Promise<void> {
+  const response = await api.get(`/attendance/export/${format}/`, {
+    responseType: "blob",
+    params: section ? { section } : undefined,
+  });
   const extension = format === "excel" ? "xlsx" : format;
   const blob = new Blob([response.data]);
   const url = window.URL.createObjectURL(blob);

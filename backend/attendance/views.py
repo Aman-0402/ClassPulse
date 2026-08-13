@@ -20,6 +20,7 @@ from attendance.services import (
     attendance_percentage,
     build_attendance_matrix,
     build_report_rows,
+    get_available_sections,
     get_closed_sessions,
     get_current_qr_token,
     mark_attendance,
@@ -143,7 +144,8 @@ class AnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get(self, request):
-        sessions, rows = build_attendance_matrix()
+        section = request.query_params.get("section", "")
+        sessions, rows = build_attendance_matrix(section=section)
         total_sessions = len(sessions)
         total_students = len(rows)
         overall_present = sum(r["present_count"] for r in rows)
@@ -167,6 +169,8 @@ class AnalyticsView(APIView):
                 "overall_rate": overall_rate,
                 "students": students_data,
                 "below_threshold": below_threshold,
+                "available_sections": get_available_sections(),
+                "section": section,
             }
         )
 
@@ -175,10 +179,12 @@ class ExportCSVView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get(self, request):
-        sessions, rows = build_attendance_matrix()
+        section = request.query_params.get("section", "")
+        sessions, rows = build_attendance_matrix(section=section)
         header, data_rows = build_report_rows(sessions, rows)
+        filename = f"attendance_report_{section}.csv" if section else "attendance_report.csv"
         response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=attendance_report.csv"
+        response["Content-Disposition"] = f"attachment; filename={filename}"
         response.write("﻿")  # UTF-8 BOM so Excel renders non-ASCII names correctly
         writer = csv.writer(response)
         writer.writerow(header)
@@ -190,8 +196,10 @@ class ExportExcelView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get(self, request):
-        sessions, rows = build_attendance_matrix()
+        section = request.query_params.get("section", "")
+        sessions, rows = build_attendance_matrix(section=section)
         header, data_rows = build_report_rows(sessions, rows)
+        filename = f"attendance_report_{section}.xlsx" if section else "attendance_report.xlsx"
         wb = Workbook()
         ws = wb.active
         ws.title = "Attendance"
@@ -205,7 +213,7 @@ class ExportExcelView(APIView):
             buffer.read(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = "attachment; filename=attendance_report.xlsx"
+        response["Content-Disposition"] = f"attachment; filename={filename}"
         return response
 
 
@@ -236,7 +244,8 @@ class ExportPDFView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get(self, request):
-        sessions, rows = build_attendance_matrix()
+        section = request.query_params.get("section", "")
+        sessions, rows = build_attendance_matrix(section=section)
         header, data_rows = build_report_rows(sessions, rows)
         buffer = BytesIO()
         page_width, _ = landscape(A4)
@@ -260,6 +269,7 @@ class ExportPDFView(APIView):
         )
         doc.build([table])
         buffer.seek(0)
+        filename = f"attendance_report_{section}.pdf" if section else "attendance_report.pdf"
         response = HttpResponse(buffer.read(), content_type="application/pdf")
-        response["Content-Disposition"] = "attachment; filename=attendance_report.pdf"
+        response["Content-Disposition"] = f"attachment; filename={filename}"
         return response

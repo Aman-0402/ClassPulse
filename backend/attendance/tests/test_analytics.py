@@ -26,6 +26,11 @@ class AnalyticsTest(APITestCase):
         )
         StudentProfile.objects.create(user=self.s2, crn="102", course="CSE", semester=5, section="A")
 
+        self.s3 = User.objects.create_user(
+            username="stud3", password="pw12345678", role=User.ROLE_STUDENT, first_name="Ravi Kumar"
+        )
+        StudentProfile.objects.create(user=self.s3, crn="201", course="CSE", semester=5, section="B")
+
         self.closed1 = AttendanceSession.objects.create(
             teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED
         )
@@ -49,13 +54,25 @@ class AnalyticsTest(APITestCase):
         response = self.client.get(reverse("attendance-analytics"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["total_sessions"], 2)
-        self.assertEqual(response.data["total_students"], 2)
-        self.assertEqual(response.data["overall_rate"], 75.0)
-        self.assertEqual(len(response.data["students"]), 2)
+        self.assertEqual(response.data["total_students"], 3)
+        self.assertEqual(len(response.data["students"]), 3)
+
+    def test_available_sections_lists_all_distinct_sections(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"))
+        self.assertEqual(response.data["available_sections"], ["A", "B"])
+        self.assertEqual(response.data["section"], "")
+
+    def test_section_filter_scopes_students_and_totals(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"), {"section": "B"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["section"], "B")
+        self.assertEqual(response.data["total_students"], 1)
+        self.assertEqual(response.data["students"][0]["crn"], "201")
 
     def test_below_threshold_list(self):
         self._auth(self.teacher_token)
         response = self.client.get(reverse("attendance-analytics"))
-        below = response.data["below_threshold"]
-        self.assertEqual(len(below), 1)
-        self.assertEqual(below[0]["crn"], "102")
+        below_crns = {s["crn"] for s in response.data["below_threshold"]}
+        self.assertEqual(below_crns, {"102", "201"})

@@ -11,7 +11,7 @@ from attendance.exceptions import (
     InvalidTokenError,
     SessionClosedError,
 )
-from accounts.models import User
+from accounts.models import User, StudentProfile
 from attendance.models import ActivityLog, AttendanceSession, QRToken, Attendance
 
 logger = logging.getLogger(__name__)
@@ -135,6 +135,15 @@ def mark_attendance(student, token_value, ip_address, device_info):
     return attendance
 
 
+def get_available_sections():
+    return list(
+        StudentProfile.objects.exclude(section="")
+        .order_by("section")
+        .values_list("section", flat=True)
+        .distinct()
+    )
+
+
 def get_closed_sessions():
     return AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED).order_by("date", "start_time")
 
@@ -148,13 +157,15 @@ class AttendanceMatrix(NamedTuple):
     rows: list
 
 
-def build_attendance_matrix() -> AttendanceMatrix:
+def build_attendance_matrix(section: str = "") -> AttendanceMatrix:
     sessions = list(get_closed_sessions())
     students = (
         User.objects.filter(role=User.ROLE_STUDENT, student_profile__isnull=False)
         .select_related("student_profile")
         .order_by("student_profile__crn")
     )
+    if section:
+        students = students.filter(student_profile__section=section)
     present_pairs = set(
         Attendance.objects.filter(session__in=sessions).values_list("student_id", "session_id")
     )
