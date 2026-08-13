@@ -4,6 +4,7 @@ from typing import NamedTuple
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from attendance.exceptions import (
     DuplicateAttendanceError,
@@ -12,7 +13,7 @@ from attendance.exceptions import (
     SessionClosedError,
 )
 from accounts.models import User, StudentProfile
-from attendance.models import ActivityLog, AttendanceSession, QRToken, Attendance
+from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, QRToken, Attendance
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,14 @@ def get_available_sections():
         .values_list("section", flat=True)
         .distinct()
     )
+
+
+def get_current_schedule_slot():
+    """The timetable slot covering right now, if any (local time, current weekday)."""
+    now = timezone.localtime()
+    return ClassSchedule.objects.filter(
+        day_of_week=now.weekday(), start_time__lte=now.time(), end_time__gt=now.time()
+    ).first()
 
 
 def get_closed_sessions():

@@ -77,6 +77,19 @@ export interface QRTokenResponse {
   expires_at: string;
 }
 
+export interface CurrentScheduleResponse {
+  matched: boolean;
+  subject?: string;
+  section?: string;
+  start_time?: string;
+  end_time?: string;
+}
+
+export async function getCurrentSchedule(): Promise<CurrentScheduleResponse> {
+  const { data } = await api.get<CurrentScheduleResponse>("/attendance/schedule/current/");
+  return data;
+}
+
 export async function startSession(subject: string, durationMinutes: number): Promise<SessionResponse> {
   const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", {
     subject,

@@ -45,6 +45,31 @@ def default_qr_expiry():
     return timezone.now() + timezone.timedelta(seconds=QR_TOKEN_LIFETIME_SECONDS)
 
 
+class ClassSchedule(models.Model):
+    MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
+    DAY_CHOICES = [
+        (MONDAY, "Monday"),
+        (TUESDAY, "Tuesday"),
+        (WEDNESDAY, "Wednesday"),
+        (THURSDAY, "Thursday"),
+        (FRIDAY, "Friday"),
+        (SATURDAY, "Saturday"),
+        (SUNDAY, "Sunday"),
+    ]
+
+    day_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    section = models.CharField(max_length=10)
+    subject = models.CharField(max_length=100, default="Training II")
+
+    class Meta:
+        ordering = ["day_of_week", "start_time"]
+
+    def __str__(self):
+        return f"{self.get_day_of_week_display()} {self.start_time}-{self.end_time} BBA III {self.section}"
+
+
 class QRToken(models.Model):
     session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name="qr_tokens")
     token = models.CharField(max_length=64, unique=True, default=generate_qr_token)

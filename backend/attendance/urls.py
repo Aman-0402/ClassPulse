@@ -1,6 +1,7 @@
 from django.urls import path
 from attendance.views import (
     AnalyticsView,
+    CurrentScheduleView,
     ExportCSVView,
     ExportExcelView,
     ExportPDFView,
@@ -14,6 +15,7 @@ from attendance.views import (
 )
 
 urlpatterns = [
+    path("schedule/current/", CurrentScheduleView.as_view(), name="schedule-current"),
     path("sessions/start/", StartSessionView.as_view(), name="session-start"),
     path("sessions/<int:session_id>/stop/", StopSessionView.as_view(), name="session-stop"),
     path("sessions/<int:session_id>/qr/", SessionQRView.as_view(), name="session-qr"),

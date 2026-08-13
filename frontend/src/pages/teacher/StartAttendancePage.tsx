@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Form, Button, Alert } from "react-bootstrap";
-import { startSession } from "../../api/client";
+import { getCurrentSchedule, startSession } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
 const DURATION_OPTIONS = [5, 10, 15, 30, 60];
@@ -10,7 +10,22 @@ export default function StartAttendancePage() {
   const [subject, setSubject] = useState("");
   const [duration, setDuration] = useState(5);
   const [error, setError] = useState<string | null>(null);
+  const [scheduleHint, setScheduleHint] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getCurrentSchedule()
+      .then((data) => {
+        if (data.matched && data.subject && data.section) {
+          const label = `${data.subject} — BBA III ${data.section}`;
+          setSubject(label);
+          setScheduleHint(`Auto-filled from today's timetable: ${label}`);
+        }
+      })
+      .catch(() => {
+        // Timetable auto-fill is a convenience, not required — the form still works blank.
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +44,7 @@ export default function StartAttendancePage() {
       <Card style={{ maxWidth: 400 }}>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
+          {scheduleHint && <Alert variant="info">{scheduleHint}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="subject">
               <Form.Label>Subject</Form.Label>

@@ -24,6 +24,7 @@ from attendance.services import (
     get_available_sections,
     get_closed_sessions,
     get_current_qr_token,
+    get_current_schedule_slot,
     mark_attendance,
 )
 
@@ -31,6 +32,24 @@ from attendance.services import (
 class StartSessionView(generics.CreateAPIView):
     serializer_class = StartSessionSerializer
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+
+class CurrentScheduleView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        slot = get_current_schedule_slot()
+        if slot is None:
+            return Response({"matched": False})
+        return Response(
+            {
+                "matched": True,
+                "subject": slot.subject,
+                "section": slot.section,
+                "start_time": slot.start_time,
+                "end_time": slot.end_time,
+            }
+        )
 
 
 class StopSessionView(APIView):
