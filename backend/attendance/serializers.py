@@ -9,7 +9,17 @@ class StartSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AttendanceSession
-        fields = ["id", "subject", "date", "start_time", "duration_minutes", "periods", "closes_at", "status"]
+        fields = [
+            "id",
+            "subject",
+            "section",
+            "date",
+            "start_time",
+            "duration_minutes",
+            "periods",
+            "closes_at",
+            "status",
+        ]
         read_only_fields = ["id", "date", "start_time", "status"]
 
     def create(self, validated_data):
@@ -24,6 +34,7 @@ class SessionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "subject",
+            "section",
             "date",
             "start_time",
             "end_time",

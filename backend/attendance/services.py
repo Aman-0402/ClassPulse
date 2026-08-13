@@ -182,11 +182,25 @@ def merge_consecutive_slots(slots):
     for slot in slots:
         if merged and merged[-1]["section"] == slot.section and merged[-1]["subject"] == slot.subject:
             merged[-1]["end_time"] = slot.end_time
+            merged[-1]["periods"] += 1
         else:
             merged.append(
-                {"subject": slot.subject, "section": slot.section, "start_time": slot.start_time, "end_time": slot.end_time}
+                {
+                    "subject": slot.subject,
+                    "section": slot.section,
+                    "start_time": slot.start_time,
+                    "end_time": slot.end_time,
+                    "periods": 1,
+                }
             )
     return merged
+
+
+def get_today_sessions_by_section(teacher):
+    """This teacher's sessions started today, keyed by section (single slot per section per day)."""
+    today = timezone.localdate()
+    sessions = AttendanceSession.objects.filter(teacher=teacher, date=today).exclude(section="")
+    return {session.section: session for session in sessions}
 
 
 def get_current_schedule_slot():

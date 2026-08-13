@@ -96,6 +96,9 @@ export interface ScheduleSlot {
   section: string;
   start_time: string;
   end_time: string;
+  periods: number;
+  session_id: number | null;
+  session_status: "active" | "closed" | null;
 }
 
 export interface TodayScheduleResponse {
@@ -111,12 +114,14 @@ export async function getTodaySchedule(): Promise<TodayScheduleResponse> {
 export async function startSession(
   subject: string,
   durationMinutes: number,
-  periods: number = 1
+  periods: number = 1,
+  section: string = ""
 ): Promise<SessionResponse> {
   const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", {
     subject,
     duration_minutes: durationMinutes,
     periods,
+    section,
   });
   return data;
 }

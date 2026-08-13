@@ -26,6 +26,7 @@ from attendance.services import (
     get_current_qr_token,
     get_current_schedule_slot,
     get_today_schedule,
+    get_today_sessions_by_section,
     mark_attendance,
     merge_consecutive_slots,
 )
@@ -59,10 +60,16 @@ class TodayScheduleView(APIView):
 
     def get(self, request):
         slots = get_today_schedule()
+        merged = merge_consecutive_slots(slots)
+        sessions_by_section = get_today_sessions_by_section(request.user)
+        for block in merged:
+            session = sessions_by_section.get(block["section"])
+            block["session_id"] = session.id if session else None
+            block["session_status"] = session.status if session else None
         return Response(
             {
                 "day": timezone.localdate().strftime("%A"),
-                "slots": merge_consecutive_slots(slots),
+                "slots": merged,
             }
         )
 

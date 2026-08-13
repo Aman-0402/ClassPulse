@@ -60,22 +60,42 @@ export default function TeacherProfilePage() {
       </Link>
 
       {scheduleDay && (
-        <Card className="mt-4" style={{ maxWidth: 480 }}>
+        <Card className="mt-4" style={{ maxWidth: 620 }}>
           <Card.Body>
             <h2 className="h6 mb-3">{scheduleDay}'s Timetable</h2>
             {slots.length === 0 ? (
               <p className="text-muted mb-0">No training sessions scheduled today.</p>
             ) : (
-              <Table size="sm" borderless className="mb-0">
+              <Table size="sm" borderless hover className="mb-0">
                 <tbody>
                   {slots.map((slot, index) => (
-                    <tr key={index}>
+                    <tr
+                      key={index}
+                      role="button"
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        slot.session_id
+                          ? navigate(`/teacher/session/${slot.session_id}`)
+                          : navigate("/teacher/start-attendance", {
+                              state: { subject: slot.subject, section: slot.section, periods: slot.periods },
+                            })
+                      }
+                    >
                       <td className="text-muted font-mono">
                         {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                       </td>
                       <td>{slot.subject}</td>
                       <td>
                         <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                      </td>
+                      <td className="text-end">
+                        {slot.session_id ? (
+                          <span className={`stamp ${slot.session_status === "active" ? "stamp-present" : "stamp-neutral"}`}>
+                            {slot.session_status === "active" ? "View live" : "View attendance"}
+                          </span>
+                        ) : (
+                          <span className="stamp stamp-neutral">Start attendance</span>
+                        )}
                       </td>
                     </tr>
                   ))}

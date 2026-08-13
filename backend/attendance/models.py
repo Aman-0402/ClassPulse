@@ -23,6 +23,7 @@ class AttendanceSession(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendance_sessions"
     )
     subject = models.CharField(max_length=100)
+    section = models.CharField(max_length=10, blank=True, default="")
     date = models.DateField(default=timezone.localdate)
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)

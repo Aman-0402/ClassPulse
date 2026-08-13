@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from attendance.models import ClassSchedule
+from attendance.models import AttendanceSession, ClassSchedule
 from attendance.services import get_current_schedule_slot, get_today_schedule, merge_consecutive_slots
 
 User = get_user_model()
@@ -197,3 +197,54 @@ class TodayScheduleViewTest(APITestCase):
         with patch("attendance.services.timezone.localdate", return_value=_monday_date()):
             response = self.client.get(reverse("schedule-today"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class TodayScheduleSessionLinkingTest(APITestCase):
+    def setUp(self):
+        ClassSchedule.objects.all().delete()
+        AttendanceSession.objects.all().delete()
+        ClassSchedule.objects.create(
+            day_of_week=ClassSchedule.MONDAY,
+            start_time=time(10, 5),
+            end_time=time(10, 55),
+            section="A",
+            subject="Training II",
+        )
+        ClassSchedule.objects.create(
+            day_of_week=ClassSchedule.MONDAY,
+            start_time=time(12, 45),
+            end_time=time(13, 35),
+            section="B",
+            subject="Training II",
+        )
+        self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
+        token = Token.objects.create(user=self.teacher)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def _get_today(self):
+        with patch("attendance.services.timezone.localdate", return_value=_monday_date()):
+            return self.client.get(reverse("schedule-today"))
+
+    def test_slot_without_a_session_has_no_session_id(self):
+        response = self._get_today()
+        section_a = next(s for s in response.data["slots"] if s["section"] == "A")
+        self.assertIsNone(section_a["session_id"])
+        self.assertIsNone(section_a["session_status"])
+
+    def test_slot_with_a_started_session_links_to_it(self):
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="Training II", section="A", date=_monday_date()
+        )
+        response = self._get_today()
+        section_a = next(s for s in response.data["slots"] if s["section"] == "A")
+        self.assertEqual(section_a["session_id"], session.id)
+        self.assertEqual(section_a["session_status"], AttendanceSession.STATUS_ACTIVE)
+
+    def test_another_teachers_session_does_not_link(self):
+        other_teacher = User.objects.create_user(username="prof2", password="pw12345678", role=User.ROLE_TEACHER)
+        AttendanceSession.objects.create(
+            teacher=other_teacher, subject="Training II", section="A", date=_monday_date()
+        )
+        response = self._get_today()
+        section_a = next(s for s in response.data["slots"] if s["section"] == "A")
+        self.assertIsNone(section_a["session_id"])
