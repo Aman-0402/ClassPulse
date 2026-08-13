@@ -203,12 +203,14 @@ class AnalyticsView(APIView):
         total_sessions = len(sessions)
         total_students = len(rows)
         overall_present = sum(r["present_count"] for r in rows)
-        overall_possible = total_students * total_sessions
+        weighted_total = sum(s.periods for s in sessions)
+        overall_possible = total_students * weighted_total
         overall_rate = attendance_percentage(overall_present, overall_possible)
         students_data = [
             {
                 "name": r["name"],
                 "crn": r["crn"],
+                "roll_number": r["student"].username,
                 "present": r["present_count"],
                 "total": r["total"],
                 "percentage": r["percentage"],

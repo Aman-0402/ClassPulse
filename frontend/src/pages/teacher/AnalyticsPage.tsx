@@ -8,6 +8,7 @@ import AppShell from "../../components/AppShell";
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [section, setSection] = useState("");
+  const [search, setSearch] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloadingFormat, setDownloadingFormat] = useState<"csv" | "excel" | "pdf" | null>(null);
@@ -62,17 +63,28 @@ export default function AnalyticsPage() {
     <AppShell>
       <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
         <h1 className="h3 mb-0">Attendance Analytics</h1>
-        <Form.Group controlId="section-filter" style={{ minWidth: 180 }}>
-          <Form.Label className="small text-muted mb-1">Section</Form.Label>
-          <Form.Select value={section} onChange={(e) => setSection(e.target.value)}>
-            <option value="">All sections</option>
-            {data.available_sections.map((s) => (
-              <option key={s} value={s}>
-                Section {s}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
+        <div className="d-flex gap-2 flex-wrap">
+          <Form.Group controlId="student-search" style={{ minWidth: 220 }}>
+            <Form.Label className="small text-muted mb-1">Search student</Form.Label>
+            <Form.Control
+              type="search"
+              placeholder="Name or CRN"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </Form.Group>
+          <Form.Group controlId="section-filter" style={{ minWidth: 180 }}>
+            <Form.Label className="small text-muted mb-1">Section</Form.Label>
+            <Form.Select value={section} onChange={(e) => setSection(e.target.value)}>
+              <option value="">All sections</option>
+              {data.available_sections.map((s) => (
+                <option key={s} value={s}>
+                  Section {s}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        </div>
       </div>
 
       {loadError && <Alert variant="danger">{loadError}</Alert>}
@@ -106,36 +118,53 @@ export default function AnalyticsPage() {
         </Button>
       </ButtonGroup>
 
-      {data.students.length === 0 ? (
-        <p className="text-muted">No students in this section yet.</p>
-      ) : (
-        <Table striped bordered>
-          <thead>
-            <tr>
-              <th>CRN</th>
-              <th>Name</th>
-              <th>Present</th>
-              <th>Total</th>
-              <th>%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.students.map((s) => (
-              <tr key={s.crn}>
-                <td className="font-mono">{s.crn}</td>
-                <td>{s.name}</td>
-                <td>{s.present}</td>
-                <td>{s.total}</td>
-                <td>
-                  <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
-                    {s.percentage}%
-                  </span>
-                </td>
+      {(() => {
+        const query = search.trim().toLowerCase();
+        const visibleStudents = query
+          ? data.students.filter(
+              (s) => s.name.toLowerCase().includes(query) || s.crn.toLowerCase().includes(query)
+            )
+          : data.students;
+
+        if (data.students.length === 0) {
+          return <p className="text-muted">No students in this section yet.</p>;
+        }
+        if (visibleStudents.length === 0) {
+          return <p className="text-muted">No students match "{search}".</p>;
+        }
+        return (
+          <Table striped bordered>
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>CRN</th>
+                <th>Roll No.</th>
+                <th>Name</th>
+                <th>Present</th>
+                <th>Total</th>
+                <th>%</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+            </thead>
+            <tbody>
+              {visibleStudents.map((s, index) => (
+                <tr key={s.crn}>
+                  <td>{index + 1}</td>
+                  <td className="font-mono">{s.crn}</td>
+                  <td className="font-mono">{s.roll_number}</td>
+                  <td>{s.name}</td>
+                  <td>{s.present}</td>
+                  <td>{s.total}</td>
+                  <td>
+                    <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
+                      {s.percentage}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        );
+      })()}
     </AppShell>
   );
 }

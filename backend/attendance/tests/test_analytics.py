@@ -76,3 +76,20 @@ class AnalyticsTest(APITestCase):
         response = self.client.get(reverse("attendance-analytics"))
         below_crns = {s["crn"] for s in response.data["below_threshold"]}
         self.assertEqual(below_crns, {"102", "201"})
+
+    def test_students_include_roll_number(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"))
+        by_crn = {s["crn"]: s for s in response.data["students"]}
+        self.assertEqual(by_crn["101"]["roll_number"], "stud1")
+
+    def test_overall_rate_weighted_by_merged_session_periods(self):
+        # closed1 is a merged double period (periods=2); closed2 is a normal single period.
+        # Weighted total per student = 2 + 1 = 3, so with 3 students the denominator is 9,
+        # not len(sessions)*students = 2*3 = 6 — a session count would silently overcount the rate.
+        self.closed1.periods = 2
+        self.closed1.save()
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"))
+        # present: s1 present both (2+1=3), s2 present closed1 only (2), s3 absent (0) -> 5 present / 9 possible
+        self.assertEqual(response.data["overall_rate"], round(5 / 9 * 100, 1))

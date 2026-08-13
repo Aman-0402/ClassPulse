@@ -196,6 +196,7 @@ export async function getStudentHistory(): Promise<AttendanceHistoryResponse> {
 export interface StudentAnalyticsRow {
   name: string;
   crn: string;
+  roll_number: string;
   present: number;
   total: number;
   percentage: number;
