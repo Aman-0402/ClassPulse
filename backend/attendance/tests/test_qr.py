@@ -45,3 +45,13 @@ class SessionQRTest(APITestCase):
         QRToken.objects.filter(token=first).update(expires_at=timezone.now() - timezone.timedelta(seconds=1))
         second = self.client.get(url).data["token"]
         self.assertNotEqual(first, second)
+
+    def test_qr_rejected_once_attendance_window_elapsed(self):
+        self.session.duration_minutes = 5
+        self.session.start_time = timezone.now() - timezone.timedelta(minutes=6)
+        self.session.save()
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("session-qr", args=[self.session.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.status, AttendanceSession.STATUS_CLOSED)

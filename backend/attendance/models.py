@@ -26,11 +26,19 @@ class AttendanceSession(models.Model):
     date = models.DateField(default=timezone.localdate)
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
+    duration_minutes = models.PositiveSmallIntegerField(default=5)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.subject} ({self.date})"
+
+    @property
+    def closes_at(self):
+        return self.start_time + timezone.timedelta(minutes=self.duration_minutes)
+
+    def is_window_expired(self):
+        return timezone.now() >= self.closes_at
 
 
 def default_qr_expiry():

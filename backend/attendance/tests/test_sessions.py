@@ -25,6 +25,27 @@ class SessionLifecycleTest(APITestCase):
         self.assertEqual(AttendanceSession.objects.count(), 1)
         self.assertEqual(AttendanceSession.objects.first().teacher, self.teacher)
 
+    def test_start_session_defaults_duration_to_5_minutes(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")
+        self.assertEqual(response.data["duration_minutes"], 5)
+
+    def test_teacher_can_set_custom_duration(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(
+            reverse("session-start"), {"subject": "AI", "duration_minutes": 15}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        session = AttendanceSession.objects.get()
+        self.assertEqual(session.duration_minutes, 15)
+
+    def test_duration_out_of_range_rejected(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(
+            reverse("session-start"), {"subject": "AI", "duration_minutes": 200}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_student_cannot_start_session(self):
         self._auth(self.student_token)
         response = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")

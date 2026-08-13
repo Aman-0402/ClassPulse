@@ -30,6 +30,14 @@ export default function LiveQRPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
   const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
+  const [closesAt, setClosesAt] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -67,6 +75,8 @@ export default function LiveQRPage() {
         if (active) {
           setPresentCount(data.present_count);
           setRecent(data.recent);
+          setClosesAt(data.closes_at);
+          setSessionStatus(data.status);
         }
       })
       .catch(() => {
@@ -110,6 +120,11 @@ export default function LiveQRPage() {
     };
   }, [sessionId]);
 
+  const windowClosed = sessionStatus === "closed" || (!!closesAt && new Date(closesAt).getTime() <= nowTick);
+  const secondsLeft = closesAt ? Math.max(0, Math.floor((new Date(closesAt).getTime() - nowTick) / 1000)) : null;
+  const countdownLabel =
+    secondsLeft === null ? null : `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")}`;
+
   const handleStop = async () => {
     if (!sessionId) return;
     try {
@@ -134,9 +149,14 @@ export default function LiveQRPage() {
           <p className="mt-3 text-muted">QR refreshes every 15 seconds</p>
         </Col>
         <Col md={6}>
-          <div className="d-flex align-items-center gap-2 mb-3">
+          <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
             <span className="text-muted">Present:</span>
             <span className="stamp stamp-present">{presentCount}</span>
+            {windowClosed ? (
+              <span className="stamp stamp-absent">Window closed</span>
+            ) : (
+              countdownLabel && <span className="stamp stamp-neutral font-mono">{countdownLabel} left</span>
+            )}
             {wsStatus !== "connected" && (
               <span className="stamp stamp-neutral">{wsStatus === "reconnecting" ? "Reconnecting" : "Disconnected"}</span>
             )}

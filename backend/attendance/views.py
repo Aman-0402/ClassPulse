@@ -20,6 +20,7 @@ from attendance.services import (
     attendance_percentage,
     build_attendance_matrix,
     build_report_rows,
+    close_session_if_window_expired,
     get_available_sections,
     get_closed_sessions,
     get_current_qr_token,
@@ -50,6 +51,9 @@ class SessionQRView(APIView):
 
     def get(self, request, session_id):
         session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        session = close_session_if_window_expired(session)
+        if session.status == AttendanceSession.STATUS_CLOSED:
+            return Response({"detail": "The attendance window has closed."}, status=400)
         token = get_current_qr_token(session)
         return Response(QRTokenSerializer(token).data)
 
@@ -77,6 +81,7 @@ class SessionLiveView(APIView):
 
     def get(self, request, session_id):
         session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        session = close_session_if_window_expired(session)
         records = (
             Attendance.objects.filter(session=session)
             .select_related("student", "student__student_profile")
@@ -91,7 +96,14 @@ class SessionLiveView(APIView):
             for record in records
         ]
         present_count = Attendance.objects.filter(session=session).count()
-        return Response({"present_count": present_count, "recent": recent})
+        return Response(
+            {
+                "present_count": present_count,
+                "recent": recent,
+                "status": session.status,
+                "closes_at": session.closes_at,
+            }
+        )
 
 
 class SessionActivityView(APIView):

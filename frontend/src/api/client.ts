@@ -67,6 +67,8 @@ export interface SessionResponse {
   date: string;
   start_time: string;
   end_time?: string | null;
+  duration_minutes: number;
+  closes_at: string;
   status: "active" | "closed";
 }
 
@@ -75,8 +77,11 @@ export interface QRTokenResponse {
   expires_at: string;
 }
 
-export async function startSession(subject: string): Promise<SessionResponse> {
-  const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", { subject });
+export async function startSession(subject: string, durationMinutes: number): Promise<SessionResponse> {
+  const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", {
+    subject,
+    duration_minutes: durationMinutes,
+  });
   return data;
 }
 
@@ -104,6 +109,8 @@ export interface AttendanceRecord {
 export interface LiveSessionResponse {
   present_count: number;
   recent: AttendanceRecord[];
+  status: "active" | "closed";
+  closes_at: string;
 }
 
 export async function getSessionLive(sessionId: number): Promise<LiveSessionResponse> {

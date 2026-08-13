@@ -4,8 +4,11 @@ import { Card, Form, Button, Alert } from "react-bootstrap";
 import { startSession } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
+const DURATION_OPTIONS = [5, 10, 15, 30, 60];
+
 export default function StartAttendancePage() {
   const [subject, setSubject] = useState("");
+  const [duration, setDuration] = useState(5);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -13,7 +16,7 @@ export default function StartAttendancePage() {
     e.preventDefault();
     setError(null);
     try {
-      const session = await startSession(subject);
+      const session = await startSession(subject, duration);
       navigate(`/teacher/session/${session.id}`);
     } catch {
       setError("Could not start attendance session.");
@@ -30,6 +33,19 @@ export default function StartAttendancePage() {
             <Form.Group className="mb-3" controlId="subject">
               <Form.Label>Subject</Form.Label>
               <Form.Control value={subject} onChange={(e) => setSubject(e.target.value)} required />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="duration">
+              <Form.Label>Attendance window</Form.Label>
+              <Form.Select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+                {DURATION_OPTIONS.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} minutes
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Text className="text-muted">
+                Students can mark attendance until this window closes.
+              </Form.Text>
             </Form.Group>
             <Button type="submit" className="w-100">
               Start Session

@@ -17,6 +17,22 @@ from attendance.models import ActivityLog, AttendanceSession, QRToken, Attendanc
 logger = logging.getLogger(__name__)
 
 
+def close_session_if_window_expired(session: AttendanceSession) -> AttendanceSession:
+    """Lazily auto-close a session once its attendance window has elapsed.
+
+    Mirrors the QR-token lazy-rotation pattern already used in this app: there's no
+    background scheduler, so expiry is enforced the next time anything touches the
+    session (marking attendance, fetching the QR, loading the live dashboard) rather
+    than on a timer. A manual "Stop Attendance" click still closes it immediately;
+    this only covers the case where the teacher's window runs out unattended.
+    """
+    if session.status == AttendanceSession.STATUS_ACTIVE and session.is_window_expired():
+        session.status = AttendanceSession.STATUS_CLOSED
+        session.end_time = session.closes_at
+        session.save(update_fields=["status", "end_time"])
+    return session
+
+
 def get_current_qr_token(session: AttendanceSession) -> QRToken:
     latest = session.qr_tokens.order_by("-created_at", "-id").first()
     if latest and not latest.is_expired():
@@ -97,7 +113,7 @@ def mark_attendance(student, token_value, ip_address, device_info):
         log_activity(student, None, ActivityLog.TYPE_INVALID_TOKEN, ip_address, device_info)
         raise InvalidTokenError()
 
-    session = qr_token.session
+    session = close_session_if_window_expired(qr_token.session)
 
     if session.status != AttendanceSession.STATUS_ACTIVE:
         log_activity(student, session, ActivityLog.TYPE_SESSION_CLOSED, ip_address, device_info)

@@ -64,3 +64,14 @@ class MarkAttendanceTest(APITestCase):
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)
+
+    def test_expired_attendance_window_auto_closes_and_rejects(self):
+        self.session.duration_minutes = 5
+        self.session.start_time = timezone.now() - timezone.timedelta(minutes=6)
+        self.session.save()
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.status, AttendanceSession.STATUS_CLOSED)
+        self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)
