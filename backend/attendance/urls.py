@@ -12,10 +12,12 @@ from attendance.views import (
     StartSessionView,
     StopSessionView,
     StudentHistoryView,
+    TodayScheduleView,
 )
 
 urlpatterns = [
     path("schedule/current/", CurrentScheduleView.as_view(), name="schedule-current"),
+    path("schedule/today/", TodayScheduleView.as_view(), name="schedule-today"),
     path("sessions/start/", StartSessionView.as_view(), name="session-start"),
     path("sessions/<int:session_id>/stop/", StopSessionView.as_view(), name="session-stop"),
     path("sessions/<int:session_id>/qr/", SessionQRView.as_view(), name="session-qr"),

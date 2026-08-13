@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Spinner } from "react-bootstrap";
-import { getTeacherProfile, logout } from "../api/client";
+import { Card, Spinner, Table } from "react-bootstrap";
+import { getTeacherProfile, getTodaySchedule, logout } from "../api/client";
+import type { ScheduleSlot } from "../api/client";
 import AppShell from "../components/AppShell";
+import { formatTime } from "../utils/time";
 
 interface TeacherProfile {
   full_name: string;
@@ -12,6 +14,8 @@ interface TeacherProfile {
 
 export default function TeacherProfilePage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
+  const [scheduleDay, setScheduleDay] = useState<string | null>(null);
+  const [slots, setSlots] = useState<ScheduleSlot[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +24,14 @@ export default function TeacherProfilePage() {
       .catch(() => {
         logout();
         navigate("/login", { replace: true });
+      });
+    getTodaySchedule()
+      .then((data) => {
+        setScheduleDay(data.day);
+        setSlots(data.slots);
+      })
+      .catch(() => {
+        // Timetable card is a convenience — the rest of the dashboard still works without it.
       });
   }, [navigate]);
 
@@ -46,6 +58,33 @@ export default function TeacherProfilePage() {
       <Link to="/teacher/start-attendance" className="btn btn-primary mt-3">
         Start Attendance
       </Link>
+
+      {scheduleDay && (
+        <Card className="mt-4" style={{ maxWidth: 480 }}>
+          <Card.Body>
+            <h2 className="h6 mb-3">{scheduleDay}'s Timetable</h2>
+            {slots.length === 0 ? (
+              <p className="text-muted mb-0">No training sessions scheduled today.</p>
+            ) : (
+              <Table size="sm" borderless className="mb-0">
+                <tbody>
+                  {slots.map((slot, index) => (
+                    <tr key={index}>
+                      <td className="text-muted font-mono">
+                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                      </td>
+                      <td>{slot.subject}</td>
+                      <td>
+                        <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </Card.Body>
+        </Card>
+      )}
     </AppShell>
   );
 }

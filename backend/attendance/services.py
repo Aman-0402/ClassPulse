@@ -161,6 +161,12 @@ def get_available_sections():
     )
 
 
+def get_today_schedule():
+    """All timetable slots for today's weekday, in order."""
+    today = timezone.localdate()
+    return ClassSchedule.objects.filter(day_of_week=today.weekday()).order_by("start_time")
+
+
 def get_current_schedule_slot():
     """The timetable slot covering right now, if any (local time, current weekday)."""
     now = timezone.localtime()

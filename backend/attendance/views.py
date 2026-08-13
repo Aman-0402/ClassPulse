@@ -25,6 +25,7 @@ from attendance.services import (
     get_closed_sessions,
     get_current_qr_token,
     get_current_schedule_slot,
+    get_today_schedule,
     mark_attendance,
 )
 
@@ -48,6 +49,27 @@ class CurrentScheduleView(APIView):
                 "section": slot.section,
                 "start_time": slot.start_time,
                 "end_time": slot.end_time,
+            }
+        )
+
+
+class TodayScheduleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        slots = get_today_schedule()
+        return Response(
+            {
+                "day": timezone.localdate().strftime("%A"),
+                "slots": [
+                    {
+                        "subject": slot.subject,
+                        "section": slot.section,
+                        "start_time": slot.start_time,
+                        "end_time": slot.end_time,
+                    }
+                    for slot in slots
+                ],
             }
         )
 

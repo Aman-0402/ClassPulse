@@ -90,6 +90,23 @@ export async function getCurrentSchedule(): Promise<CurrentScheduleResponse> {
   return data;
 }
 
+export interface ScheduleSlot {
+  subject: string;
+  section: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface TodayScheduleResponse {
+  day: string;
+  slots: ScheduleSlot[];
+}
+
+export async function getTodaySchedule(): Promise<TodayScheduleResponse> {
+  const { data } = await api.get<TodayScheduleResponse>("/attendance/schedule/today/");
+  return data;
+}
+
 export async function startSession(subject: string, durationMinutes: number): Promise<SessionResponse> {
   const { data } = await api.post<SessionResponse>("/attendance/sessions/start/", {
     subject,
