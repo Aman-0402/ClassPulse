@@ -25,6 +25,7 @@ from attendance.services import (
     get_available_sections,
     get_closed_sessions,
     get_day_attendance,
+    get_session_roster,
     set_manual_attendance,
     get_current_qr_token,
     get_current_schedule_slot,
@@ -147,6 +148,7 @@ class SessionLiveView(APIView):
                 "status": session.status,
                 "closes_at": session.closes_at,
                 "section": session.section,
+                "roster": get_session_roster(session),
             }
         )
 

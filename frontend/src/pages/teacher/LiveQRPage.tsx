@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Spinner, Alert, ListGroup, Toast, ToastContainer, Row, Col } from "react-bootstrap";
+import { Button, Spinner, Alert, ListGroup, Modal, Table, Toast, ToastContainer, Row, Col } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import { getSessionQR, getSessionLive, stopSession, getSessionActivity } from "../../api/client";
-import type { AttendanceRecord, ActivityLogEntry } from "../../api/client";
+import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import { connectToAttendanceSocket } from "../../api/ws";
 import type { AttendanceUpdateEvent, ActivityUpdateEvent } from "../../api/ws";
 import AppShell from "../../components/AppShell";
@@ -37,6 +37,9 @@ export default function LiveQRPage() {
   const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | null>(null);
   const [sessionSection, setSessionSection] = useState("");
   const sessionSectionRef = useRef("");
+  const [roster, setRoster] = useState<DayAttendanceStudent[]>([]);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export default function LiveQRPage() {
           setSessionStatus(data.status);
           setSessionSection(data.section);
           sessionSectionRef.current = data.section;
+          setRoster(data.roster);
         }
       })
       .catch(() => {
@@ -108,6 +112,7 @@ export default function LiveQRPage() {
         if (!active) return;
         setPresentCount(update.present_count);
         setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
+        setRoster((prev) => prev.map((s) => (s.crn === update.crn ? { ...s, present: true } : s)));
         setToastVariant("success");
         setToast(`${update.name} marked present`);
         setToastKey((key) => key + 1);
@@ -146,8 +151,9 @@ export default function LiveQRPage() {
   const countdownLabel =
     secondsLeft === null ? null : `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
-  const handleStop = async () => {
+  const handleConfirmStop = async () => {
     if (!sessionId) return;
+    setStopping(true);
     try {
       await stopSession(Number(sessionId));
     } catch {
@@ -193,6 +199,42 @@ export default function LiveQRPage() {
           </ListGroup>
         </Col>
       </Row>
+      {roster.length > 0 && (
+        <div className="mt-4">
+          <h2 className="h5">
+            Section {sessionSection} Roster
+            <span className="text-muted small ms-2">
+              ({roster.filter((s) => s.present).length}/{roster.length} present)
+            </span>
+          </h2>
+          <Table size="sm" striped bordered>
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>CRN</th>
+                <th>Roll No.</th>
+                <th>Name</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roster.map((s, index) => (
+                <tr key={s.crn}>
+                  <td>{index + 1}</td>
+                  <td className="font-mono">{s.crn}</td>
+                  <td className="font-mono">{s.roll_number}</td>
+                  <td>{s.name}</td>
+                  <td>
+                    <span className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}>
+                      {s.present ? "Present" : "Absent"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      )}
       {(activityLog.length > 0 || activityError) && (
         <div className="mt-4">
           <h2 className="h5">Suspicious Activity</h2>
@@ -211,10 +253,29 @@ export default function LiveQRPage() {
         </div>
       )}
       <div className="text-center mt-4">
-        <Button variant="danger" onClick={handleStop}>
+        <Button variant="danger" onClick={() => setShowStopConfirm(true)}>
           Stop Attendance
         </Button>
       </div>
+
+      <Modal show={showStopConfirm} onHide={() => setShowStopConfirm(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5">Submit attendance?</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Stopping will close this session for good — no more students can mark attendance after
+          this. {presentCount} of {roster.length || "?"} students are currently marked present.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setShowStopConfirm(false)} disabled={stopping}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleConfirmStop} disabled={stopping}>
+            {stopping ? "Submitting..." : "Submit Attendance"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <ToastContainer position="top-end" className="p-3">
         <Toast
           key={toastKey}

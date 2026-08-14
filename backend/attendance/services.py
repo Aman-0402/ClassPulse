@@ -175,6 +175,34 @@ def set_manual_attendance(session, student, present, device_info=""):
         Attendance.objects.filter(student=student, session=session).delete()
 
 
+def get_session_roster(session):
+    """Every student in this session's section, present/absent for THIS session specifically.
+
+    Unlike get_day_attendance (section+date, "attended ANY session that day"), this is
+    scoped to one exact session — what the live dashboard needs while a session is in
+    progress. Returns [] for sessions started without a section (nothing to scope to).
+    """
+    if not session.section:
+        return []
+    students = (
+        User.objects.filter(role=User.ROLE_STUDENT, student_profile__section=session.section)
+        .select_related("student_profile")
+        .order_by("student_profile__crn")
+    )
+    present_student_ids = set(
+        Attendance.objects.filter(session=session).values_list("student_id", flat=True)
+    )
+    return [
+        {
+            "crn": student.student_profile.crn,
+            "roll_number": student.student_profile.urn,
+            "name": student.get_full_name() or student.username,
+            "present": student.id in present_student_ids,
+        }
+        for student in students
+    ]
+
+
 def get_day_attendance(section, date):
     """Per-student present/absent for a specific section on a specific date.
 

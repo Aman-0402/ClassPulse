@@ -137,6 +137,7 @@ export interface LiveSessionResponse {
   status: "active" | "closed";
   closes_at: string;
   section: string;
+  roster: DayAttendanceStudent[];
 }
 
 export async function getSessionLive(sessionId: number): Promise<LiveSessionResponse> {
