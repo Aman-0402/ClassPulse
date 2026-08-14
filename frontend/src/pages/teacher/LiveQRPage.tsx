@@ -23,6 +23,7 @@ export default function LiveQRPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [token, setToken] = useState<string | null>(null);
+  const [qrRefreshAt, setQrRefreshAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [presentCount, setPresentCount] = useState(0);
   const [recent, setRecent] = useState<AttendanceRecord[]>([]);
@@ -53,6 +54,7 @@ export default function LiveQRPage() {
         .then((data) => {
           if (active) {
             setToken(data.token);
+            setQrRefreshAt(Date.now() + QR_REFRESH_MS);
             setError(null);
           }
         })
@@ -135,6 +137,10 @@ export default function LiveQRPage() {
     };
   }, [sessionId]);
 
+  const qrSecondsLeft = qrRefreshAt
+    ? Math.max(0, Math.min(QR_REFRESH_MS / 1000, Math.ceil((qrRefreshAt - nowTick) / 1000)))
+    : null;
+
   const windowClosed = sessionStatus === "closed" || (!!closesAt && new Date(closesAt).getTime() <= nowTick);
   const secondsLeft = closesAt ? Math.max(0, Math.floor((new Date(closesAt).getTime() - nowTick) / 1000)) : null;
   const countdownLabel =
@@ -161,7 +167,9 @@ export default function LiveQRPage() {
       <Row className="mt-3">
         <Col md={6} className="text-center">
           {!error && (token ? <QRCodeSVG value={token} size={256} /> : <Spinner animation="border" />)}
-          <p className="mt-3 text-muted">QR refreshes every 15 seconds</p>
+          <p className="mt-3 text-muted">
+            QR refreshes in <span className="font-mono">{qrSecondsLeft ?? "--"}</span>s
+          </p>
         </Col>
         <Col md={6}>
           <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
