@@ -16,6 +16,7 @@ class User(AbstractUser):
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="student_profile")
     crn = models.CharField(max_length=30, unique=True)
+    urn = models.CharField(max_length=30, blank=True, default="")
     course = models.CharField(max_length=100)
     semester = models.PositiveSmallIntegerField()
     section = models.CharField(max_length=10)

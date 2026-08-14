@@ -4,9 +4,9 @@ from accounts.models import User, StudentProfile
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("crn", "user", "get_full_name", "course", "semester", "section")
+    list_display = ("crn", "urn", "user", "get_full_name", "course", "semester", "section")
     list_filter = ("section", "course", "semester")
-    search_fields = ("crn", "user__username", "user__first_name")
+    search_fields = ("crn", "urn", "user__username", "user__first_name")
     ordering = ("section", "crn")
 
     @admin.display(description="Name")

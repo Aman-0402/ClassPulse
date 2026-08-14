@@ -17,7 +17,7 @@ class DayAttendanceServiceTest(APITestCase):
         self.s1 = User.objects.create_user(
             username="stud1", password="pw12345678", role=User.ROLE_STUDENT, first_name="Aman Raj"
         )
-        StudentProfile.objects.create(user=self.s1, crn="101", course="BBA", semester=3, section="D")
+        StudentProfile.objects.create(user=self.s1, crn="101", urn="urn101", course="BBA", semester=3, section="D")
         self.s2 = User.objects.create_user(
             username="stud2", password="pw12345678", role=User.ROLE_STUDENT, first_name="Priya Singh"
         )
@@ -42,10 +42,10 @@ class DayAttendanceServiceTest(APITestCase):
         self.assertTrue(by_crn["101"]["present"])
         self.assertFalse(by_crn["102"]["present"])
 
-    def test_roll_number_is_username(self):
+    def test_roll_number_is_urn(self):
         _, rows = get_day_attendance("D", self.date)
         by_crn = {r["crn"]: r for r in rows}
-        self.assertEqual(by_crn["101"]["roll_number"], "stud1")
+        self.assertEqual(by_crn["101"]["roll_number"], "urn101")
 
     def test_no_session_that_day_still_lists_students_all_absent(self):
         sessions, rows = get_day_attendance("D", self.date - timezone.timedelta(days=1))

@@ -197,7 +197,7 @@ def get_day_attendance(section, date):
     rows = [
         {
             "crn": student.student_profile.crn,
-            "roll_number": student.username,
+            "roll_number": student.student_profile.urn,
             "name": student.get_full_name() or student.username,
             "present": student.id in present_student_ids,
         }

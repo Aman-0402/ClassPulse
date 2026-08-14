@@ -20,7 +20,7 @@ class AnalyticsTest(APITestCase):
         self.s1 = User.objects.create_user(
             username="stud1", password="pw12345678", role=User.ROLE_STUDENT, first_name="Aman Raj"
         )
-        StudentProfile.objects.create(user=self.s1, crn="101", course="CSE", semester=5, section="A")
+        StudentProfile.objects.create(user=self.s1, crn="101", urn="urn101", course="CSE", semester=5, section="A")
         self.s2 = User.objects.create_user(
             username="stud2", password="pw12345678", role=User.ROLE_STUDENT, first_name="Priya Singh"
         )
@@ -81,7 +81,7 @@ class AnalyticsTest(APITestCase):
         self._auth(self.teacher_token)
         response = self.client.get(reverse("attendance-analytics"))
         by_crn = {s["crn"]: s for s in response.data["students"]}
-        self.assertEqual(by_crn["101"]["roll_number"], "stud1")
+        self.assertEqual(by_crn["101"]["roll_number"], "urn101")
 
     def test_overall_rate_weighted_by_merged_session_periods(self):
         # closed1 is a merged double period (periods=2); closed2 is a normal single period.

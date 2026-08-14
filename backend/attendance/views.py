@@ -213,7 +213,7 @@ class AnalyticsView(APIView):
             {
                 "name": r["name"],
                 "crn": r["crn"],
-                "roll_number": r["student"].username,
+                "roll_number": r["student"].student_profile.urn,
                 "present": r["present_count"],
                 "total": r["total"],
                 "percentage": r["percentage"],
