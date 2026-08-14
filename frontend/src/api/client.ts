@@ -17,26 +17,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export interface RegisterPayload {
-  username: string;
-  email: string;
-  password: string;
-  first_name: string;
-  crn: string;
-  course: string;
-  semester: number;
-  section: string;
-}
-
 export interface LoginResponse {
   token: string;
   role: "student" | "teacher";
   username: string;
-}
-
-export async function registerStudent(payload: RegisterPayload) {
-  const { data } = await api.post("/student/register/", payload);
-  return data;
 }
 
 export async function login(username: string, password: string): Promise<LoginResponse> {

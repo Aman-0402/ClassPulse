@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Form, Button, Alert } from "react-bootstrap";
 import { login } from "../api/client";
 import logo from "../assets/logo.png";
@@ -45,9 +45,6 @@ export default function LoginPage() {
             Log In
           </Button>
         </Form>
-        <p className="text-center mt-3 mb-0 text-muted">
-          New student? <Link to="/register">Register here</Link>
-        </p>
       </div>
     </div>
   );

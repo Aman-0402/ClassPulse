@@ -1,14 +1,7 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions
-from accounts.serializers import StudentRegistrationSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-
-
-class RegisterStudentView(generics.CreateAPIView):
-    serializer_class = StudentRegistrationSerializer
-    permission_classes = [permissions.AllowAny]
 
 
 class RoleAwareLoginView(ObtainAuthToken):
