@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, Form, Button, Alert } from "react-bootstrap";
-import { getCurrentSchedule, startSession } from "../../api/client";
+import { getAnalytics, getCurrentSchedule, startSession, logout } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
 const SUBJECT = "AI Training";
@@ -17,6 +17,7 @@ export default function StartAttendancePage() {
   const location = useLocation();
   const prefill = location.state as PrefillState | null;
 
+  const [sections, setSections] = useState<string[]>([]);
   const [section, setSection] = useState(prefill?.section ?? "");
   const [duration, setDuration] = useState(5);
   const [merged, setMerged] = useState(prefill?.periods === 2);
@@ -25,6 +26,15 @@ export default function StartAttendancePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    getAnalytics()
+      .then((result) => setSections(result.available_sections))
+      .catch((err) => {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          logout();
+          navigate("/login", { replace: true });
+        }
+      });
+
     if (prefill) {
       setScheduleHint(`From today's timetable: BBA III ${prefill.section}`);
       return;
@@ -65,6 +75,20 @@ export default function StartAttendancePage() {
             <Form.Group className="mb-3" controlId="subject">
               <Form.Label>Subject</Form.Label>
               <Form.Control value={SUBJECT} disabled readOnly />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="section">
+              <Form.Label>Section</Form.Label>
+              <Form.Select value={section} onChange={(e) => setSection(e.target.value)} required>
+                <option value="" disabled>
+                  Select a section
+                </option>
+                {sections.map((s) => (
+                  <option key={s} value={s}>
+                    BBA III {s}
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Text className="text-muted">Only Section {section || "..."} students can mark this attendance.</Form.Text>
             </Form.Group>
             <Form.Group className="mb-3" controlId="duration">
               <Form.Label>Attendance window</Form.Label>
