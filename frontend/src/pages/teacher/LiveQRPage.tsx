@@ -190,15 +190,24 @@ export default function LiveQRPage() {
               <span className="stamp stamp-neutral">{wsStatus === "reconnecting" ? "Reconnecting" : "Disconnected"}</span>
             )}
           </div>
-          <ListGroup>
-            {recent.map((record) => (
-              <ListGroup.Item key={record.crn}>
-                {record.name} <span className="text-muted font-mono">({record.crn})</span>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          {recent.length === 0 ? (
+            <p className="text-muted">Waiting for students to scan...</p>
+          ) : (
+            <ListGroup>
+              {recent.map((record) => (
+                <ListGroup.Item key={record.crn}>
+                  {record.name} <span className="text-muted font-mono">({record.crn})</span>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
         </Col>
       </Row>
+      <div className="text-center mt-3 mb-2">
+        <Button variant="danger" onClick={() => setShowStopConfirm(true)}>
+          Stop Attendance
+        </Button>
+      </div>
       {roster.length > 0 && (
         <div className="mt-4">
           <h2 className="h5">
@@ -252,11 +261,6 @@ export default function LiveQRPage() {
           </ListGroup>
         </div>
       )}
-      <div className="text-center mt-4">
-        <Button variant="danger" onClick={() => setShowStopConfirm(true)}>
-          Stop Attendance
-        </Button>
-      </div>
 
       <Modal show={showStopConfirm} onHide={() => setShowStopConfirm(false)} centered>
         <Modal.Header closeButton>
