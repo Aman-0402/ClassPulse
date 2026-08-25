@@ -107,6 +107,11 @@ export async function updateEmail(email: string) {
   return data;
 }
 
+export async function updateTeacherEmail(email: string) {
+  const { data } = await api.post("/teacher/email/", { email });
+  return data;
+}
+
 export interface SessionResponse {
   id: number;
   subject: string;

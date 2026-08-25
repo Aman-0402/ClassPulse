@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Spinner, Table } from "react-bootstrap";
-import { getTeacherProfile, getTodaySchedule, logout } from "../api/client";
+import { Card, Spinner, Table, Form, Button } from "react-bootstrap";
+import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout } from "../api/client";
 import type { ScheduleSlot } from "../api/client";
 import AppShell from "../components/AppShell";
 import { formatTime } from "../utils/time";
+import { TRAINING_SUBJECT } from "../constants";
 
 interface TeacherProfile {
   full_name: string;
@@ -16,6 +17,10 @@ export default function TeacherProfilePage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [scheduleDay, setScheduleDay] = useState<string | null>(null);
   const [slots, setSlots] = useState<ScheduleSlot[]>([]);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +40,26 @@ export default function TeacherProfilePage() {
       });
   }, [navigate]);
 
+  const handleStartEditEmail = () => {
+    setEmailInput(profile?.email ?? "");
+    setEmailError(null);
+    setEditingEmail(true);
+  };
+
+  const handleSaveEmail = async () => {
+    setEmailError(null);
+    setEmailSaving(true);
+    try {
+      const updated = await updateTeacherEmail(emailInput);
+      setProfile((prev) => (prev ? { ...prev, email: updated.email } : prev));
+      setEditingEmail(false);
+    } catch (err: any) {
+      setEmailError(err?.response?.data?.email?.[0] || "Enter a valid email address.");
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
   if (!profile) {
     return (
       <AppShell>
@@ -50,8 +75,45 @@ export default function TeacherProfilePage() {
         <Card.Body>
           <span className="stamp stamp-neutral mb-3 d-inline-block">Teacher</span>
           <dl className="row mb-0">
+            <dt className="col-4 text-muted fw-normal">Name</dt>
+            <dd className="col-8">{profile.full_name || profile.username}</dd>
+            <dt className="col-4 text-muted fw-normal">Subject</dt>
+            <dd className="col-8">{TRAINING_SUBJECT}</dd>
             <dt className="col-4 text-muted fw-normal">Email</dt>
-            <dd className="col-8 text-break">{profile.email}</dd>
+            <dd className="col-8">
+              {editingEmail ? (
+                <div>
+                  <Form.Control
+                    size="sm"
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    autoFocus
+                  />
+                  {emailError && <div className="text-danger small mt-1">{emailError}</div>}
+                  <div className="d-flex gap-2 mt-2">
+                    <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
+                      {emailSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      onClick={() => setEditingEmail(false)}
+                      disabled={emailSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <span className="text-break">{profile.email}</span>
+                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditEmail}>
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </dd>
           </dl>
         </Card.Body>
       </Card>

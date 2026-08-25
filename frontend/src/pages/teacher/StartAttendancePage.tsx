@@ -3,8 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Card, Form, Button, Alert } from "react-bootstrap";
 import { getAnalytics, getCurrentSchedule, startSession, logout } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import { TRAINING_SUBJECT } from "../../constants";
 
-const SUBJECT = "AI Training";
+const SUBJECT = TRAINING_SUBJECT;
 const DURATION_OPTIONS = [5, 10, 15, 30, 60];
 
 interface PrefillState {

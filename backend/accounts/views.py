@@ -103,18 +103,22 @@ class UpdateEmailSerializer(serializers.Serializer):
 
 
 class UpdateEmailView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsStudent]
+    # Role-agnostic on purpose — both students and teachers use this (via
+    # separate URLs, /api/student/email/ and /api/teacher/email/, but the
+    # same view) since updating your own email isn't an identity-fraud risk
+    # the way name/CRN/roll number are, for either role.
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        # Unlike name/CRN/roll number, email isn't an identity-fraud risk (it
-        # doesn't affect who a QR scan is attributed to), so this is direct
-        # self-service — no ProfileEditRequest/admin-approval round trip needed.
         serializer = UpdateEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request.user.email = serializer.validated_data["email"]
         request.user.save(update_fields=["email"])
-        profile = get_object_or_404(StudentProfile.objects.select_related("user"), user=request.user)
-        return Response(StudentProfileSerializer(profile, context={"request": request}).data)
+
+        if request.user.role == request.user.ROLE_STUDENT:
+            profile = get_object_or_404(StudentProfile.objects.select_related("user"), user=request.user)
+            return Response(StudentProfileSerializer(profile, context={"request": request}).data)
+        return Response(TeacherProfileSerializer(request.user).data)
 
 
 class ProfilePhotoView(APIView):

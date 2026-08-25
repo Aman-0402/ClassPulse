@@ -32,14 +32,32 @@ class UpdateEmailTest(APITestCase):
         self.student.refresh_from_db()
         self.assertEqual(self.student.email, "25262101758@bba.local")
 
-    def test_teacher_cannot_use_student_endpoint(self):
-        teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
-        token = Token.objects.create(user=teacher)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
-        response = self.client.post(reverse("update-email"), {"email": "x@y.com"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     def test_unauthenticated_rejected(self):
         self.client.credentials()
         response = self.client.post(reverse("update-email"), {"email": "x@y.com"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TeacherUpdateEmailTest(APITestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username="prof", password="pw12345678", role=User.ROLE_TEACHER, email="admin@classpulse.local"
+        )
+        self.token = Token.objects.create(user=self.teacher)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_teacher_can_update_own_email(self):
+        response = self.client.post(reverse("teacher-update-email"), {"email": "prof.real@gmail.com"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["email"], "prof.real@gmail.com")
+        self.teacher.refresh_from_db()
+        self.assertEqual(self.teacher.email, "prof.real@gmail.com")
+
+    def test_invalid_email_rejected(self):
+        response = self.client.post(reverse("teacher-update-email"), {"email": "not-an-email"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unauthenticated_rejected(self):
+        self.client.credentials()
+        response = self.client.post(reverse("teacher-update-email"), {"email": "x@y.com"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

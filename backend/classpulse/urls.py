@@ -18,12 +18,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from accounts.views import ChangePasswordView, LogoutView, TeacherProfileView
+from accounts.views import ChangePasswordView, LogoutView, TeacherProfileView, UpdateEmailView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/student/', include('accounts.urls')),
     path('api/teacher/profile/', TeacherProfileView.as_view(), name='teacher-profile'),
+    path('api/teacher/email/', UpdateEmailView.as_view(), name='teacher-update-email'),
     path('api/logout/', LogoutView.as_view(), name='logout'),
     path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/attendance/', include('attendance.urls')),
