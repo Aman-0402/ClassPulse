@@ -4,6 +4,7 @@ from accounts.views import (
     ProfilePhotoView,
     RoleAwareLoginView,
     StudentProfileView,
+    UpdateEmailView,
 )
 
 urlpatterns = [
@@ -11,4 +12,5 @@ urlpatterns = [
     path("profile/", StudentProfileView.as_view(), name="student-profile"),
     path("edit-request/", ProfileEditRequestView.as_view(), name="profile-edit-request"),
     path("photo/", ProfilePhotoView.as_view(), name="profile-photo"),
+    path("email/", UpdateEmailView.as_view(), name="update-email"),
 ]

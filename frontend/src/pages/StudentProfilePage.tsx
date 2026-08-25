@@ -7,6 +7,7 @@ import {
   getMyEditRequests,
   submitProfileEditRequest,
   uploadProfilePhoto,
+  updateEmail,
   logout,
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
@@ -39,6 +40,10 @@ export default function StudentProfilePage() {
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
   const navigate = useNavigate();
 
   const loadEditRequests = () => {
@@ -87,6 +92,26 @@ export default function StudentProfilePage() {
       setPhotoError(data?.photo?.[0] || "Could not upload photo. Make sure it's a square image under 1MB.");
     } finally {
       setPhotoUploading(false);
+    }
+  };
+
+  const handleStartEditEmail = () => {
+    setEmailInput(profile?.email ?? "");
+    setEmailError(null);
+    setEditingEmail(true);
+  };
+
+  const handleSaveEmail = async () => {
+    setEmailError(null);
+    setEmailSaving(true);
+    try {
+      const updated = await updateEmail(emailInput);
+      setProfile((prev) => (prev ? { ...prev, email: updated.email } : prev));
+      setEditingEmail(false);
+    } catch (err: any) {
+      setEmailError(err?.response?.data?.email?.[0] || "Enter a valid email address.");
+    } finally {
+      setEmailSaving(false);
     }
   };
 
@@ -185,7 +210,40 @@ export default function StudentProfilePage() {
             <dt className="col-5 text-muted fw-normal">Section</dt>
             <dd className="col-7">{profile.section}</dd>
             <dt className="col-5 text-muted fw-normal">Email</dt>
-            <dd className="col-7 text-break">{profile.email}</dd>
+            <dd className="col-7">
+              {editingEmail ? (
+                <div>
+                  <Form.Control
+                    size="sm"
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    autoFocus
+                  />
+                  {emailError && <div className="text-danger small mt-1">{emailError}</div>}
+                  <div className="d-flex gap-2 mt-2">
+                    <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
+                      {emailSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      onClick={() => setEditingEmail(false)}
+                      disabled={emailSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <span className="text-break">{profile.email}</span>
+                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditEmail}>
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </dd>
           </dl>
         </Card.Body>
       </Card>

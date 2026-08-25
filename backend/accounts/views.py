@@ -98,6 +98,25 @@ class ProfileEditRequestView(APIView):
         return Response(ProfileEditRequestSerializer(edit_request).data, status=201)
 
 
+class UpdateEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class UpdateEmailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def post(self, request):
+        # Unlike name/CRN/roll number, email isn't an identity-fraud risk (it
+        # doesn't affect who a QR scan is attributed to), so this is direct
+        # self-service — no ProfileEditRequest/admin-approval round trip needed.
+        serializer = UpdateEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request.user.email = serializer.validated_data["email"]
+        request.user.save(update_fields=["email"])
+        profile = get_object_or_404(StudentProfile.objects.select_related("user"), user=request.user)
+        return Response(StudentProfileSerializer(profile, context={"request": request}).data)
+
+
 class ProfilePhotoView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
 

@@ -102,6 +102,11 @@ export async function changePassword(oldPassword: string, newPassword: string): 
   localStorage.setItem("classpulse_token", data.token);
 }
 
+export async function updateEmail(email: string) {
+  const { data } = await api.post("/student/email/", { email });
+  return data;
+}
+
 export interface SessionResponse {
   id: number;
   subject: string;
