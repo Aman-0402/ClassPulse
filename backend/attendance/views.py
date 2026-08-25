@@ -92,6 +92,23 @@ class StopSessionView(APIView):
         return Response(SessionSerializer(session).data)
 
 
+class ResumeSessionView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def post(self, request, session_id):
+        session = get_object_or_404(AttendanceSession, id=session_id, teacher=request.user)
+        if session.status == AttendanceSession.STATUS_ACTIVE:
+            return Response({"detail": "Session is already active."}, status=400)
+        # Restart the window from now, keeping the same duration — this is
+        # deliberately just "give it another N minutes", not a new session, so
+        # attendance already marked stays intact and the roster keeps accumulating.
+        session.status = AttendanceSession.STATUS_ACTIVE
+        session.start_time = timezone.now()
+        session.end_time = None
+        session.save(update_fields=["status", "start_time", "end_time"])
+        return Response(SessionSerializer(session).data)
+
+
 class SessionQRView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 

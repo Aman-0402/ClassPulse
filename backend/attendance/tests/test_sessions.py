@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -94,3 +95,60 @@ class SessionLifecycleTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         session.refresh_from_db()
         self.assertEqual(session.end_time, original_end_time)
+
+    def test_teacher_can_resume_closed_session(self):
+        self._auth(self.teacher_token)
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED, duration_minutes=5
+        )
+        response = self.client.post(reverse("session-resume", args=[session.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        session.refresh_from_db()
+        self.assertEqual(session.status, AttendanceSession.STATUS_ACTIVE)
+        self.assertIsNone(session.end_time)
+        self.assertFalse(session.is_window_expired())
+
+    def test_resuming_auto_expired_session_reopens_the_window(self):
+        # The exact scenario reported: window auto-expires after 5 min, teacher
+        # clicks back in — resuming must give a genuinely fresh window, not one
+        # that's still expired relative to the old start_time.
+        self._auth(self.teacher_token)
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher,
+            subject="AI",
+            duration_minutes=5,
+            start_time=timezone.now() - timezone.timedelta(minutes=10),
+        )
+        session.status = AttendanceSession.STATUS_CLOSED
+        session.save()
+        self.client.post(reverse("session-resume", args=[session.id]))
+        session.refresh_from_db()
+        self.assertFalse(session.is_window_expired())
+
+    def test_resuming_already_active_session_rejected(self):
+        self._auth(self.teacher_token)
+        session = AttendanceSession.objects.create(teacher=self.teacher, subject="AI")
+        response = self.client.post(reverse("session-resume", args=[session.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_teacher_cannot_resume_others_session(self):
+        other_teacher = User.objects.create_user(username="prof3", password="pw12345678", role=User.ROLE_TEACHER)
+        session = AttendanceSession.objects.create(
+            teacher=other_teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED
+        )
+        self._auth(self.teacher_token)
+        response = self.client.post(reverse("session-resume", args=[session.id]))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_resuming_preserves_existing_attendance(self):
+        from accounts.models import StudentProfile
+        from attendance.models import Attendance
+
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="A")
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", section="A", status=AttendanceSession.STATUS_CLOSED
+        )
+        Attendance.objects.create(student=self.student, session=session)
+        self._auth(self.teacher_token)
+        self.client.post(reverse("session-resume", args=[session.id]))
+        self.assertEqual(Attendance.objects.filter(session=session).count(), 1)

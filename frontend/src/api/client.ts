@@ -172,6 +172,11 @@ export async function stopSession(sessionId: number): Promise<SessionResponse> {
   return data;
 }
 
+export async function resumeSession(sessionId: number): Promise<SessionResponse> {
+  const { data } = await api.post<SessionResponse>(`/attendance/sessions/${sessionId}/resume/`);
+  return data;
+}
+
 export async function getSessionQR(sessionId: number): Promise<QRTokenResponse> {
   const { data } = await api.get<QRTokenResponse>(`/attendance/sessions/${sessionId}/qr/`);
   return data;

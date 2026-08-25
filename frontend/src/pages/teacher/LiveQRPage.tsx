@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Spinner, Alert, ListGroup, Modal, Table, Toast, ToastContainer, Row, Col } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
-import { getSessionQR, getSessionLive, stopSession, getSessionActivity } from "../../api/client";
+import {
+  getSessionQR,
+  getSessionLive,
+  stopSession,
+  resumeSession,
+  setManualAttendance,
+  getSessionActivity,
+} from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
@@ -37,6 +44,9 @@ export default function LiveQRPage() {
   const [roster, setRoster] = useState<DayAttendanceStudent[]>([]);
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [resuming, setResuming] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [savingCrn, setSavingCrn] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Tracks which crns/activity entries have already triggered a toast, so re-polling
@@ -171,6 +181,45 @@ export default function LiveQRPage() {
     navigate("/teacher/profile");
   };
 
+  const handleResume = async () => {
+    if (!sessionId) return;
+    const id = Number(sessionId);
+    setResuming(true);
+    setActionError(null);
+    try {
+      await resumeSession(id);
+      // Refresh immediately rather than waiting for the next poll — resuming
+      // should feel instant, not "wait up to 3s and hope it worked."
+      setSessionStatus("active");
+      const [qr, live] = await Promise.all([getSessionQR(id), getSessionLive(id)]);
+      setToken(qr.token);
+      setQrRefreshAt(Date.now() + QR_REFRESH_MS);
+      setError(null);
+      setClosesAt(live.closes_at);
+      setPresentCount(live.present_count);
+      setRoster(live.roster);
+      setRecent(live.recent);
+    } catch {
+      setActionError("Could not resume this session. Please try again.");
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  const handleToggleAttendance = async (crn: string, currentlyPresent: boolean) => {
+    if (!sessionId) return;
+    setSavingCrn(crn);
+    try {
+      await setManualAttendance(Number(sessionId), crn, !currentlyPresent);
+      setRoster((prev) => prev.map((s) => (s.crn === crn ? { ...s, present: !currentlyPresent } : s)));
+      setPresentCount((prev) => (currentlyPresent ? prev - 1 : prev + 1));
+    } catch {
+      setActionError("Could not update attendance. Please try again.");
+    } finally {
+      setSavingCrn(null);
+    }
+  };
+
   return (
     <AppShell>
       <h1 className="h3 text-center mb-1">Attendance Live</h1>
@@ -179,12 +228,29 @@ export default function LiveQRPage() {
           {error}
         </Alert>
       )}
+      {actionError && !windowClosed && (
+        <Alert variant="danger" className="mt-3">
+          {actionError}
+        </Alert>
+      )}
       <Row className="mt-3">
         <Col md={6} className="text-center">
-          {!error && (token ? <QRCodeSVG value={token} size={256} /> : <Spinner animation="border" />)}
-          <p className="mt-3 text-muted">
-            QR refreshes in <span className="font-mono">{qrSecondsLeft ?? "--"}</span>s
-          </p>
+          {windowClosed ? (
+            <div className="py-4">
+              <p className="text-muted mb-3">The attendance window has closed.</p>
+              {actionError && <Alert variant="danger" className="py-2">{actionError}</Alert>}
+              <Button onClick={handleResume} disabled={resuming}>
+                {resuming ? "Resuming..." : "Resume Attendance"}
+              </Button>
+            </div>
+          ) : (
+            <>
+              {!error && (token ? <QRCodeSVG value={token} size={256} /> : <Spinner animation="border" />)}
+              <p className="mt-3 text-muted">
+                QR refreshes in <span className="font-mono">{qrSecondsLeft ?? "--"}</span>s
+              </p>
+            </>
+          )}
         </Col>
         <Col md={6}>
           <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
@@ -268,9 +334,20 @@ export default function LiveQRPage() {
                   <td className="font-mono">{s.roll_number}</td>
                   <td>{s.name}</td>
                   <td>
-                    <span className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}>
-                      {s.present ? "Present" : "Absent"}
-                    </span>
+                    <button
+                      type="button"
+                      className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
+                      style={{
+                        border: "none",
+                        cursor: "pointer",
+                        opacity: savingCrn === s.crn ? 0.5 : 1,
+                      }}
+                      disabled={savingCrn !== null}
+                      title="Click to toggle present/absent"
+                      onClick={() => handleToggleAttendance(s.crn, s.present)}
+                    >
+                      {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
+                    </button>
                   </td>
                 </tr>
               ))}
