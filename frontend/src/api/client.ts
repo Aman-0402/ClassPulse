@@ -35,6 +35,45 @@ export async function getStudentProfile() {
   return data;
 }
 
+export interface ProfileEditRequestPayload {
+  requested_name?: string;
+  requested_crn?: string;
+  requested_urn?: string;
+  reason?: string;
+}
+
+export interface ProfileEditRequestRecord {
+  id: number;
+  requested_name: string;
+  requested_crn: string;
+  requested_urn: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export async function submitProfileEditRequest(
+  payload: ProfileEditRequestPayload
+): Promise<ProfileEditRequestRecord> {
+  const { data } = await api.post<ProfileEditRequestRecord>("/student/edit-request/", payload);
+  return data;
+}
+
+export async function getMyEditRequests(): Promise<ProfileEditRequestRecord[]> {
+  const { data } = await api.get<ProfileEditRequestRecord[]>("/student/edit-request/");
+  return data;
+}
+
+export async function uploadProfilePhoto(file: File): Promise<{ photo: string | null }> {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const { data } = await api.post("/student/photo/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
 export async function getTeacherProfile() {
   const { data } = await api.get("/teacher/profile/");
   return data;
@@ -146,6 +185,7 @@ export async function markAttendance(token: string) {
 export interface AttendanceRecord {
   name: string;
   crn: string;
+  photo: string | null;
   marked_at: string;
 }
 

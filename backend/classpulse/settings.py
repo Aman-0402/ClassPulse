@@ -84,6 +84,10 @@ REST_FRAMEWORK = {
     },
 }
 
+# Used to build absolute media URLs (e.g. student photos) in contexts with no
+# HttpRequest available, like the WebSocket attendance-broadcast payload.
+BACKEND_ORIGIN = os.environ.get('BACKEND_ORIGIN', 'http://127.0.0.1:8000')
+
 CORS_ALLOWED_ORIGINS = [
     origin
     for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')

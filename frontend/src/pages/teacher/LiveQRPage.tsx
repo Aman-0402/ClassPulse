@@ -111,7 +111,13 @@ export default function LiveQRPage() {
       onUpdate: (update: AttendanceUpdateEvent) => {
         if (!active) return;
         setPresentCount(update.present_count);
-        setRecent((prev) => [{ name: update.name, crn: update.crn, marked_at: update.marked_at }, ...prev].slice(0, 10));
+        setRecent(
+          (prev) =>
+            [
+              { name: update.name, crn: update.crn, photo: update.photo, marked_at: update.marked_at },
+              ...prev,
+            ].slice(0, 10)
+        );
         setRoster((prev) => prev.map((s) => (s.crn === update.crn ? { ...s, present: true } : s)));
         setToastVariant("success");
         setToast(`${update.name} marked present`);
@@ -194,9 +200,37 @@ export default function LiveQRPage() {
             <p className="text-muted">Waiting for students to scan...</p>
           ) : (
             <ListGroup>
-              {recent.map((record) => (
-                <ListGroup.Item key={record.crn}>
-                  {record.name} <span className="text-muted font-mono">({record.crn})</span>
+              {recent.map((record, index) => (
+                <ListGroup.Item
+                  key={`${record.crn}-${record.marked_at}-${index}`}
+                  className="d-flex align-items-center gap-2"
+                >
+                  {record.photo ? (
+                    <img
+                      src={record.photo}
+                      alt=""
+                      width={40}
+                      height={40}
+                      style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid var(--line)" }}
+                    />
+                  ) : (
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "var(--line)",
+                        color: "var(--ink-soft)",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {record.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span>
+                    {record.name} <span className="text-muted font-mono">({record.crn})</span>
+                  </span>
                 </ListGroup.Item>
               ))}
             </ListGroup>

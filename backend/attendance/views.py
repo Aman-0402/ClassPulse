@@ -135,14 +135,20 @@ class SessionLiveView(APIView):
             .select_related("student", "student__student_profile")
             .order_by("-marked_at")[:10]
         )
-        recent = [
-            {
-                "name": record.student.get_full_name() or record.student.username,
-                "crn": getattr(getattr(record.student, "student_profile", None), "crn", ""),
-                "marked_at": record.marked_at,
-            }
-            for record in records
-        ]
+        recent = []
+        for record in records:
+            profile = getattr(record.student, "student_profile", None)
+            photo_url = None
+            if profile and profile.photo:
+                photo_url = request.build_absolute_uri(profile.photo.url)
+            recent.append(
+                {
+                    "name": record.student.get_full_name() or record.student.username,
+                    "crn": profile.crn if profile else "",
+                    "photo": photo_url,
+                    "marked_at": record.marked_at,
+                }
+            )
         present_count = Attendance.objects.filter(session=session).count()
         return Response(
             {

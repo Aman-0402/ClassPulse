@@ -1,15 +1,22 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
+from rest_framework import permissions, serializers
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from accounts.serializers import StudentProfileSerializer, TeacherProfileSerializer
-from accounts.models import StudentProfile
+from accounts.permissions import IsStudent
+from accounts.serializers import (
+    ProfileEditRequestCreateSerializer,
+    ProfileEditRequestSerializer,
+    ProfilePhotoSerializer,
+    StudentProfileSerializer,
+    TeacherProfileSerializer,
+)
+from accounts.models import ProfileEditRequest, StudentProfile
 
 
 class RoleAwareLoginView(ObtainAuthToken):
@@ -70,7 +77,37 @@ class ChangePasswordView(APIView):
 class StudentProfileView(APIView):
     def get(self, request):
         profile = get_object_or_404(StudentProfile.objects.select_related("user"), user=request.user)
-        return Response(StudentProfileSerializer(profile).data)
+        return Response(StudentProfileSerializer(profile, context={"request": request}).data)
+
+
+class ProfileEditRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def get(self, request):
+        requests = ProfileEditRequest.objects.filter(student=request.user)[:10]
+        return Response(ProfileEditRequestSerializer(requests, many=True).data)
+
+    def post(self, request):
+        if ProfileEditRequest.objects.filter(student=request.user, status=ProfileEditRequest.STATUS_PENDING).exists():
+            return Response(
+                {"detail": "You already have a pending edit request. Wait for it to be reviewed."}, status=400
+            )
+        serializer = ProfileEditRequestCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        edit_request = serializer.save(student=request.user)
+        return Response(ProfileEditRequestSerializer(edit_request).data, status=201)
+
+
+class ProfilePhotoView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def post(self, request):
+        profile = get_object_or_404(StudentProfile, user=request.user)
+        serializer = ProfilePhotoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile.photo = serializer.validated_data["photo"]
+        profile.save(update_fields=["photo"])
+        return Response(StudentProfileSerializer(profile, context={"request": request}).data)
 
 
 class TeacherProfileView(APIView):

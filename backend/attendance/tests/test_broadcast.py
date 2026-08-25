@@ -34,6 +34,31 @@ class BroadcastTest(APITestCase):
         self.assertEqual(event["type"], "attendance.update")
         self.assertEqual(event["data"]["name"], "Aman Raj")
         self.assertEqual(event["data"]["present_count"], 1)
+        self.assertIsNone(event["data"]["photo"])  # no StudentProfile/photo set in this fixture
+
+    @patch("attendance.services.get_channel_layer")
+    def test_broadcast_includes_absolute_photo_url_when_set(self, mock_get_layer):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from accounts.models import StudentProfile
+
+        buffer = BytesIO()
+        Image.new("RGB", (100, 100), color="red").save(buffer, format="PNG")
+        photo = SimpleUploadedFile("photo.png", buffer.getvalue(), content_type="image/png")
+        StudentProfile.objects.create(
+            user=self.student, crn="101", course="BBA", semester=3, section="A", photo=photo
+        )
+
+        mock_layer = AsyncMock()
+        mock_get_layer.return_value = mock_layer
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.student_token.key}")
+
+        self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+
+        _, event = mock_layer.group_send.call_args[0]
+        self.assertTrue(event["data"]["photo"].startswith("http"))
+        self.assertIn("/media/", event["data"]["photo"])
 
     @patch("attendance.services.get_channel_layer")
     def test_broadcast_not_called_on_failed_mark(self, mock_get_layer):

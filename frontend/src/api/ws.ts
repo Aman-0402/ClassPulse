@@ -5,6 +5,7 @@ export interface AttendanceUpdateEvent {
   kind: "attendance";
   name: string;
   crn: string;
+  photo: string | null;
   marked_at: string;
   present_count: number;
 }

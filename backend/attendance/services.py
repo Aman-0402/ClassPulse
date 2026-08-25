@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
@@ -57,6 +58,9 @@ def broadcast_attendance_update(attendance):
                     "kind": "attendance",
                     "name": attendance.student.get_full_name() or attendance.student.username,
                     "crn": profile.crn if profile else "",
+                    "photo": (
+                        settings.BACKEND_ORIGIN + profile.photo.url if profile and profile.photo else None
+                    ),
                     "marked_at": attendance.marked_at.isoformat(),
                     "present_count": present_count,
                 },
