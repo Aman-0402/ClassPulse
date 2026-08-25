@@ -24,7 +24,7 @@
   color-scheme: light;
   color: var(--ink);
   background: var(--paper);
-  font: 16px/1.5 var(--font-body);
+  font: 18px/1.6 var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -195,7 +195,7 @@ a:focus-visible {
 }
 .app-shell-main {
   padding: 2rem 1rem 3rem;
-  max-width: 1080px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -214,6 +214,7 @@ a:focus-visible {
   border: 2px solid currentColor;
   transform: rotate(-2deg);
   background: transparent;
+  white-space: nowrap;
 }
 .stamp-present {
   color: var(--stamp-green);
@@ -256,10 +257,13 @@ a:focus-visible {
   border-color: var(--line);
 }
 
-/* Tables: hairline rules, mono numerics */
+/* Tables: hairline rules, mono numerics, roomier rows for the bigger base font */
 .table td,
 .table th {
   vertical-align: middle;
+}
+.table > :not(caption) > * > * {
+  padding: 0.75rem 0.9rem;
 }
 .table td.font-mono,
 .table th.font-mono {
