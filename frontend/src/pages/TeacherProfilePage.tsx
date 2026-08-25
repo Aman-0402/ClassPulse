@@ -60,7 +60,7 @@ export default function TeacherProfilePage() {
       </Link>
 
       {scheduleDay && (
-        <Card className="mt-4" style={{ maxWidth: 620 }}>
+        <Card className="mt-4" style={{ maxWidth: 820 }}>
           <Card.Body>
             <h2 className="h6 mb-3">{scheduleDay}'s Timetable</h2>
             {slots.length === 0 ? (
@@ -81,14 +81,14 @@ export default function TeacherProfilePage() {
                             })
                       }
                     >
-                      <td className="text-muted font-mono">
+                      <td className="text-muted font-mono text-nowrap">
                         {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                       </td>
-                      <td>{slot.subject}</td>
-                      <td>
+                      <td className="text-nowrap">{slot.subject}</td>
+                      <td className="text-nowrap">
                         <span className="stamp stamp-neutral">BBA III {slot.section}</span>
                       </td>
-                      <td className="text-end">
+                      <td className="text-end text-nowrap">
                         {slot.session_id ? (
                           <span className={`stamp ${slot.session_status === "active" ? "stamp-present" : "stamp-neutral"}`}>
                             {slot.session_status === "active" ? "View live" : "View attendance"}
