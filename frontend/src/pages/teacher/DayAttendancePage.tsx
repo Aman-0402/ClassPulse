@@ -4,6 +4,9 @@ import { Alert, Card, Form, Spinner, Table } from "react-bootstrap";
 import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
 import type { DayAttendanceResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import TablePagination from "../../components/TablePagination";
+
+const PAGE_SIZE = 70;
 
 function formatSessionTime(isoDatetime: string): string {
   return new Date(isoDatetime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -24,6 +27,7 @@ export default function DayAttendancePage() {
   const [loading, setLoading] = useState(false);
   const [savingCrn, setSavingCrn] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,6 +74,10 @@ export default function DayAttendancePage() {
       active = false;
     };
   }, [section, date, navigate]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [section, date]);
 
   const canToggle = data?.sessions.length === 1;
 
@@ -147,43 +155,56 @@ export default function DayAttendancePage() {
           {data.students.length === 0 ? (
             <p className="text-muted">No students in this section.</p>
           ) : (
-            <Table striped bordered>
-              <thead>
-                <tr>
-                  <th>S.No</th>
-                  <th>CRN</th>
-                  <th>Roll No.</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.students.map((s, index) => (
-                  <tr key={s.crn}>
-                    <td>{index + 1}</td>
-                    <td className="font-mono">{s.crn}</td>
-                    <td className="font-mono">{s.roll_number}</td>
-                    <td>{s.name}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
-                        style={{
-                          border: "none",
-                          cursor: canToggle ? "pointer" : "default",
-                          opacity: savingCrn === s.crn ? 0.5 : 1,
-                        }}
-                        disabled={!canToggle || savingCrn !== null}
-                        title={canToggle ? "Click to toggle present/absent" : "Only editable when there's exactly one session this day"}
-                        onClick={() => handleToggle(s.crn, s.present)}
-                      >
-                        {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+            (() => {
+              const totalPages = Math.max(1, Math.ceil(data.students.length / PAGE_SIZE));
+              const pageStudents = data.students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+              return (
+                <>
+                  <Table striped bordered>
+                    <thead>
+                      <tr>
+                        <th>S.No</th>
+                        <th>CRN</th>
+                        <th>Roll No.</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageStudents.map((s, index) => (
+                        <tr key={s.crn}>
+                          <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
+                          <td className="font-mono">{s.crn}</td>
+                          <td className="font-mono">{s.roll_number}</td>
+                          <td>{s.name}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
+                              style={{
+                                border: "none",
+                                cursor: canToggle ? "pointer" : "default",
+                                opacity: savingCrn === s.crn ? 0.5 : 1,
+                              }}
+                              disabled={!canToggle || savingCrn !== null}
+                              title={
+                                canToggle
+                                  ? "Click to toggle present/absent"
+                                  : "Only editable when there's exactly one session this day"
+                              }
+                              onClick={() => handleToggle(s.crn, s.present)}
+                            >
+                              {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                  <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                </>
+              );
+            })()
           )}
         </>
       )}

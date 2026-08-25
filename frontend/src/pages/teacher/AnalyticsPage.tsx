@@ -4,6 +4,9 @@ import { Card, Spinner, Table, Button, ButtonGroup, Alert, Form } from "react-bo
 import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../../api/client";
 import type { AnalyticsResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import TablePagination from "../../components/TablePagination";
+
+const PAGE_SIZE = 70;
 
 function toIsoDate(d: Date): string {
   const offset = d.getTimezoneOffset();
@@ -30,6 +33,7 @@ export default function AnalyticsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloadingFormat, setDownloadingFormat] = useState<"csv" | "excel" | "pdf" | null>(null);
@@ -58,6 +62,10 @@ export default function AnalyticsPage() {
       active = false;
     };
   }, [navigate, section, dateFrom, dateTo]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [section, dateFrom, dateTo, search]);
 
   const handleDownload = async (format: "csv" | "excel" | "pdf") => {
     if (downloadingFormat) return;
@@ -206,37 +214,44 @@ export default function AnalyticsPage() {
         if (visibleStudents.length === 0) {
           return <p className="text-muted">No students match "{search}".</p>;
         }
+
+        const totalPages = Math.max(1, Math.ceil(visibleStudents.length / PAGE_SIZE));
+        const pageStudents = visibleStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
         return (
-          <Table striped bordered>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>CRN</th>
-                <th>Roll No.</th>
-                <th>Name</th>
-                <th>Present</th>
-                <th>Total</th>
-                <th>%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleStudents.map((s, index) => (
-                <tr key={s.crn}>
-                  <td>{index + 1}</td>
-                  <td className="font-mono">{s.crn}</td>
-                  <td className="font-mono">{s.roll_number}</td>
-                  <td>{s.name}</td>
-                  <td>{s.present}</td>
-                  <td>{s.total}</td>
-                  <td>
-                    <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
-                      {s.percentage}%
-                    </span>
-                  </td>
+          <>
+            <Table striped bordered>
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>CRN</th>
+                  <th>Roll No.</th>
+                  <th>Name</th>
+                  <th>Present</th>
+                  <th>Total</th>
+                  <th>%</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {pageStudents.map((s, index) => (
+                  <tr key={s.crn}>
+                    <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
+                    <td className="font-mono">{s.crn}</td>
+                    <td className="font-mono">{s.roll_number}</td>
+                    <td>{s.name}</td>
+                    <td>{s.present}</td>
+                    <td>{s.total}</td>
+                    <td>
+                      <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
+                        {s.percentage}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
         );
       })()}
     </AppShell>
