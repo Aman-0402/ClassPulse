@@ -293,8 +293,13 @@ def get_current_schedule_slot():
     ).first()
 
 
-def get_closed_sessions():
-    return AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED).order_by("date", "start_time")
+def get_closed_sessions(date_from=None, date_to=None):
+    sessions = AttendanceSession.objects.filter(status=AttendanceSession.STATUS_CLOSED)
+    if date_from:
+        sessions = sessions.filter(date__gte=date_from)
+    if date_to:
+        sessions = sessions.filter(date__lte=date_to)
+    return sessions.order_by("date", "start_time")
 
 
 def attendance_percentage(present: int, total: int) -> float:
@@ -306,8 +311,8 @@ class AttendanceMatrix(NamedTuple):
     rows: list
 
 
-def build_attendance_matrix(section: str = "") -> AttendanceMatrix:
-    sessions = list(get_closed_sessions())
+def build_attendance_matrix(section: str = "", date_from=None, date_to=None) -> AttendanceMatrix:
+    sessions = list(get_closed_sessions(date_from=date_from, date_to=date_to))
     students = (
         User.objects.filter(role=User.ROLE_STUDENT, student_profile__isnull=False)
         .select_related("student_profile")

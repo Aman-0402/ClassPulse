@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from accounts.models import StudentProfile
@@ -105,6 +106,8 @@ class SessionQRView(APIView):
 
 class MarkAttendanceView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "mark_attendance"
 
     def post(self, request):
         serializer = TokenInputSerializer(data=request.data)
@@ -199,12 +202,26 @@ class StudentHistoryView(APIView):
         return Response({"total": total, "present": present, "percentage": percentage, "history": history})
 
 
+def _parse_date_range(request):
+    """(date_from, date_to) parsed from query params, or raises ValueError."""
+    date_from_str = request.query_params.get("date_from", "")
+    date_to_str = request.query_params.get("date_to", "")
+    date_from = timezone.datetime.strptime(date_from_str, "%Y-%m-%d").date() if date_from_str else None
+    date_to = timezone.datetime.strptime(date_to_str, "%Y-%m-%d").date() if date_to_str else None
+    return date_from, date_to
+
+
 class AnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get(self, request):
         section = request.query_params.get("section", "")
-        sessions, rows = build_attendance_matrix(section=section)
+        try:
+            date_from, date_to = _parse_date_range(request)
+        except ValueError:
+            return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
+
+        sessions, rows = build_attendance_matrix(section=section, date_from=date_from, date_to=date_to)
         total_sessions = len(sessions)
         total_students = len(rows)
         overall_present = sum(r["present_count"] for r in rows)
@@ -232,6 +249,8 @@ class AnalyticsView(APIView):
                 "below_threshold": below_threshold,
                 "available_sections": get_available_sections(),
                 "section": section,
+                "date_from": date_from,
+                "date_to": date_to,
             }
         )
 
@@ -292,7 +311,11 @@ class ExportCSVView(APIView):
 
     def get(self, request):
         section = request.query_params.get("section", "")
-        sessions, rows = build_attendance_matrix(section=section)
+        try:
+            date_from, date_to = _parse_date_range(request)
+        except ValueError:
+            return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
+        sessions, rows = build_attendance_matrix(section=section, date_from=date_from, date_to=date_to)
         header, data_rows = build_report_rows(sessions, rows)
         filename = f"attendance_report_{section}.csv" if section else "attendance_report.csv"
         response = HttpResponse(content_type="text/csv")
@@ -309,7 +332,11 @@ class ExportExcelView(APIView):
 
     def get(self, request):
         section = request.query_params.get("section", "")
-        sessions, rows = build_attendance_matrix(section=section)
+        try:
+            date_from, date_to = _parse_date_range(request)
+        except ValueError:
+            return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
+        sessions, rows = build_attendance_matrix(section=section, date_from=date_from, date_to=date_to)
         header, data_rows = build_report_rows(sessions, rows)
         filename = f"attendance_report_{section}.xlsx" if section else "attendance_report.xlsx"
         wb = Workbook()
@@ -357,7 +384,11 @@ class ExportPDFView(APIView):
 
     def get(self, request):
         section = request.query_params.get("section", "")
-        sessions, rows = build_attendance_matrix(section=section)
+        try:
+            date_from, date_to = _parse_date_range(request)
+        except ValueError:
+            return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
+        sessions, rows = build_attendance_matrix(section=section, date_from=date_from, date_to=date_to)
         header, data_rows = build_report_rows(sessions, rows)
         buffer = BytesIO()
         page_width, _ = landscape(A4)

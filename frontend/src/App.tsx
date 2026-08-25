@@ -6,6 +6,7 @@ import StartAttendancePage from "./pages/teacher/StartAttendancePage";
 import LiveQRPage from "./pages/teacher/LiveQRPage";
 import ScanQRPage from "./pages/student/ScanQRPage";
 import AttendanceHistoryPage from "./pages/student/AttendanceHistoryPage";
+import ChangePasswordPage from "./pages/student/ChangePasswordPage";
 import AnalyticsPage from "./pages/teacher/AnalyticsPage";
 import DayAttendancePage from "./pages/teacher/DayAttendancePage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/student/profile" element={<StudentProfilePage />} />
           <Route path="/student/scan" element={<ScanQRPage />} />
           <Route path="/student/history" element={<AttendanceHistoryPage />} />
+          <Route path="/student/change-password" element={<ChangePasswordPage />} />
           <Route path="/teacher/profile" element={<TeacherProfilePage />} />
           <Route path="/teacher/start-attendance" element={<StartAttendancePage />} />
           <Route path="/teacher/session/:sessionId" element={<LiveQRPage />} />

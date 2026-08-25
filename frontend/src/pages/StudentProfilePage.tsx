@@ -67,9 +67,14 @@ export default function StudentProfilePage() {
           </dl>
         </Card.Body>
       </Card>
-      <Link to="/student/scan" className="btn btn-primary mt-3">
-        Scan Attendance QR
-      </Link>
+      <div className="d-flex gap-2 mt-3 flex-wrap">
+        <Link to="/student/scan" className="btn btn-primary">
+          Scan Attendance QR
+        </Link>
+        <Link to="/student/change-password" className="btn btn-outline-secondary">
+          Change Password
+        </Link>
+      </div>
 
       {scheduleDay && (
         <Card className="mt-4" style={{ maxWidth: 480 }}>

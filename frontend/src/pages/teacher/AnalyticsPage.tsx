@@ -5,9 +5,30 @@ import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../.
 import type { AnalyticsResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
+function toIsoDate(d: Date): string {
+  const offset = d.getTimezoneOffset();
+  return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+}
+
+function startOfWeek(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diffToMonday);
+  return toIsoDate(monday);
+}
+
+function startOfMonth(): string {
+  const now = new Date();
+  return toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+}
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [section, setSection] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -16,7 +37,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     let active = true;
-    getAnalytics(section)
+    getAnalytics(section, dateFrom, dateTo)
       .then((result) => {
         if (active) {
           setData(result);
@@ -36,20 +57,42 @@ export default function AnalyticsPage() {
     return () => {
       active = false;
     };
-  }, [navigate, section]);
+  }, [navigate, section, dateFrom, dateTo]);
 
   const handleDownload = async (format: "csv" | "excel" | "pdf") => {
     if (downloadingFormat) return;
     setDownloadError(null);
     setDownloadingFormat(format);
     try {
-      await downloadReport(format, section);
+      await downloadReport(format, section, dateFrom, dateTo);
     } catch {
       setDownloadError("Could not download the report. Please try again.");
     } finally {
       setDownloadingFormat(null);
     }
   };
+
+  const applyPreset = (preset: "week" | "month" | "all") => {
+    if (preset === "week") {
+      setDateFrom(startOfWeek());
+      setDateTo(toIsoDate(new Date()));
+    } else if (preset === "month") {
+      setDateFrom(startOfMonth());
+      setDateTo(toIsoDate(new Date()));
+    } else {
+      setDateFrom("");
+      setDateTo("");
+    }
+  };
+
+  const activePreset =
+    dateFrom === "" && dateTo === ""
+      ? "all"
+      : dateFrom === startOfWeek() && dateTo === toIsoDate(new Date())
+      ? "week"
+      : dateFrom === startOfMonth() && dateTo === toIsoDate(new Date())
+      ? "month"
+      : null;
 
   if (!data) {
     return (
@@ -85,6 +128,37 @@ export default function AnalyticsPage() {
             </Form.Select>
           </Form.Group>
         </div>
+      </div>
+
+      <div className="d-flex align-items-end gap-2 flex-wrap mb-4">
+        <Form.Group controlId="date-from" style={{ minWidth: 160 }}>
+          <Form.Label className="small text-muted mb-1">From</Form.Label>
+          <Form.Control type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        </Form.Group>
+        <Form.Group controlId="date-to" style={{ minWidth: 160 }}>
+          <Form.Label className="small text-muted mb-1">To</Form.Label>
+          <Form.Control type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </Form.Group>
+        <ButtonGroup>
+          <Button
+            variant={activePreset === "week" ? "dark" : "outline-secondary"}
+            onClick={() => applyPreset("week")}
+          >
+            This Week
+          </Button>
+          <Button
+            variant={activePreset === "month" ? "dark" : "outline-secondary"}
+            onClick={() => applyPreset("month")}
+          >
+            This Month
+          </Button>
+          <Button
+            variant={activePreset === "all" ? "dark" : "outline-secondary"}
+            onClick={() => applyPreset("all")}
+          >
+            All Time
+          </Button>
+        </ButtonGroup>
       </div>
 
       {loadError && <Alert variant="danger">{loadError}</Alert>}

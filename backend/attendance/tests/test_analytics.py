@@ -1,3 +1,5 @@
+import datetime
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
@@ -93,3 +95,47 @@ class AnalyticsTest(APITestCase):
         response = self.client.get(reverse("attendance-analytics"))
         # present: s1 present both (2+1=3), s2 present closed1 only (2), s3 absent (0) -> 5 present / 9 possible
         self.assertEqual(response.data["overall_rate"], round(5 / 9 * 100, 1))
+
+
+class AnalyticsDateRangeTest(APITestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
+        self.teacher_token = Token.objects.create(user=self.teacher)
+        self.student = User.objects.create_user(
+            username="stud1", password="pw12345678", role=User.ROLE_STUDENT, first_name="Aman Raj"
+        )
+        StudentProfile.objects.create(user=self.student, crn="101", urn="urn101", course="BBA", semester=3, section="A")
+
+        self.old_session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED,
+            date=datetime.date(2026, 1, 5),
+        )
+        self.recent_session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI", status=AttendanceSession.STATUS_CLOSED,
+            date=datetime.date(2026, 8, 10),
+        )
+        Attendance.objects.create(student=self.student, session=self.old_session)
+        Attendance.objects.create(student=self.student, session=self.recent_session)
+
+    def _auth(self, token):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_no_range_includes_all_sessions(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"))
+        self.assertEqual(response.data["total_sessions"], 2)
+
+    def test_date_range_scopes_to_recent_session_only(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(
+            reverse("attendance-analytics"), {"date_from": "2026-08-01", "date_to": "2026-08-31"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_sessions"], 1)
+        self.assertEqual(response.data["students"][0]["total"], 1)
+        self.assertEqual(response.data["students"][0]["present"], 1)
+
+    def test_invalid_date_format_rejected(self):
+        self._auth(self.teacher_token)
+        response = self.client.get(reverse("attendance-analytics"), {"date_from": "not-a-date"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

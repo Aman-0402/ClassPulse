@@ -41,8 +41,26 @@ export async function getTeacherProfile() {
 }
 
 export function logout() {
+  // Best-effort — revoke the token server-side before clearing it locally, so it
+  // can't be replayed after "logout" (previously this only cleared localStorage,
+  // leaving the token valid forever). Fire-and-forget: every caller in this app
+  // treats logout() as synchronous and navigates immediately after, so this must
+  // not block on the network or on the request failing (e.g. already offline).
+  api.post("/logout/").catch(() => {});
   localStorage.removeItem("classpulse_token");
   localStorage.removeItem("classpulse_role");
+}
+
+export interface ChangePasswordResponse {
+  token: string;
+}
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  const { data } = await api.post<ChangePasswordResponse>("/change-password/", {
+    old_password: oldPassword,
+    new_password: newPassword,
+  });
+  localStorage.setItem("classpulse_token", data.token);
 }
 
 export interface SessionResponse {
@@ -195,11 +213,21 @@ export interface AnalyticsResponse {
   below_threshold: StudentAnalyticsRow[];
   available_sections: string[];
   section: string;
+  date_from: string | null;
+  date_to: string | null;
 }
 
-export async function getAnalytics(section?: string): Promise<AnalyticsResponse> {
+export async function getAnalytics(
+  section?: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<AnalyticsResponse> {
   const { data } = await api.get<AnalyticsResponse>("/attendance/analytics/", {
-    params: section ? { section } : undefined,
+    params: {
+      ...(section ? { section } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
+    },
   });
   return data;
 }
@@ -238,10 +266,19 @@ export async function setManualAttendance(sessionId: number, crn: string, presen
   await api.post(`/attendance/sessions/${sessionId}/manual/`, { crn, present });
 }
 
-export async function downloadReport(format: "csv" | "excel" | "pdf", section?: string): Promise<void> {
+export async function downloadReport(
+  format: "csv" | "excel" | "pdf",
+  section?: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<void> {
   const response = await api.get(`/attendance/export/${format}/`, {
     responseType: "blob",
-    params: section ? { section } : undefined,
+    params: {
+      ...(section ? { section } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
+    },
   });
   const extension = format === "excel" ? "xlsx" : format;
   const blob = new Blob([response.data]);
