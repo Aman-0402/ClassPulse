@@ -174,10 +174,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ASGI_APPLICATION = "classpulse.asgi.application"
 
-# In-memory only — group messages only relay within a single process.
-# Switch to channels_redis before running >1 daphne worker or multiple runserver instances.
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-    },
-}
+# Redis-backed when REDIS_URL is set (works across multiple daphne workers/processes —
+# what real deployment needs); falls back to in-memory (single-process only, but needs
+# no external service) when it isn't, so tests and a bare `runserver` still work with
+# nothing extra to install.
+REDIS_URL = os.environ.get('REDIS_URL', '')
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
