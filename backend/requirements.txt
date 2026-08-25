@@ -20,6 +20,7 @@ packaging==26.3
 pillow==12.3.0
 pycparser==3.0
 pyOpenSSL==26.4.0
+python-dotenv==1.2.3
 PyMySQL==1.2.0
 pypdf==6.15.0
 reportlab==5.0.0

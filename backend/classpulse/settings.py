@@ -10,22 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x9)xrsb*+b#-29s6-#_!r%^)s3zds6fuzq%k&p6%k2+xz6o!sa'
+# Falls back to a dev-only key (never used if .env sets SECRET_KEY) so the app
+# still runs out of the box without requiring a .env file to exist.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-only-do-not-use-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
 
 
 # Application definition
@@ -66,10 +73,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # Scoped per-view below (throttle_classes + throttle_scope) rather than a
+    # blanket default — login/change-password need tight limits (brute-force
+    # guessing), mark-attendance needs a looser one (legitimate retries after a
+    # duplicate/expired-QR rejection), and most views don't need throttling at all.
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '10/min',
+        'change_password': '5/min',
+        'mark_attendance': '20/min',
+    },
 }
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Vite dev server
+    origin
+    for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+    if origin
 ]
 
 ROOT_URLCONF = 'classpulse.urls'
@@ -98,11 +116,11 @@ WSGI_APPLICATION = 'classpulse.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'classpulse',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME', 'classpulse'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
