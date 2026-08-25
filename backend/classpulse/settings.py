@@ -38,7 +38,6 @@ ALLOWED_HOSTS = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,7 +47,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'channels',
     'accounts',
     'attendance',
 ]
@@ -83,10 +81,6 @@ REST_FRAMEWORK = {
         'mark_attendance': '20/min',
     },
 }
-
-# Used to build absolute media URLs (e.g. student photos) in contexts with no
-# HttpRequest available, like the WebSocket attendance-broadcast payload.
-BACKEND_ORIGIN = os.environ.get('BACKEND_ORIGIN', 'http://127.0.0.1:8000')
 
 CORS_ALLOWED_ORIGINS = [
     origin
@@ -175,26 +169,3 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-ASGI_APPLICATION = "classpulse.asgi.application"
-
-# Redis-backed when REDIS_URL is set (works across multiple daphne workers/processes —
-# what real deployment needs); falls back to in-memory (single-process only, but needs
-# no external service) when it isn't, so tests and a bare `runserver` still work with
-# nothing extra to install.
-REDIS_URL = os.environ.get('REDIS_URL', '')
-if REDIS_URL:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [REDIS_URL],
-            },
-        },
-    }
-else:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer",
-        },
-    }

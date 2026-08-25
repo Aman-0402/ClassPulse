@@ -1,9 +1,6 @@
 import logging
 from typing import NamedTuple
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
@@ -43,56 +40,6 @@ def get_current_qr_token(session: AttendanceSession) -> QRToken:
     return QRToken.objects.create(session=session)
 
 
-def broadcast_attendance_update(attendance):
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-    profile = getattr(attendance.student, "student_profile", None)
-    present_count = Attendance.objects.filter(session=attendance.session).count()
-    try:
-        async_to_sync(channel_layer.group_send)(
-            f"attendance_session_{attendance.session_id}",
-            {
-                "type": "attendance.update",
-                "data": {
-                    "kind": "attendance",
-                    "name": attendance.student.get_full_name() or attendance.student.username,
-                    "crn": profile.crn if profile else "",
-                    "photo": (
-                        settings.BACKEND_ORIGIN + profile.photo.url if profile and profile.photo else None
-                    ),
-                    "marked_at": attendance.marked_at.isoformat(),
-                    "present_count": present_count,
-                },
-            },
-        )
-    except Exception:
-        logger.exception("Failed to broadcast attendance update for attendance id=%s", attendance.id)
-
-
-def broadcast_activity_event(log_entry):
-    if log_entry.session_id is None:
-        return
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-    try:
-        async_to_sync(channel_layer.group_send)(
-            f"attendance_session_{log_entry.session_id}",
-            {
-                "type": "activity.update",
-                "data": {
-                    "kind": "activity",
-                    "activity_type": log_entry.activity_type,
-                    "student": log_entry.student.get_full_name() or log_entry.student.username,
-                    "created_at": log_entry.created_at.isoformat(),
-                },
-            },
-        )
-    except Exception:
-        logger.exception("Failed to broadcast activity event id=%s", log_entry.id)
-
-
 def log_activity(student, session, activity_type, ip_address="", device_info=""):
     try:
         entry = ActivityLog.objects.create(
@@ -107,8 +54,6 @@ def log_activity(student, session, activity_type, ip_address="", device_info="")
             "Failed to write ActivityLog for student id=%s activity_type=%s", getattr(student, "id", None), activity_type
         )
         return None
-    if activity_type != ActivityLog.TYPE_SUCCESS:
-        broadcast_activity_event(entry)
     return entry
 
 
@@ -158,7 +103,6 @@ def mark_attendance(student, token_value, ip_address, device_info):
         log_activity(student, session, ActivityLog.TYPE_NEW_DEVICE, ip_address, device_info)
 
     log_activity(student, session, ActivityLog.TYPE_SUCCESS, ip_address, device_info)
-    broadcast_attendance_update(attendance)
     return attendance
 
 
@@ -170,11 +114,9 @@ def set_manual_attendance(session, student, present, device_info=""):
     do; it just creates or removes the Attendance row directly.
     """
     if present:
-        attendance, created = Attendance.objects.get_or_create(
+        Attendance.objects.get_or_create(
             student=student, session=session, defaults={"device_info": device_info or "manual override"}
         )
-        if created:
-            broadcast_attendance_update(attendance)
     else:
         Attendance.objects.filter(student=student, session=session).delete()
 

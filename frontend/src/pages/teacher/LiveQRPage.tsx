@@ -4,11 +4,10 @@ import { Button, Spinner, Alert, ListGroup, Modal, Table, Toast, ToastContainer,
 import { QRCodeSVG } from "qrcode.react";
 import { getSessionQR, getSessionLive, stopSession, getSessionActivity } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
-import { connectToAttendanceSocket } from "../../api/ws";
-import type { AttendanceUpdateEvent, ActivityUpdateEvent } from "../../api/ws";
 import AppShell from "../../components/AppShell";
 
 const QR_REFRESH_MS = 15000;
+const LIVE_POLL_MS = 3000;
 
 const ACTIVITY_LABELS: Record<ActivityLogEntry["activity_type"], { label: string; stampClass: string }> = {
   duplicate: { label: "Duplicate scan", stampClass: "stamp-absent" },
@@ -32,15 +31,20 @@ export default function LiveQRPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [toastVariant, setToastVariant] = useState<"success" | "warning">("success");
   const [toastKey, setToastKey] = useState(0);
-  const [wsStatus, setWsStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
   const [closesAt, setClosesAt] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | null>(null);
   const [sessionSection, setSessionSection] = useState("");
-  const sessionSectionRef = useRef("");
   const [roster, setRoster] = useState<DayAttendanceStudent[]>([]);
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
+
+  // Tracks which crns/activity entries have already triggered a toast, so re-polling
+  // the same data (nothing new happened) never re-announces it. Refs, not state —
+  // this bookkeeping shouldn't itself trigger a re-render.
+  const seenAttendanceCrns = useRef<Set<string>>(new Set());
+  const seenActivityKeys = useRef<Set<string>>(new Set());
+  const firstLivePoll = useRef(true);
 
   useEffect(() => {
     const interval = setInterval(() => setNowTick(Date.now()), 1000);
@@ -79,72 +83,71 @@ export default function LiveQRPage() {
     const id = Number(sessionId);
     let active = true;
 
-    getSessionLive(id)
-      .then((data) => {
-        if (active) {
+    const pollLive = () => {
+      getSessionLive(id)
+        .then((data) => {
+          if (!active) return;
           setPresentCount(data.present_count);
-          setRecent(data.recent);
           setClosesAt(data.closes_at);
           setSessionStatus(data.status);
           setSessionSection(data.section);
-          sessionSectionRef.current = data.section;
           setRoster(data.roster);
-        }
-      })
-      .catch(() => {
-        if (active) setError("Could not load live attendance data.");
-      });
+          setError(null);
 
-    getSessionActivity(id)
-      .then((data) => {
-        if (active) {
+          // Toast only for scans this page hasn't already announced — on the very
+          // first poll everything is "new" but shouldn't toast (it's history, not
+          // something that just happened).
+          if (!firstLivePoll.current) {
+            for (const record of data.recent) {
+              const key = `${record.crn}-${record.marked_at}`;
+              if (!seenAttendanceCrns.current.has(key)) {
+                seenAttendanceCrns.current.add(key);
+                setToastVariant("success");
+                setToast(`${record.name} marked present`);
+                setToastKey((k) => k + 1);
+              }
+            }
+          } else {
+            for (const record of data.recent) {
+              seenAttendanceCrns.current.add(`${record.crn}-${record.marked_at}`);
+            }
+          }
+          setRecent(data.recent);
+          firstLivePoll.current = false;
+        })
+        .catch(() => {
+          if (active) setError("Could not load live attendance data.");
+        });
+
+      getSessionActivity(id)
+        .then((data) => {
+          if (!active) return;
+          for (const entry of data.logs) {
+            const key = `${entry.activity_type}-${entry.student}-${entry.created_at}`;
+            if (!seenActivityKeys.current.has(key)) {
+              seenActivityKeys.current.add(key);
+              if (entry.activity_type === "wrong_section") {
+                setToastVariant("warning");
+                setToast(`${entry.student} scanned this QR but isn't in this session's section`);
+                setToastKey((k) => k + 1);
+              }
+            }
+          }
           setActivityLog(data.logs);
           setActivityError(null);
-        }
-      })
-      .catch(() => {
-        // Security panel — an empty list must never be confused with "checked, nothing found."
-        if (active) setActivityError("Could not load suspicious activity.");
-      });
+        })
+        .catch(() => {
+          // Security panel — an empty list must never be confused with "checked, nothing found."
+          if (active) setActivityError("Could not load suspicious activity.");
+        });
+    };
 
-    const handle = connectToAttendanceSocket(id, {
-      onUpdate: (update: AttendanceUpdateEvent) => {
-        if (!active) return;
-        setPresentCount(update.present_count);
-        setRecent(
-          (prev) =>
-            [
-              { name: update.name, crn: update.crn, photo: update.photo, marked_at: update.marked_at },
-              ...prev,
-            ].slice(0, 10)
-        );
-        setRoster((prev) => prev.map((s) => (s.crn === update.crn ? { ...s, present: true } : s)));
-        setToastVariant("success");
-        setToast(`${update.name} marked present`);
-        setToastKey((key) => key + 1);
-      },
-      onActivity: (event: ActivityUpdateEvent) => {
-        if (!active) return;
-        setActivityLog((prev) =>
-          [{ activity_type: event.activity_type, student: event.student, created_at: event.created_at }, ...prev].slice(0, 20)
-        );
-        if (event.activity_type === "wrong_section") {
-          const expected = sessionSectionRef.current;
-          setToastVariant("warning");
-          setToast(
-            `${event.student} scanned this QR but isn't in Section ${expected || "this session's section"}`
-          );
-          setToastKey((key) => key + 1);
-        }
-      },
-      onStatusChange: (status) => {
-        if (active) setWsStatus(status);
-      },
-    });
+    pollLive();
+    const interval = setInterval(pollLive, LIVE_POLL_MS);
 
     return () => {
       active = false;
-      handle.close();
+      clearInterval(interval);
     };
   }, [sessionId]);
 
@@ -191,9 +194,6 @@ export default function LiveQRPage() {
               <span className="stamp stamp-absent">Window closed</span>
             ) : (
               countdownLabel && <span className="stamp stamp-neutral font-mono">{countdownLabel} left</span>
-            )}
-            {wsStatus !== "connected" && (
-              <span className="stamp stamp-neutral">{wsStatus === "reconnecting" ? "Reconnecting" : "Disconnected"}</span>
             )}
           </div>
           {recent.length === 0 ? (

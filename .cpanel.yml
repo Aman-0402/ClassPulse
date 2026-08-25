@@ -1,0 +1,22 @@
+---
+# cPanel Git Version Control deploy script.
+#
+# How this runs: create the repo under cPanel > Git Version Control, pointing at
+# this GitHub repo. Every time you click "Update from Remote" then "Deploy HEAD
+# Commit" (or an auto-deploy webhook fires, if your host supports it), cPanel
+# copies the repo into DEPLOYPATH and then runs the commands below from inside
+# DEPLOYPATH.
+#
+# Edit DEPLOYPATH to match the app's actual path from "Setup Python App" (cPanel
+# shows it there, usually something like /home/<cpanel-user>/classpulse-backend).
+# This only deploys the Django backend — see DEPLOY.md for the frontend, which
+# is a separate static-file deploy since shared cPanel has no Node runtime.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/USERNAME/classpulse-backend
+    - /bin/cp -R backend/. $DEPLOYPATH
+    - /home/USERNAME/virtualenv/classpulse-backend/3.10/bin/pip install -r $DEPLOYPATH/requirements.txt
+    - /home/USERNAME/virtualenv/classpulse-backend/3.10/bin/python $DEPLOYPATH/manage.py migrate --noinput
+    - /home/USERNAME/virtualenv/classpulse-backend/3.10/bin/python $DEPLOYPATH/manage.py collectstatic --noinput
+    - /bin/mkdir -p $DEPLOYPATH/tmp
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt
