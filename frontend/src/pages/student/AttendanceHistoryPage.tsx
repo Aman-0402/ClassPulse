@@ -48,28 +48,30 @@ export default function AttendanceHistoryPage() {
       {data.history.length === 0 ? (
         <p className="text-muted">No classes recorded yet — history appears here once a session closes.</p>
       ) : (
-        <Table striped bordered>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Subject</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.history.map((entry, index) => (
-              <tr key={`${entry.date}-${index}`}>
-                <td className="font-mono">{entry.date}</td>
-                <td>{entry.subject}</td>
-                <td>
-                  <span className={`stamp ${entry.status === "present" ? "stamp-present" : "stamp-absent"}`}>
-                    {entry.status}
-                  </span>
-                </td>
+        <div className="table-responsive">
+          <Table striped bordered>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {data.history.map((entry, index) => (
+                <tr key={`${entry.date}-${index}`}>
+                  <td className="font-mono">{entry.date}</td>
+                  <td>{entry.subject}</td>
+                  <td>
+                    <span className={`stamp ${entry.status === "present" ? "stamp-present" : "stamp-absent"}`}>
+                      {entry.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
       )}
     </AppShell>
   );

@@ -70,6 +70,54 @@ class SessionLifecycleTest(APITestCase):
         response = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_restarting_same_section_same_day_reuses_session_not_a_second_one(self):
+        # Reported bug: start -> stop -> start again (same section, same day) was
+        # creating a second AttendanceSession row, silently doubling both the
+        # attendance total and, for a partially-attending student, their present
+        # count too — build_attendance_matrix() sums periods across every closed
+        # session with no per-day dedup. There must only ever be one row.
+        self._auth(self.teacher_token)
+        first = self.client.post(
+            reverse("session-start"), {"subject": "AI", "section": "A"}, format="json"
+        )
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        first_id = first.data["id"]
+
+        self.client.post(reverse("session-stop", args=[first_id]))
+
+        second = self.client.post(
+            reverse("session-start"), {"subject": "AI", "section": "A"}, format="json"
+        )
+        self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(AttendanceSession.objects.count(), 1)
+        self.assertEqual(second.data["id"], first_id)
+        reused = AttendanceSession.objects.get(id=first_id)
+        self.assertEqual(reused.status, AttendanceSession.STATUS_ACTIVE)
+
+    def test_restarting_different_section_same_day_creates_a_new_session(self):
+        self._auth(self.teacher_token)
+        first = self.client.post(
+            reverse("session-start"), {"subject": "AI", "section": "A"}, format="json"
+        )
+        self.client.post(reverse("session-stop", args=[first.data["id"]]))
+
+        second = self.client.post(
+            reverse("session-start"), {"subject": "AI", "section": "B"}, format="json"
+        )
+        self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(AttendanceSession.objects.count(), 2)
+        self.assertNotEqual(second.data["id"], first.data["id"])
+
+    def test_sessions_without_a_section_are_never_deduped(self):
+        self._auth(self.teacher_token)
+        first = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")
+        self.client.post(reverse("session-stop", args=[first.data["id"]]))
+
+        second = self.client.post(reverse("session-start"), {"subject": "AI"}, format="json")
+        self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(AttendanceSession.objects.count(), 2)
+
     def test_teacher_can_stop_own_session(self):
         self._auth(self.teacher_token)
         session = AttendanceSession.objects.create(teacher=self.teacher, subject="AI")

@@ -220,36 +220,38 @@ export default function AnalyticsPage() {
 
         return (
           <>
-            <Table striped bordered>
-              <thead>
-                <tr>
-                  <th>S.No</th>
-                  <th>CRN</th>
-                  <th>Roll No.</th>
-                  <th>Name</th>
-                  <th>Present</th>
-                  <th>Total</th>
-                  <th>%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageStudents.map((s, index) => (
-                  <tr key={s.crn}>
-                    <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
-                    <td className="font-mono">{s.crn}</td>
-                    <td className="font-mono">{s.roll_number}</td>
-                    <td>{s.name}</td>
-                    <td>{s.present}</td>
-                    <td>{s.total}</td>
-                    <td>
-                      <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
-                        {s.percentage}%
-                      </span>
-                    </td>
+            <div className="table-responsive">
+              <Table striped bordered>
+                <thead>
+                  <tr>
+                    <th>S.No</th>
+                    <th>CRN</th>
+                    <th>Roll No.</th>
+                    <th>Name</th>
+                    <th>Present</th>
+                    <th>Total</th>
+                    <th>%</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
+                </thead>
+                <tbody>
+                  {pageStudents.map((s, index) => (
+                    <tr key={s.crn}>
+                      <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
+                      <td className="font-mono">{s.crn}</td>
+                      <td className="font-mono">{s.roll_number}</td>
+                      <td>{s.name}</td>
+                      <td>{s.present}</td>
+                      <td>{s.total}</td>
+                      <td>
+                        <span className={`stamp ${s.percentage >= ATTENDANCE_THRESHOLD ? "stamp-present" : "stamp-absent"}`}>
+                          {s.percentage}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
             <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>
         );

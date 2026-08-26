@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
 import { logout } from "../api/client";
 import logo from "../assets/logo.png";
+import InstallPrompt from "./InstallPrompt";
 
 interface AppShellProps {
   children: ReactNode;
@@ -55,6 +56,7 @@ export default function AppShell({ children }: AppShellProps) {
         </nav>
       </header>
       <main className="app-shell-main">{children}</main>
+      <InstallPrompt />
     </div>
   );
 }

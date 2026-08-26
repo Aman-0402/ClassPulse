@@ -30,5 +30,7 @@ urlpatterns = [
     path('api/attendance/', include('attendance.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Always serve media (student photos) through Django, not just in DEBUG — this
+# app has no separate media server/CDN, and shared cPanel hosting has no other
+# way to expose files outside the app's own docroot at a stable URL.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

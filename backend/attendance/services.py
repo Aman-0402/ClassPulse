@@ -135,15 +135,16 @@ def get_session_roster(session):
         .select_related("student_profile")
         .order_by("student_profile__crn")
     )
-    present_student_ids = set(
-        Attendance.objects.filter(session=session).values_list("student_id", flat=True)
+    marked_at_by_student_id = dict(
+        Attendance.objects.filter(session=session).values_list("student_id", "marked_at")
     )
     return [
         {
             "crn": student.student_profile.crn,
             "roll_number": student.student_profile.urn,
             "name": student.get_full_name() or student.username,
-            "present": student.id in present_student_ids,
+            "present": student.id in marked_at_by_student_id,
+            "marked_at": marked_at_by_student_id.get(student.id),
         }
         for student in students
     ]

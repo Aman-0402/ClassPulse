@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000/api";
+const BASE_URL = "https://arxinfo.info/api";
 
 // Matches the backend's attendance_percentage() convention (see attendance/views.py's
 // AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and
@@ -299,6 +299,9 @@ export interface DayAttendanceStudent {
   roll_number: string;
   name: string;
   present: boolean;
+  // Only populated on the live-session roster (SessionLiveView) — the
+  // per-day attendance view has no single "the" session to time-stamp against.
+  marked_at?: string | null;
 }
 
 export interface DayAttendanceResponse {

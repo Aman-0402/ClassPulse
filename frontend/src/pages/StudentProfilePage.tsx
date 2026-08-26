@@ -12,6 +12,7 @@ import {
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
 import AppShell from "../components/AppShell";
+import PhotoCropModal from "../components/PhotoCropModal";
 import { formatTime } from "../utils/time";
 
 interface Profile {
@@ -24,8 +25,6 @@ interface Profile {
   email: string;
   photo: string | null;
 }
-
-const MAX_PHOTO_BYTES = 1 * 1024 * 1024;
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -40,6 +39,8 @@ export default function StudentProfilePage() {
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState("");
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -74,22 +75,42 @@ export default function StudentProfilePage() {
     loadEditRequests();
   }, [navigate]);
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const MAX_SOURCE_PHOTO_BYTES = 15 * 1024 * 1024;
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     setPhotoError(null);
-    if (file.size > MAX_PHOTO_BYTES) {
-      setPhotoError("Photo must be under 1MB.");
+    // Generous cap just so FileReader doesn't choke on something absurd — the
+    // cropper re-encodes to a fixed 512x512 JPEG regardless of source size, so
+    // the backend's real 1MB limit is checked against that output, not this.
+    if (file.size > MAX_SOURCE_PHOTO_BYTES) {
+      setPhotoError("That image is too large to crop. Try a smaller file.");
       return;
     }
+    setCropFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropCancel = () => {
+    setCropSrc(null);
+    setCropFileName("");
+  };
+
+  const handleCropConfirm = async (croppedFile: File) => {
+    setPhotoError(null);
     setPhotoUploading(true);
     try {
-      const result = await uploadProfilePhoto(file);
+      const result = await uploadProfilePhoto(croppedFile);
       setProfile((prev) => (prev ? { ...prev, photo: result.photo } : prev));
+      setCropSrc(null);
+      setCropFileName("");
     } catch (err: any) {
       const data = err?.response?.data;
-      setPhotoError(data?.photo?.[0] || "Could not upload photo. Make sure it's a square image under 1MB.");
+      setPhotoError(data?.photo?.[0] || "Could not upload photo. Please try again.");
     } finally {
       setPhotoUploading(false);
     }
@@ -177,7 +198,7 @@ export default function StudentProfilePage() {
                   fontSize: "1.5rem",
                 }}
               >
-                {profile.full_name.charAt(0).toUpperCase()}
+                {(profile.full_name || "?").charAt(0).toUpperCase()}
               </span>
             )}
             <div>
@@ -191,7 +212,7 @@ export default function StudentProfilePage() {
                   onChange={handlePhotoChange}
                 />
               </label>
-              <div className="text-muted small mt-1">Square image, under 1MB</div>
+              <div className="text-muted small mt-1">You'll get to crop it next</div>
             </div>
           </div>
           {photoError && <Alert variant="danger" className="py-2">{photoError}</Alert>}
@@ -319,23 +340,33 @@ export default function StudentProfilePage() {
               return mySlots.length === 0 ? (
                 <p className="text-muted mb-0">No training sessions scheduled today.</p>
               ) : (
-                <Table size="sm" borderless className="mb-0">
-                  <tbody>
-                    {mySlots.map((slot, index) => (
-                      <tr key={index}>
-                        <td className="text-muted font-mono">
-                          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                        </td>
-                        <td>{slot.subject}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                <div className="table-responsive">
+                  <Table size="sm" borderless className="mb-0">
+                    <tbody>
+                      {mySlots.map((slot, index) => (
+                        <tr key={index}>
+                          <td className="text-muted font-mono">
+                            {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                          </td>
+                          <td>{slot.subject}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
               );
             })()}
           </Card.Body>
         </Card>
       )}
+      <PhotoCropModal
+        show={!!cropSrc}
+        imageSrc={cropSrc}
+        fileName={cropFileName}
+        onCancel={handleCropCancel}
+        onConfirm={handleCropConfirm}
+        confirming={photoUploading}
+      />
     </AppShell>
   );
 }

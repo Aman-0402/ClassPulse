@@ -111,6 +111,14 @@ WSGI_APPLICATION = 'classpulse.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DB_SOCKET (optional): some cPanel/shared MySQL setups grant DB users only
+# for the socket-based 'localhost' host pattern, not TCP 127.0.0.1 — PyMySQL
+# (unlike the native MySQL C client) always connects over TCP unless given an
+# explicit unix_socket path, so HOST=localhost alone can still get a 1045
+# Access Denied. Set DB_SOCKET to the path phpMyAdmin's Variables page shows
+# for 'socket' (commonly /var/lib/mysql/mysql.sock) to force socket auth.
+_db_socket = os.environ.get('DB_SOCKET', '')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -121,6 +129,7 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
+            **({'unix_socket': _db_socket} if _db_socket else {}),
         },
     }
 }
@@ -161,6 +170,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

@@ -5,12 +5,9 @@ import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../
 import type { DayAttendanceResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import TablePagination from "../../components/TablePagination";
+import { formatSessionTime } from "../../utils/time";
 
 const PAGE_SIZE = 70;
-
-function formatSessionTime(isoDatetime: string): string {
-  return new Date(isoDatetime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -160,47 +157,49 @@ export default function DayAttendancePage() {
               const pageStudents = data.students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
               return (
                 <>
-                  <Table striped bordered>
-                    <thead>
-                      <tr>
-                        <th>S.No</th>
-                        <th>CRN</th>
-                        <th>Roll No.</th>
-                        <th>Name</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pageStudents.map((s, index) => (
-                        <tr key={s.crn}>
-                          <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
-                          <td className="font-mono">{s.crn}</td>
-                          <td className="font-mono">{s.roll_number}</td>
-                          <td>{s.name}</td>
-                          <td>
-                            <button
-                              type="button"
-                              className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
-                              style={{
-                                border: "none",
-                                cursor: canToggle ? "pointer" : "default",
-                                opacity: savingCrn === s.crn ? 0.5 : 1,
-                              }}
-                              disabled={!canToggle || savingCrn !== null}
-                              title={
-                                canToggle
-                                  ? "Click to toggle present/absent"
-                                  : "Only editable when there's exactly one session this day"
-                              }
-                              onClick={() => handleToggle(s.crn, s.present)}
-                            >
-                              {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
-                            </button>
-                          </td>
+                  <div className="table-responsive">
+                    <Table striped bordered>
+                      <thead>
+                        <tr>
+                          <th>S.No</th>
+                          <th>CRN</th>
+                          <th>Roll No.</th>
+                          <th>Name</th>
+                          <th>Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
+                      </thead>
+                      <tbody>
+                        {pageStudents.map((s, index) => (
+                          <tr key={s.crn}>
+                            <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
+                            <td className="font-mono">{s.crn}</td>
+                            <td className="font-mono">{s.roll_number}</td>
+                            <td>{s.name}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
+                                style={{
+                                  border: "none",
+                                  cursor: canToggle ? "pointer" : "default",
+                                  opacity: savingCrn === s.crn ? 0.5 : 1,
+                                }}
+                                disabled={!canToggle || savingCrn !== null}
+                                title={
+                                  canToggle
+                                    ? "Click to toggle present/absent"
+                                    : "Only editable when there's exactly one session this day"
+                                }
+                                onClick={() => handleToggle(s.crn, s.present)}
+                              >
+                                {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
                   <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
                 </>
               );

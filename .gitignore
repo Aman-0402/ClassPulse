@@ -13,6 +13,7 @@ frontend/dist/
 # Env
 .env
 .env.local
+.env.example
 
 # Real student roster data (PII) — never commit
 Data/

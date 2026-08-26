@@ -12,6 +12,11 @@ import {
 } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import { formatSessionTime } from "../../utils/time";
+
+// Roughly 5 rows tall (each ListGroup.Item is ~56px with the current padding/avatar
+// size) — beyond that the list scrolls instead of pushing the rest of the page down.
+const RECENT_LIST_MAX_HEIGHT = 280;
 
 const QR_REFRESH_MS = 15000;
 const LIVE_POLL_MS = 3000;
@@ -265,26 +270,31 @@ export default function LiveQRPage() {
           {recent.length === 0 ? (
             <p className="text-muted">Waiting for students to scan...</p>
           ) : (
-            <ListGroup>
+            <ListGroup style={{ maxHeight: RECENT_LIST_MAX_HEIGHT, overflowY: "auto" }}>
               {recent.map((record, index) => (
                 <ListGroup.Item
                   key={`${record.crn}-${record.marked_at}-${index}`}
-                  className="d-flex align-items-center gap-2"
+                  className="d-flex align-items-center gap-3"
                 >
                   {record.photo ? (
                     <img
                       src={record.photo}
                       alt=""
-                      width={40}
-                      height={40}
-                      style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid var(--line)" }}
+                      width={44}
+                      height={44}
+                      style={{
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid var(--line)",
+                        flexShrink: 0,
+                      }}
                     />
                   ) : (
                     <span
-                      className="d-inline-flex align-items-center justify-content-center"
+                      className="d-inline-flex align-items-center justify-content-center flex-shrink-0"
                       style={{
-                        width: 40,
-                        height: 40,
+                        width: 44,
+                        height: 44,
                         borderRadius: "50%",
                         background: "var(--line)",
                         color: "var(--ink-soft)",
@@ -294,9 +304,10 @@ export default function LiveQRPage() {
                       {record.name.charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span>
+                  <span className="flex-grow-1">
                     {record.name} <span className="text-muted font-mono">({record.crn})</span>
                   </span>
+                  <span className="text-muted small font-mono">{formatSessionTime(record.marked_at)}</span>
                 </ListGroup.Item>
               ))}
             </ListGroup>
@@ -316,43 +327,47 @@ export default function LiveQRPage() {
               ({roster.filter((s) => s.present).length}/{roster.length} present)
             </span>
           </h2>
-          <Table size="sm" striped bordered>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>CRN</th>
-                <th>Roll No.</th>
-                <th>Name</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roster.map((s, index) => (
-                <tr key={s.crn}>
-                  <td>{index + 1}</td>
-                  <td className="font-mono">{s.crn}</td>
-                  <td className="font-mono">{s.roll_number}</td>
-                  <td>{s.name}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
-                      style={{
-                        border: "none",
-                        cursor: "pointer",
-                        opacity: savingCrn === s.crn ? 0.5 : 1,
-                      }}
-                      disabled={savingCrn !== null}
-                      title="Click to toggle present/absent"
-                      onClick={() => handleToggleAttendance(s.crn, s.present)}
-                    >
-                      {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <Table size="sm" striped bordered>
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>CRN</th>
+                  <th>Roll No.</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {roster.map((s, index) => (
+                  <tr key={s.crn}>
+                    <td>{index + 1}</td>
+                    <td className="font-mono">{s.crn}</td>
+                    <td className="font-mono">{s.roll_number}</td>
+                    <td>{s.name}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
+                        style={{
+                          border: "none",
+                          cursor: "pointer",
+                          opacity: savingCrn === s.crn ? 0.5 : 1,
+                        }}
+                        disabled={savingCrn !== null}
+                        title="Click to toggle present/absent"
+                        onClick={() => handleToggleAttendance(s.crn, s.present)}
+                      >
+                        {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
+                      </button>
+                    </td>
+                    <td className="font-mono text-muted">{s.marked_at ? formatSessionTime(s.marked_at) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
         </div>
       )}
       {(activityLog.length > 0 || activityError) && (

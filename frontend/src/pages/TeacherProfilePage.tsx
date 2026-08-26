@@ -128,41 +128,43 @@ export default function TeacherProfilePage() {
             {slots.length === 0 ? (
               <p className="text-muted mb-0">No training sessions scheduled today.</p>
             ) : (
-              <Table size="sm" borderless hover className="mb-0">
-                <tbody>
-                  {slots.map((slot, index) => (
-                    <tr
-                      key={index}
-                      role="button"
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        slot.session_id
-                          ? navigate(`/teacher/session/${slot.session_id}`)
-                          : navigate("/teacher/start-attendance", {
-                              state: { subject: slot.subject, section: slot.section, periods: slot.periods },
-                            })
-                      }
-                    >
-                      <td className="text-muted font-mono text-nowrap">
-                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                      </td>
-                      <td className="text-nowrap">{slot.subject}</td>
-                      <td className="text-nowrap">
-                        <span className="stamp stamp-neutral">BBA III {slot.section}</span>
-                      </td>
-                      <td className="text-end text-nowrap">
-                        {slot.session_id ? (
-                          <span className={`stamp ${slot.session_status === "active" ? "stamp-present" : "stamp-neutral"}`}>
-                            {slot.session_status === "active" ? "View live" : "View attendance"}
-                          </span>
-                        ) : (
-                          <span className="stamp stamp-neutral">Start attendance</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              <div className="table-responsive">
+                <Table size="sm" borderless hover className="mb-0">
+                  <tbody>
+                    {slots.map((slot, index) => (
+                      <tr
+                        key={index}
+                        role="button"
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          slot.session_id
+                            ? navigate(`/teacher/session/${slot.session_id}`)
+                            : navigate("/teacher/start-attendance", {
+                                state: { subject: slot.subject, section: slot.section, periods: slot.periods },
+                              })
+                        }
+                      >
+                        <td className="text-muted font-mono text-nowrap">
+                          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                        </td>
+                        <td className="text-nowrap">{slot.subject}</td>
+                        <td className="text-nowrap">
+                          <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                        </td>
+                        <td className="text-end text-nowrap">
+                          {slot.session_id ? (
+                            <span className={`stamp ${slot.session_status === "active" ? "stamp-present" : "stamp-neutral"}`}>
+                              {slot.session_status === "active" ? "View live" : "View attendance"}
+                            </span>
+                          ) : (
+                            <span className="stamp stamp-neutral">Start attendance</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
             )}
           </Card.Body>
         </Card>

@@ -1,0 +1,16 @@
+RewriteEngine On
+RewriteBase /
+
+# Never touch API requests — those belong to the Django app mounted at /api,
+# not this static frontend. Without this, mod_rewrite serves index.html for
+# every /api/* request before Passenger ever sees it (silent HTML-instead-of-
+# JSON responses, no error — the exact bug this comment is here to prevent).
+RewriteRule ^api/ - [L]
+
+# Don't rewrite real files/directories (assets, favicon, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else falls back to index.html so React Router can handle it
+RewriteRule ^ index.html [L]
