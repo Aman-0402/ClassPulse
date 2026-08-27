@@ -6,11 +6,12 @@ format the real rosters come in. `Data/` holds real student PII and is
 gitignored, so it has to be uploaded separately (cPanel File Manager) —
 this script never ships with student data baked in.
 
-Credential scheme (matches the original import, see Agent.md):
+Credential scheme:
   username = CRN (e.g. "25BBA015")
-  password = first 4 letters of first name, uppercase, + CRN with its
-             leading 2-digit year prefix stripped
-             e.g. "Divyanshi Gautam" + "25BBA015" -> "DIVYBBA015"
+  password = CRN (same as username) — deliberately chosen for simplicity over
+             the earlier first4(name)+CRN scheme (see Agent.md's security-audit
+             entry), since students were confusing the two; weaker (CRN is
+             often known to classmates), accepted tradeoff.
 
 Existing CRNs are skipped, not overwritten — re-running is safe.
 
@@ -35,11 +36,8 @@ COURSE = "BBA"
 SEMESTER = 3
 
 
-def derive_credentials(crn: str, full_name: str) -> tuple[str, str]:
-    first_name = full_name.strip().split()[0]
-    name_part = re.sub(r"[^A-Za-z]", "", first_name).upper()[:4]
-    crn_suffix = re.sub(r"^\d{2}", "", crn.strip(), count=1)
-    return crn.strip(), f"{name_part}{crn_suffix}"
+def derive_credentials(crn: str) -> tuple[str, str]:
+    return crn.strip(), crn.strip()
 
 
 def section_from_filename(path: Path) -> str:
@@ -64,7 +62,7 @@ def import_file(path: Path):
                 skipped += 1
                 continue
 
-            username, password = derive_credentials(crn, name)
+            username, password = derive_credentials(crn)
             user = User.objects.create_user(
                 username=username,
                 password=password,

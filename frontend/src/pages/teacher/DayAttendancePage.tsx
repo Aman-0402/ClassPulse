@@ -1,13 +1,41 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Alert, Card, Form, Spinner, Table } from "react-bootstrap";
+import { Alert, Button, Card, Form, Spinner, Table } from "react-bootstrap";
 import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
-import type { DayAttendanceResponse } from "../../api/client";
+import type { DayAttendanceResponse, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import TablePagination from "../../components/TablePagination";
 import { formatSessionTime } from "../../utils/time";
 
 const PAGE_SIZE = 70;
+
+// Same quote-prefix guard the backend's CSV/Excel exports use (sanitize_report_cell
+// in attendance/services.py) — CRN/name are free-text via student profile-edit
+// requests, so a value starting with =/+/-/@ could execute as a formula if opened
+// in Excel/Sheets unescaped (CWE-1236). This export is generated client-side (the
+// data's already fully loaded here), so it needs its own copy of the same guard.
+function sanitizeCell(value: string): string {
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
+function filterByStatus(
+  students: DayAttendanceStudent[],
+  statusFilter: "all" | "present" | "absent"
+): DayAttendanceStudent[] {
+  if (statusFilter === "all") return students;
+  return students.filter((s) => (statusFilter === "present" ? s.present : !s.present));
+}
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows.map((row) => row.map((cell) => `"${sanitizeCell(cell).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -25,6 +53,7 @@ export default function DayAttendancePage() {
   const [savingCrn, setSavingCrn] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<"all" | "present" | "absent">("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,7 +103,24 @@ export default function DayAttendancePage() {
 
   useEffect(() => {
     setPage(1);
-  }, [section, date]);
+  }, [section, date, statusFilter]);
+
+  const handleExport = () => {
+    if (!data) return;
+    const filtered = filterByStatus(data.students, statusFilter);
+    const rows: string[][] = [
+      ["S.No", "CRN", "Roll No.", "Name", "Status"],
+      ...filtered.map((s, index) => [
+        String(index + 1),
+        s.crn,
+        s.roll_number,
+        s.name,
+        s.present ? "Present" : "Absent",
+      ]),
+    ];
+    const suffix = statusFilter === "all" ? "" : `_${statusFilter}`;
+    downloadCsv(`day_attendance_${section}_${date}${suffix}.csv`, rows);
+  };
 
   const canToggle = data?.sessions.length === 1;
 
@@ -112,6 +158,17 @@ export default function DayAttendancePage() {
           <Form.Group controlId="day-date" style={{ minWidth: 170 }}>
             <Form.Label className="small text-muted mb-1">Date</Form.Label>
             <Form.Control type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </Form.Group>
+          <Form.Group controlId="day-status" style={{ minWidth: 160 }}>
+            <Form.Label className="small text-muted mb-1">Status</Form.Label>
+            <Form.Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "present" | "absent")}
+            >
+              <option value="all">All</option>
+              <option value="present">Present only</option>
+              <option value="absent">Absent only</option>
+            </Form.Select>
           </Form.Group>
         </div>
       </div>
@@ -153,10 +210,17 @@ export default function DayAttendancePage() {
             <p className="text-muted">No students in this section.</p>
           ) : (
             (() => {
-              const totalPages = Math.max(1, Math.ceil(data.students.length / PAGE_SIZE));
-              const pageStudents = data.students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+              const filteredStudents = filterByStatus(data.students, statusFilter);
+              if (filteredStudents.length === 0) {
+                return <p className="text-muted">No {statusFilter} students for this date.</p>;
+              }
+              const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+              const pageStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
               return (
                 <>
+                  <Button variant="outline-secondary" size="sm" className="mb-2" onClick={handleExport}>
+                    Export CSV{statusFilter !== "all" ? ` (${statusFilter} only)` : ""}
+                  </Button>
                   <div className="table-responsive">
                     <Table striped bordered>
                       <thead>
