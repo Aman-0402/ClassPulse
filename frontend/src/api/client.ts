@@ -6,6 +6,10 @@ import axios from "axios";
 // forgetting to revert it for local dev.
 const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "https://arxinfo.info/api";
 
+// Django admin lives alongside the API under the same mount — used to deep-link
+// a teacher straight to reviewing pending profile-edit requests.
+export const ADMIN_URL = `${BASE_URL}/admin/`;
+
 // Matches the backend's attendance_percentage() convention (see attendance/views.py's
 // AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and
 // the backend's below-threshold list can't silently drift apart.
@@ -106,8 +110,25 @@ export async function changePassword(oldPassword: string, newPassword: string): 
   localStorage.setItem("classpulse_token", data.token);
 }
 
+// The OTP itself is never sent to the student by this call — it's generated
+// server-side and only visible to the admin (Django admin), who relays it to
+// the student out-of-band (in person/phone call). No SMS/email service exists
+// for this app, so this is deliberately not a "you'll receive a code" flow.
+export async function requestPasswordResetOtp(username: string): Promise<void> {
+  await api.post("/forgot-password/", { username });
+}
+
+export async function resetPasswordWithOtp(username: string, otp: string, newPassword: string): Promise<void> {
+  await api.post("/reset-password/", { username, otp, new_password: newPassword });
+}
+
 export async function updateEmail(email: string) {
   const { data } = await api.post("/student/email/", { email });
+  return data;
+}
+
+export async function updateContactNumber(contactNumber: string) {
+  const { data } = await api.post("/student/contact-number/", { contact_number: contactNumber });
   return data;
 }
 

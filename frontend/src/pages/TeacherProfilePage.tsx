@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, Form, Button } from "react-bootstrap";
-import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout } from "../api/client";
+import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout, ADMIN_URL } from "../api/client";
 import type { ScheduleSlot } from "../api/client";
 import AppShell from "../components/AppShell";
 import LoadingScreen from "../components/LoadingScreen";
@@ -12,6 +12,7 @@ interface TeacherProfile {
   full_name: string;
   email: string;
   username: string;
+  pending_edit_requests_count: number;
 }
 
 export default function TeacherProfilePage() {
@@ -72,6 +73,20 @@ export default function TeacherProfilePage() {
   return (
     <AppShell>
       <h1 className="h3 mb-4">Welcome, {profile.full_name || profile.username}</h1>
+      {profile.pending_edit_requests_count > 0 && (
+        <a
+          href={ADMIN_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none"
+        >
+          <span className="action-pill">
+            {profile.pending_edit_requests_count} pending profile correction
+            {profile.pending_edit_requests_count === 1 ? "" : "s"}
+          </span>
+          <span className="text-muted small">Review in Admin →</span>
+        </a>
+      )}
       <Card style={{ maxWidth: 480 }}>
         <Card.Body>
           <span className="stamp stamp-neutral mb-3 d-inline-block">Teacher</span>

@@ -8,6 +8,7 @@ import {
   submitProfileEditRequest,
   uploadProfilePhoto,
   updateEmail,
+  updateContactNumber,
   logout,
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
@@ -24,6 +25,7 @@ interface Profile {
   semester: number;
   section: string;
   email: string;
+  contact_number: string;
   photo: string | null;
 }
 
@@ -46,6 +48,11 @@ export default function StudentProfilePage() {
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSaving, setEmailSaving] = useState(false);
+  const [editingContact, setEditingContact] = useState(false);
+  const [contactInput, setContactInput] = useState("");
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [contactSaving, setContactSaving] = useState(false);
+  const [showCorrectionForm, setShowCorrectionForm] = useState(false);
   const navigate = useNavigate();
 
   const loadEditRequests = () => {
@@ -137,6 +144,26 @@ export default function StudentProfilePage() {
     }
   };
 
+  const handleStartEditContact = () => {
+    setContactInput(profile?.contact_number ?? "");
+    setContactError(null);
+    setEditingContact(true);
+  };
+
+  const handleSaveContact = async () => {
+    setContactError(null);
+    setContactSaving(true);
+    try {
+      const updated = await updateContactNumber(contactInput);
+      setProfile((prev) => (prev ? { ...prev, contact_number: updated.contact_number } : prev));
+      setEditingContact(false);
+    } catch (err: any) {
+      setContactError(err?.response?.data?.contact_number?.[0] || "Enter a valid phone number.");
+    } finally {
+      setContactSaving(false);
+    }
+  };
+
   const handleEditRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRequestError(null);
@@ -156,6 +183,7 @@ export default function StudentProfilePage() {
       setRequestedCrn("");
       setRequestedUrn("");
       setReason("");
+      setShowCorrectionForm(false);
       loadEditRequests();
     } catch (err: any) {
       setRequestError(err?.response?.data?.detail || "Could not submit the request.");
@@ -189,7 +217,8 @@ export default function StudentProfilePage() {
           in.
         </Alert>
       )}
-      <Card style={{ maxWidth: 480 }}>
+      <div className="d-flex flex-wrap gap-4 align-items-start" style={{ maxWidth: 980 }}>
+      <Card style={{ flex: "1 1 420px" }}>
         <Card.Body>
           <div className="d-flex align-items-center gap-3 mb-3">
             {profile.photo ? (
@@ -288,66 +317,49 @@ export default function StudentProfilePage() {
                 </div>
               )}
             </div>
+            <div className="info-row">
+              <div className="info-row-label">Contact Number</div>
+              {editingContact ? (
+                <div>
+                  <Form.Control
+                    size="sm"
+                    type="tel"
+                    value={contactInput}
+                    onChange={(e) => setContactInput(e.target.value)}
+                    autoFocus
+                  />
+                  {contactError && <div className="text-danger small mt-1">{contactError}</div>}
+                  <div className="d-flex gap-2 mt-2">
+                    <Button size="sm" onClick={handleSaveContact} disabled={contactSaving}>
+                      {contactSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      onClick={() => setEditingContact(false)}
+                      disabled={contactSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <span className={profile.contact_number ? "" : "text-muted"}>
+                    {profile.contact_number || "Not added yet"}
+                  </span>
+                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditContact}>
+                    {profile.contact_number ? "Edit" : "Add"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </Card.Body>
       </Card>
 
-      <Card className="mt-4" style={{ maxWidth: 480 }}>
-        <Card.Body>
-          <h2 className="h6 mb-3">Request a Profile Correction</h2>
-          {pendingRequest ? (
-            <Alert variant="info" className="mb-0">
-              You have a pending request awaiting review
-              {pendingRequest.requested_name && <> — name to "{pendingRequest.requested_name}"</>}
-              {pendingRequest.requested_crn && <> — CRN to "{pendingRequest.requested_crn}"</>}
-              {pendingRequest.requested_urn && <> — roll no. to "{pendingRequest.requested_urn}"</>}.
-            </Alert>
-          ) : (
-            <Form onSubmit={handleEditRequestSubmit}>
-              {requestError && <Alert variant="danger" className="py-2">{requestError}</Alert>}
-              <Form.Group className="mb-2" controlId="requested-name">
-                <Form.Label className="small text-muted mb-1">Correct name</Form.Label>
-                <Form.Control
-                  value={requestedName}
-                  placeholder={profile.full_name}
-                  onChange={(e) => setRequestedName(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-2" controlId="requested-crn">
-                <Form.Label className="small text-muted mb-1">Correct CRN</Form.Label>
-                <Form.Control
-                  value={requestedCrn}
-                  placeholder={profile.crn}
-                  onChange={(e) => setRequestedCrn(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-2" controlId="requested-urn">
-                <Form.Label className="small text-muted mb-1">Correct roll number</Form.Label>
-                <Form.Control
-                  value={requestedUrn}
-                  placeholder={profile.urn}
-                  onChange={(e) => setRequestedUrn(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3" controlId="request-reason">
-                <Form.Label className="small text-muted mb-1">Reason (optional)</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </Form.Group>
-              <Button type="submit" size="sm" disabled={requestSubmitting}>
-                {requestSubmitting ? "Submitting..." : "Submit Request"}
-              </Button>
-            </Form>
-          )}
-        </Card.Body>
-      </Card>
-
       {scheduleDay && (
-        <Card className="mt-4" style={{ maxWidth: 480 }}>
+        <Card style={{ flex: "1 1 420px" }}>
           <Card.Body>
             <h2 className="h6 mb-3">{scheduleDay}'s Timetable — Section {profile.section}</h2>
             {(() => {
@@ -374,6 +386,84 @@ export default function StudentProfilePage() {
           </Card.Body>
         </Card>
       )}
+      </div>
+
+      <Card className="mt-4" style={{ maxWidth: 980 }}>
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 className="h6 mb-0">Request a Profile Correction</h2>
+            {!pendingRequest && !showCorrectionForm && (
+              <Button size="sm" variant="outline-secondary" onClick={() => setShowCorrectionForm(true)}>
+                Request Correction
+              </Button>
+            )}
+          </div>
+          {pendingRequest ? (
+            <Alert variant="info" className="mb-0">
+              You have a pending request awaiting review
+              {pendingRequest.requested_name && <> — name to "{pendingRequest.requested_name}"</>}
+              {pendingRequest.requested_crn && <> — CRN to "{pendingRequest.requested_crn}"</>}
+              {pendingRequest.requested_urn && <> — roll no. to "{pendingRequest.requested_urn}"</>}.
+            </Alert>
+          ) : !showCorrectionForm ? (
+            <p className="text-muted mb-0 small">
+              Need your name, CRN, or roll number fixed? Requesting sends it to the admin for review.
+            </p>
+          ) : (
+            <Form onSubmit={handleEditRequestSubmit}>
+              {requestError && <Alert variant="danger" className="py-2">{requestError}</Alert>}
+              <div className="d-flex flex-wrap gap-3">
+                <Form.Group className="mb-2" style={{ flex: "1 1 220px" }} controlId="requested-name">
+                  <Form.Label className="small text-muted mb-1">Correct name</Form.Label>
+                  <Form.Control
+                    value={requestedName}
+                    placeholder={profile.full_name}
+                    onChange={(e) => setRequestedName(e.target.value)}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-2" style={{ flex: "1 1 220px" }} controlId="requested-crn">
+                  <Form.Label className="small text-muted mb-1">Correct CRN</Form.Label>
+                  <Form.Control
+                    value={requestedCrn}
+                    placeholder={profile.crn}
+                    onChange={(e) => setRequestedCrn(e.target.value)}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-2" style={{ flex: "1 1 220px" }} controlId="requested-urn">
+                  <Form.Label className="small text-muted mb-1">Correct roll number</Form.Label>
+                  <Form.Control
+                    value={requestedUrn}
+                    placeholder={profile.urn}
+                    onChange={(e) => setRequestedUrn(e.target.value)}
+                  />
+                </Form.Group>
+              </div>
+              <Form.Group className="mb-3" controlId="request-reason">
+                <Form.Label className="small text-muted mb-1">Reason (optional)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </Form.Group>
+              <div className="d-flex gap-2">
+                <Button type="submit" size="sm" disabled={requestSubmitting}>
+                  {requestSubmitting ? "Submitting..." : "Submit Request"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => setShowCorrectionForm(false)}
+                  disabled={requestSubmitting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </Form>
+          )}
+        </Card.Body>
+      </Card>
       <PhotoCropModal
         show={!!cropSrc}
         imageSrc={cropSrc}

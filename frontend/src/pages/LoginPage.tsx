@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Form, Button, Alert, InputGroup } from "react-bootstrap";
 import { login } from "../api/client";
 import logo from "../assets/logo.png";
@@ -55,6 +55,11 @@ export default function LoginPage() {
             Log In
           </Button>
         </Form>
+        <div className="text-center mt-3">
+          <Link to="/forgot-password" className="small">
+            Forgot password?
+          </Link>
+        </div>
       </div>
     </div>
   );
