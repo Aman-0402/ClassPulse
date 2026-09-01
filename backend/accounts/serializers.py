@@ -1,6 +1,9 @@
 from PIL import Image
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
-from accounts.models import ProfileEditRequest, StudentProfile
+from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile
 
 MAX_PHOTO_BYTES = 1 * 1024 * 1024
 
@@ -14,7 +17,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         model = StudentProfile
         fields = [
             "id", "username", "email", "full_name",
-            "crn", "urn", "course", "semester", "section", "photo",
+            "crn", "urn", "course", "semester", "section", "contact_number", "photo",
         ]
 
 
@@ -60,3 +63,50 @@ class TeacherProfileSerializer(serializers.Serializer):
     email = serializers.EmailField()
     full_name = serializers.CharField(source="first_name")
     date_joined = serializers.DateTimeField()
+    pending_edit_requests_count = serializers.SerializerMethodField()
+
+    def get_pending_edit_requests_count(self, obj):
+        return ProfileEditRequest.objects.filter(status=ProfileEditRequest.STATUS_PENDING).count()
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+    def validate_username(self, value):
+        User = get_user_model()
+        try:
+            user = User.objects.get(username=value, role=User.ROLE_STUDENT)
+        except User.DoesNotExist:
+            # Deliberately no distinct error — same generic response whether the
+            # username exists or not, so this can't be used to enumerate accounts.
+            return value
+        self.context["user"] = user
+        return value
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    otp = serializers.CharField(max_length=6)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        User = get_user_model()
+        try:
+            user = User.objects.get(username=attrs["username"], role=User.ROLE_STUDENT)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid username or OTP.")
+
+        otp_record = (
+            PasswordResetOTP.objects.filter(user=user, code=attrs["otp"]).order_by("-created_at").first()
+        )
+        if not otp_record or not otp_record.is_valid:
+            raise serializers.ValidationError("Invalid or expired OTP. Request a new one.")
+
+        try:
+            validate_password(attrs["new_password"], user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"new_password": exc.messages})
+
+        attrs["user"] = user
+        attrs["otp_record"] = otp_record
+        return attrs

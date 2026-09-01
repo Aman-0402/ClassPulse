@@ -79,6 +79,8 @@ REST_FRAMEWORK = {
         'login': '10/min',
         'change_password': '5/min',
         'mark_attendance': '20/min',
+        'forgot_password': '5/hour',
+        'reset_password': '10/hour',
     },
 }
 

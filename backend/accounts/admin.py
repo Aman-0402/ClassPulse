@@ -1,18 +1,40 @@
 from django.contrib import admin
 from django.utils import timezone
-from accounts.models import ProfileEditRequest, User, StudentProfile
+from django.utils.html import format_html
+from accounts.models import PasswordResetOTP, ProfileEditRequest, User, StudentProfile
 
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("crn", "urn", "user", "get_full_name", "course", "semester", "section")
+    # The full-detail lookup an admin needs — "who is this student" — since
+    # there's no separate student-directory page in the app itself; this is
+    # the one place contact number, email, and photo are all visible together.
+    list_display = (
+        "crn", "urn", "user", "get_full_name", "course", "semester", "section",
+        "contact_number", "get_email",
+    )
     list_filter = ("section", "course", "semester")
-    search_fields = ("crn", "urn", "user__username", "user__first_name")
+    search_fields = ("crn", "urn", "user__username", "user__first_name", "contact_number", "user__email")
     ordering = ("section", "crn")
+    readonly_fields = ("photo_preview", "created_at", "updated_at")
+    fields = (
+        "user", "crn", "urn", "course", "semester", "section",
+        "contact_number", "photo", "photo_preview", "created_at", "updated_at",
+    )
 
     @admin.display(description="Name")
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
+
+    @admin.display(description="Email")
+    def get_email(self, obj):
+        return obj.user.email
+
+    @admin.display(description="Photo preview")
+    def photo_preview(self, obj):
+        if not obj.photo:
+            return "No photo uploaded"
+        return format_html('<img src="{}" style="max-height:150px;border-radius:8px;" />', obj.photo.url)
 
 
 @admin.register(ProfileEditRequest)
@@ -57,6 +79,27 @@ class ProfileEditRequestAdmin(admin.ModelAdmin):
             status=ProfileEditRequest.STATUS_REJECTED, reviewed_at=timezone.now(), reviewed_by=request.user
         )
         self.message_user(request, f"Rejected {updated} request(s).")
+
+
+@admin.register(PasswordResetOTP)
+class PasswordResetOTPAdmin(admin.ModelAdmin):
+    # Read this to relay the code to the student who requested it — verify
+    # who they are first (this is the whole point of routing it through a
+    # human instead of auto-sending it).
+    list_display = ("user", "code", "created_at", "expires_at", "status")
+    list_filter = ("user",)
+    search_fields = ("user__username", "user__first_name", "code")
+    readonly_fields = ("user", "code", "created_at", "expires_at", "used_at")
+    ordering = ("-created_at",)
+
+    @admin.display(description="Status")
+    def status(self, obj):
+        if obj.used_at:
+            return "Used"
+        return "Active" if obj.is_valid else "Expired"
+
+    def has_add_permission(self, request):
+        return False
 
 
 admin.site.register(User)

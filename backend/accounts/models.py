@@ -1,5 +1,10 @@
+import random
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+
+OTP_VALIDITY_MINUTES = 10
 
 
 class User(AbstractUser):
@@ -20,6 +25,7 @@ class StudentProfile(models.Model):
     course = models.CharField(max_length=100)
     semester = models.PositiveSmallIntegerField()
     section = models.CharField(max_length=10)
+    contact_number = models.CharField(max_length=20, blank=True, default="")
     photo = models.ImageField(upload_to="student_photos/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -57,3 +63,33 @@ class ProfileEditRequest(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name() or self.student.username} — {self.status}"
+
+
+def _generate_otp_code():
+    return f"{random.randint(0, 999999):06d}"
+
+
+def _default_otp_expiry():
+    return timezone.now() + timezone.timedelta(minutes=OTP_VALIDITY_MINUTES)
+
+
+class PasswordResetOTP(models.Model):
+    # There's no SMS/email service wired up for this app — the code is never
+    # sent to the student directly. It's only ever visible here, in Django
+    # admin, for the admin to read and relay to the student out-of-band (in
+    # person or by phone) after confirming who they are.
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_otps")
+    code = models.CharField(max_length=6, default=_generate_otp_code)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=_default_otp_expiry)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def is_valid(self):
+        return self.used_at is None and timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f"{self.user.username} — {self.code} ({'used' if self.used_at else 'active' if self.is_valid else 'expired'})"
