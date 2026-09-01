@@ -103,3 +103,31 @@ class ProfileEditRequestApprovalTest(APITestCase):
         self.assertEqual(self.profile.crn, "25BBA015")  # untouched — wasn't requested
         self.assertEqual(edit_request.status, ProfileEditRequest.STATUS_APPROVED)
         self.assertEqual(edit_request.reviewed_by, reviewer)
+
+    def test_approving_a_crn_change_keeps_username_and_password_in_sync(self):
+        # Real reported bug: approving a CRN correction updated
+        # StudentProfile.crn but left User.username stale, so the login
+        # scheme (username = password = CRN) broke — the student's actual
+        # current CRN stopped being their real password.
+        from accounts.admin import ProfileEditRequestAdmin
+        from django.contrib.admin.sites import AdminSite
+
+        edit_request = ProfileEditRequest.objects.create(student=self.student, requested_crn="25BBA999")
+        admin_instance = ProfileEditRequestAdmin(ProfileEditRequest, AdminSite())
+        reviewer = User.objects.create_user(username="admin2", password="pw12345678", role=User.ROLE_TEACHER)
+
+        class FakeMessages:
+            def add(self, level, message, extra_tags):
+                pass
+
+        class FakeRequest:
+            user = reviewer
+            _messages = FakeMessages()
+
+        admin_instance.approve_requests(FakeRequest(), ProfileEditRequest.objects.filter(id=edit_request.id))
+
+        self.student.refresh_from_db()
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.crn, "25BBA999")
+        self.assertEqual(self.student.username, "25BBA999")
+        self.assertTrue(self.student.check_password("25BBA999"))

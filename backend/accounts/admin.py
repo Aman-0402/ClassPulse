@@ -52,20 +52,32 @@ class ProfileEditRequestAdmin(admin.ModelAdmin):
         applied = 0
         for edit_request in queryset.filter(status=ProfileEditRequest.STATUS_PENDING):
             student = edit_request.student
+            user_update_fields = []
             if edit_request.requested_name:
                 student.first_name = edit_request.requested_name
-                student.save(update_fields=["first_name"])
+                user_update_fields.append("first_name")
             profile = getattr(student, "student_profile", None)
             if profile:
                 update_fields = []
                 if edit_request.requested_crn:
                     profile.crn = edit_request.requested_crn
                     update_fields.append("crn")
+                    # The login scheme is username=password=CRN — a CRN
+                    # correction that only touched StudentProfile.crn left
+                    # username stale, so the student's own current CRN
+                    # stopped being their real password (a genuine reported
+                    # bug: "wrong password" for exactly the students whose
+                    # CRN had been corrected here). Keep both in lockstep.
+                    student.username = edit_request.requested_crn
+                    student.set_password(edit_request.requested_crn)
+                    user_update_fields += ["username", "password"]
                 if edit_request.requested_urn:
                     profile.urn = edit_request.requested_urn
                     update_fields.append("urn")
                 if update_fields:
                     profile.save(update_fields=update_fields)
+            if user_update_fields:
+                student.save(update_fields=user_update_fields)
             edit_request.status = ProfileEditRequest.STATUS_APPROVED
             edit_request.reviewed_at = timezone.now()
             edit_request.reviewed_by = request.user
