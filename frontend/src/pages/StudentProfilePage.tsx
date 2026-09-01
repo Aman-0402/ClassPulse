@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, Table, Form, Button, Alert } from "react-bootstrap";
+import Swal from "sweetalert2";
+import { notifySuccess, notifyError } from "../utils/alerts";
 import {
   getStudentProfile,
   getTodaySchedule,
@@ -40,19 +42,22 @@ export default function StudentProfilePage() {
   const [reason, setReason] = useState("");
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSubmitting, setRequestSubmitting] = useState(false);
-  const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropFileName, setCropFileName] = useState("");
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailInput, setEmailInput] = useState("");
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSaving, setEmailSaving] = useState(false);
   const [editingContact, setEditingContact] = useState(false);
   const [contactInput, setContactInput] = useState("");
-  const [contactError, setContactError] = useState<string | null>(null);
   const [contactSaving, setContactSaving] = useState(false);
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
+  // Session-only snooze — "remind me later" means later this same visit-cycle,
+  // not forever, so it reappears next time they actually log in again rather
+  // than being silenced permanently by one click.
+  const [photoReminderDismissed, setPhotoReminderDismissed] = useState(
+    () => sessionStorage.getItem("classpulse_photo_reminder_dismissed") === "1"
+  );
   const navigate = useNavigate();
 
   const loadEditRequests = () => {
@@ -83,18 +88,37 @@ export default function StudentProfilePage() {
     loadEditRequests();
   }, [navigate]);
 
+  const photoPromptShownRef = useRef(false);
+  useEffect(() => {
+    if (!profile || profile.photo || photoReminderDismissed || photoPromptShownRef.current) return;
+    photoPromptShownRef.current = true;
+    Swal.fire({
+      icon: "warning",
+      title: "Add a Profile Photo",
+      text: "You haven't uploaded a profile photo yet. Add one so your teacher can recognize you when you scan in.",
+      confirmButtonText: "Add Photo Now",
+      confirmButtonColor: "#9d5fd1",
+      showDenyButton: true,
+      denyButtonText: "Remind me next time",
+    }).then((result) => {
+      if (result.isDenied) {
+        sessionStorage.setItem("classpulse_photo_reminder_dismissed", "1");
+        setPhotoReminderDismissed(true);
+      }
+    });
+  }, [profile, photoReminderDismissed]);
+
   const MAX_SOURCE_PHOTO_BYTES = 15 * 1024 * 1024;
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setPhotoError(null);
     // Generous cap just so FileReader doesn't choke on something absurd — the
     // cropper re-encodes to a fixed 512x512 JPEG regardless of source size, so
     // the backend's real 1MB limit is checked against that output, not this.
     if (file.size > MAX_SOURCE_PHOTO_BYTES) {
-      setPhotoError("That image is too large to crop. Try a smaller file.");
+      notifyError("Image Too Large", "That image is too large to crop. Try a smaller file.");
       return;
     }
     setCropFileName(file.name);
@@ -109,16 +133,16 @@ export default function StudentProfilePage() {
   };
 
   const handleCropConfirm = async (croppedFile: File) => {
-    setPhotoError(null);
     setPhotoUploading(true);
     try {
       const result = await uploadProfilePhoto(croppedFile);
       setProfile((prev) => (prev ? { ...prev, photo: result.photo } : prev));
       setCropSrc(null);
       setCropFileName("");
+      notifySuccess("Photo Updated", "Your profile photo has been updated.");
     } catch (err: any) {
       const data = err?.response?.data;
-      setPhotoError(data?.photo?.[0] || "Could not upload photo. Please try again.");
+      notifyError("Upload Failed", data?.photo?.[0] || "Could not upload photo. Please try again.");
     } finally {
       setPhotoUploading(false);
     }
@@ -126,19 +150,18 @@ export default function StudentProfilePage() {
 
   const handleStartEditEmail = () => {
     setEmailInput(profile?.email ?? "");
-    setEmailError(null);
     setEditingEmail(true);
   };
 
   const handleSaveEmail = async () => {
-    setEmailError(null);
     setEmailSaving(true);
     try {
       const updated = await updateEmail(emailInput);
       setProfile((prev) => (prev ? { ...prev, email: updated.email } : prev));
       setEditingEmail(false);
+      notifySuccess("Email Updated", "Your email has been updated.");
     } catch (err: any) {
-      setEmailError(err?.response?.data?.email?.[0] || "Enter a valid email address.");
+      notifyError("Update Failed", err?.response?.data?.email?.[0] || "Enter a valid email address.");
     } finally {
       setEmailSaving(false);
     }
@@ -146,19 +169,21 @@ export default function StudentProfilePage() {
 
   const handleStartEditContact = () => {
     setContactInput(profile?.contact_number ?? "");
-    setContactError(null);
     setEditingContact(true);
   };
 
   const handleSaveContact = async () => {
-    setContactError(null);
     setContactSaving(true);
     try {
       const updated = await updateContactNumber(contactInput);
       setProfile((prev) => (prev ? { ...prev, contact_number: updated.contact_number } : prev));
       setEditingContact(false);
+      notifySuccess("Contact Number Updated", "Your contact number has been updated.");
     } catch (err: any) {
-      setContactError(err?.response?.data?.contact_number?.[0] || "Enter a valid phone number.");
+      notifyError(
+        "Update Failed",
+        err?.response?.data?.contact_number?.[0] || "Enter a valid phone number."
+      );
     } finally {
       setContactSaving(false);
     }
@@ -211,12 +236,6 @@ export default function StudentProfilePage() {
           Change Password
         </Link>
       </div>
-      {!profile.photo && (
-        <Alert variant="warning" className="mb-3">
-          You haven't uploaded a profile photo yet. Add one below so your teacher can recognize you when you scan
-          in.
-        </Alert>
-      )}
       <div className="d-flex flex-wrap gap-4 align-items-start" style={{ maxWidth: 980 }}>
       <Card style={{ flex: "1 1 420px" }}>
         <Card.Body>
@@ -259,7 +278,6 @@ export default function StudentProfilePage() {
               <div className="text-muted small mt-1">You'll get to crop it next</div>
             </div>
           </div>
-          {photoError && <Alert variant="danger" className="py-2">{photoError}</Alert>}
 
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <span className="stamp stamp-neutral">Student ID</span>
@@ -293,7 +311,6 @@ export default function StudentProfilePage() {
                     onChange={(e) => setEmailInput(e.target.value)}
                     autoFocus
                   />
-                  {emailError && <div className="text-danger small mt-1">{emailError}</div>}
                   <div className="d-flex gap-2 mt-2">
                     <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
                       {emailSaving ? "Saving..." : "Save"}
@@ -328,7 +345,6 @@ export default function StudentProfilePage() {
                     onChange={(e) => setContactInput(e.target.value)}
                     autoFocus
                   />
-                  {contactError && <div className="text-danger small mt-1">{contactError}</div>}
                   <div className="d-flex gap-2 mt-2">
                     <Button size="sm" onClick={handleSaveContact} disabled={contactSaving}>
                       {contactSaving ? "Saving..." : "Save"}

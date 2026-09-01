@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
-import Swal from "sweetalert2";
 import { markAttendance } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import { notifySuccess, notifyError, notifyInfo } from "../../utils/alerts";
 
 const SCANNER_ELEMENT_ID = "qr-scanner";
 const DUPLICATE_MESSAGE = "Attendance already marked for this session.";
@@ -26,12 +26,7 @@ export default function ScanQRPage() {
           try {
             await markAttendance(decodedText);
             if (active) {
-              Swal.fire({
-                icon: "success",
-                title: "Attendance Marked!",
-                text: "You have marked your attendance.",
-                confirmButtonColor: "#9d5fd1",
-              });
+              notifySuccess("Attendance Marked!", "You have marked your attendance.");
             }
           } catch (err: any) {
             if (!active) return;
@@ -43,19 +38,9 @@ export default function ScanQRPage() {
             const detail: string = data?.detail || data?.token?.[0] || "Could not mark attendance.";
 
             if (detail === DUPLICATE_MESSAGE) {
-              Swal.fire({
-                icon: "info",
-                title: "Already Marked",
-                text: "You have already marked your attendance for this session.",
-                confirmButtonColor: "#9d5fd1",
-              });
+              notifyInfo("Already Marked", "You have already marked your attendance for this session.");
             } else {
-              Swal.fire({
-                icon: "error",
-                title: "Scan Failed",
-                text: `${detail} Please try scanning again in a few seconds.`,
-                confirmButtonColor: "#9d5fd1",
-              });
+              notifyError("Scan Failed", `${detail} Please try scanning again in a few seconds.`);
             }
           } finally {
             debounceTimeout = setTimeout(() => {
@@ -67,12 +52,7 @@ export default function ScanQRPage() {
       )
       .catch(() => {
         if (active) {
-          Swal.fire({
-            icon: "error",
-            title: "Camera Unavailable",
-            text: "Could not access the camera. Please allow camera access and try again.",
-            confirmButtonColor: "#9d5fd1",
-          });
+          notifyError("Camera Unavailable", "Could not access the camera. Please allow camera access and try again.");
         }
       });
 
