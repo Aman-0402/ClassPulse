@@ -86,6 +86,11 @@ class PasswordResetOTP(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        # Django's default verbose name inserts a space before every capital
+        # letter, which mangles an acronym like OTP into "Password reset o t
+        # ps" in the admin sidebar — spelling it out keeps it findable.
+        verbose_name = "Password Reset OTP"
+        verbose_name_plural = "Password Reset OTPs"
 
     @property
     def is_valid(self):

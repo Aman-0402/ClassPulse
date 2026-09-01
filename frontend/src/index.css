@@ -152,7 +152,8 @@ a:focus-visible {
   width: 1px;
   height: 1px;
   background: transparent;
-  animation: star-twinkle 4s ease-in-out infinite alternate;
+  animation: star-twinkle 4s ease-in-out infinite alternate, star-drift 240s linear infinite;
+  transform-origin: 1000px 1000px;
   pointer-events: none;
 }
 .auth-shell::before {
@@ -161,23 +162,95 @@ a:focus-visible {
 .auth-shell::after {
   width: 2px;
   height: 2px;
-  animation-duration: 6s;
-  animation-delay: 1.5s;
+  animation-duration: 6s, 240s;
+  animation-delay: 1.5s, 0s;
+  transform-origin: 1000px 1000px;
   box-shadow: 321px 1843px #fff, 1301px 530px #fff, 731px 236px #fff, 323px 369px #fff, 995px 1266px #fff, 515px 592px #fff, 1097px 334px #fff, 1088px 1197px #fff, 51px 962px #fff, 498px 1875px #fff, 848px 1782px #fff, 1947px 125px #fff, 1026px 585px #fff, 1779px 1035px #fff, 408px 393px #fff, 1024px 1126px #fff, 169px 1372px #fff, 1300px 447px #fff, 1117px 1193px #fff, 1228px 588px #fff, 124px 1265px #fff, 1175px 1800px #fff, 1197px 1742px #fff, 834px 518px #fff, 1989px 1047px #fff, 1181px 888px #fff, 5px 1485px #fff, 675px 735px #fff, 877px 1585px #fff, 1823px 1525px #fff, 1423px 1435px #fff, 1946px 655px #fff, 1724px 33px #fff, 1473px 906px #fff, 1282px 257px #fff, 694px 342px #fff, 1019px 1686px #fff, 1627px 158px #fff, 233px 1067px #fff, 292px 559px #fff, 1376px 1796px #fff, 1708px 736px #fff, 1853px 1366px #fff, 1960px 1480px #fff, 452px 45px #fff, 1473px 1495px #fff, 1438px 1768px #fff, 1607px 675px #fff, 324px 1449px #fff, 836px 478px #fff, 402px 698px #fff, 912px 905px #fff, 1019px 571px #fff, 1863px 1809px #fff, 22px 262px #fff, 740px 818px #fff, 1948px 867px #fff, 313px 1443px #fff, 1669px 1599px #fff, 309px 448px #fff, 1989px 1342px #fff, 964px 1226px #fff, 62px 1470px #fff, 946px 746px #fff, 951px 376px #fff, 1082px 1817px #fff, 335px 433px #fff, 1729px 88px #fff, 1447px 848px #fff, 188px 787px #fff, 1586px 1580px #fff, 1883px 1954px #fff, 1584px 1994px #fff, 406px 1502px #fff, 69px 453px #fff, 1936px 756px #fff, 1318px 1383px #fff, 1085px 1536px #fff, 1908px 994px #fff, 1447px 1474px #fff, 769px 1731px #fff, 697px 1445px #fff, 1006px 1884px #fff, 678px 282px #fff, 848px 1045px #fff, 1978px 1812px #fff, 1033px 1343px #fff, 676px 82px #fff, 347px 274px #fff, 972px 1025px #fff;
+}
+.starfield-large {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 3px;
+  background: transparent;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: star-twinkle 5s ease-in-out infinite alternate, star-drift 240s linear infinite reverse;
+  animation-delay: 0.7s, 0s;
+  transform-origin: 1200px 1200px;
+  box-shadow: 1388px 861px #fff, 147px 1943px #fff, 2055px 258px #fff, 2019px 1532px #fff, 1116px 85px #fff, 635px 680px #fff, 328px 314px #fff, 710px 1777px #fff, 1905px 2175px #fff, 1194px 2320px #fff, 126px 1349px #fff, 1615px 1481px #fff, 2275px 543px #fff, 921px 1998px #fff, 84px 1715px #fff, 1787px 2129px #fff, 1119px 280px #fff, 2395px 1177px #fff, 1281px 2058px #fff, 835px 2007px #fff, 2246px 648px #fff, 303px 194px #fff, 151px 2252px #fff, 324px 643px #fff, 201px 2110px #fff, 744px 1713px #fff, 2083px 2052px #fff, 132px 2381px #fff, 1979px 214px #fff, 118px 2256px #fff, 2102px 1173px #fff, 1677px 233px #fff, 948px 1955px #fff, 1058px 1610px #fff, 18px 2183px #fff, 264px 1862px #fff, 1849px 1808px #fff, 684px 1022px #fff, 643px 2087px #fff, 778px 715px #fff;
 }
 @keyframes star-twinkle {
   0% {
-    opacity: 0.3;
+    opacity: 0.25;
   }
   100% {
     opacity: 1;
   }
 }
+@keyframes star-drift {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Occasional shooting star — a bright dot with a fading gradient trail that
+   streaks diagonally across, then sits idle most of its own animation cycle
+   before the next pass (durations deliberately offset per instance so
+   several never fire in sync). */
+.shooting-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  animation-name: shooting-star;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.shooting-star::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 110px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75));
+  transform: translateY(-50%);
+}
+@keyframes shooting-star {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  2% {
+    opacity: 1;
+  }
+  16% {
+    opacity: 0;
+    transform: translate(-260px, 260px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-260px, 260px);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .auth-shell::before,
-  .auth-shell::after {
+  .auth-shell::after,
+  .starfield-large {
     animation: none;
     opacity: 0.7;
+  }
+  .shooting-star {
+    display: none;
   }
 }
 .auth-card {

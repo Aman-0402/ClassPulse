@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Alert, InputGroup } from "react-bootstrap";
 import { requestPasswordResetOtp, resetPasswordWithOtp } from "../api/client";
 import logo from "../assets/logo.png";
+import Starfield from "../components/Starfield";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="auth-shell">
+      <Starfield />
       <div className="auth-card">
         <img src={logo} alt="ClassPulse" className="auth-logo" />
         <h2>Forgot Password</h2>

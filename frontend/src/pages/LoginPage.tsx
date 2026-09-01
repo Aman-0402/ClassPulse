@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Form, Button, Alert, InputGroup } from "react-bootstrap";
 import { login } from "../api/client";
 import logo from "../assets/logo.png";
+import Starfield from "../components/Starfield";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-shell">
+      <Starfield />
       <div className="auth-card">
         <img src={logo} alt="ClassPulse" className="auth-logo" />
         <h2>Welcome back</h2>
