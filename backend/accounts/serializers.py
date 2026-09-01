@@ -110,3 +110,21 @@ class ResetPasswordSerializer(serializers.Serializer):
         attrs["user"] = user
         attrs["otp_record"] = otp_record
         return attrs
+
+
+class PasswordResetOTPSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PasswordResetOTP
+        fields = ["id", "username", "full_name", "code", "created_at", "expires_at", "used_at", "status"]
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+    def get_status(self, obj):
+        if obj.used_at:
+            return "used"
+        return "active" if obj.is_valid else "expired"

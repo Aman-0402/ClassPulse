@@ -118,3 +118,44 @@ class ResetPasswordTest(APITestCase):
             format="json",
         )
         self.assertFalse(Token.objects.filter(pk=token.pk).exists())
+
+
+class OTPHistoryViewTest(APITestCase):
+    def setUp(self):
+        self.student = User.objects.create_user(
+            username="25BBA015", password="DIVYBBA015", role=User.ROLE_STUDENT
+        )
+        self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
+        self.teacher_token = Token.objects.create(user=self.teacher)
+        self.student_token = Token.objects.create(user=self.student)
+
+    def test_teacher_can_view_otp_history(self):
+        PasswordResetOTP.objects.create(user=self.student)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.teacher_token.key}")
+        response = self.client.get(reverse("otp-history"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["username"], "25BBA015")
+        self.assertIn("code", response.data[0])
+
+    def test_student_cannot_view_otp_history(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.student_token.key}")
+        response = self.client.get(reverse("otp-history"))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_rejected(self):
+        response = self.client.get(reverse("otp-history"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_history_includes_used_and_expired_not_just_active(self):
+        used = PasswordResetOTP.objects.create(user=self.student)
+        used.used_at = timezone.now()
+        used.save(update_fields=["used_at"])
+        expired = PasswordResetOTP.objects.create(user=self.student)
+        expired.expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        expired.save(update_fields=["expires_at"])
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.teacher_token.key}")
+        response = self.client.get(reverse("otp-history"))
+        statuses = {row["status"] for row in response.data}
+        self.assertEqual(statuses, {"used", "expired"})

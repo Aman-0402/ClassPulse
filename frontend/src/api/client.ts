@@ -111,15 +111,32 @@ export async function changePassword(oldPassword: string, newPassword: string): 
 }
 
 // The OTP itself is never sent to the student by this call — it's generated
-// server-side and only visible to the admin (Django admin), who relays it to
-// the student out-of-band (in person/phone call). No SMS/email service exists
-// for this app, so this is deliberately not a "you'll receive a code" flow.
+// server-side and only visible to the admin (teacher's OTP History page, or
+// Django admin), who relays it to the student out-of-band (in person/phone
+// call). No SMS/email service exists for this app, so this is deliberately
+// not a "you'll receive a code" flow.
 export async function requestPasswordResetOtp(username: string): Promise<void> {
   await api.post("/forgot-password/", { username });
 }
 
 export async function resetPasswordWithOtp(username: string, otp: string, newPassword: string): Promise<void> {
   await api.post("/reset-password/", { username, otp, new_password: newPassword });
+}
+
+export interface OTPHistoryEntry {
+  id: number;
+  username: string;
+  full_name: string;
+  code: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  status: "active" | "used" | "expired";
+}
+
+export async function getOtpHistory(): Promise<OTPHistoryEntry[]> {
+  const { data } = await api.get<OTPHistoryEntry[]>("/teacher/otp-history/");
+  return data;
 }
 
 export async function updateEmail(email: string) {

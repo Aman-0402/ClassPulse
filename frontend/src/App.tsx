@@ -14,6 +14,7 @@ const AttendanceHistoryPage = lazy(() => import("./pages/student/AttendanceHisto
 const ChangePasswordPage = lazy(() => import("./pages/student/ChangePasswordPage"));
 const AnalyticsPage = lazy(() => import("./pages/teacher/AnalyticsPage"));
 const DayAttendancePage = lazy(() => import("./pages/teacher/DayAttendancePage"));
+const OTPHistoryPage = lazy(() => import("./pages/teacher/OTPHistoryPage"));
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/teacher/session/:sessionId" element={<LiveQRPage />} />
             <Route path="/teacher/analytics" element={<AnalyticsPage />} />
             <Route path="/teacher/day-attendance" element={<DayAttendancePage />} />
+            <Route path="/teacher/otp-history" element={<OTPHistoryPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

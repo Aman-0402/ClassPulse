@@ -2,16 +2,17 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import permissions, serializers
+from rest_framework import generics, permissions, serializers
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from accounts.permissions import IsStudent
+from accounts.permissions import IsStudent, IsTeacher
 from accounts.serializers import (
     ForgotPasswordSerializer,
+    PasswordResetOTPSerializer,
     ProfileEditRequestCreateSerializer,
     ProfileEditRequestSerializer,
     ProfilePhotoSerializer,
@@ -206,3 +207,12 @@ class ResetPasswordView(APIView):
         Token.objects.filter(user=user).delete()
 
         return Response({"detail": "Password reset successfully. You can now log in."})
+
+
+class OTPHistoryView(generics.ListAPIView):
+    # Full history, not just pending/active ones — the point of this page is
+    # an audit trail (who requested, when, was it used or did it expire
+    # unused), not just "what's currently actionable".
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    serializer_class = PasswordResetOTPSerializer
+    queryset = PasswordResetOTP.objects.select_related("user").all()

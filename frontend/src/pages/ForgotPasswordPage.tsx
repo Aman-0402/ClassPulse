@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Alert, InputGroup } from "react-bootstrap";
 import { requestPasswordResetOtp, resetPasswordWithOtp } from "../api/client";
 import logo from "../assets/logo.png";
 import Starfield from "../components/Starfield";
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -16,14 +18,23 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => setCooldown((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldown > 0) return;
     setError(null);
     setSubmitting(true);
     try {
       await requestPasswordResetOtp(username);
       setStep("reset");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch {
       setError("Could not request an OTP right now. Please try again.");
     } finally {
@@ -73,8 +84,8 @@ export default function ForgotPasswordPage() {
                 <Form.Label>Username</Form.Label>
                 <Form.Control value={username} onChange={(e) => setUsername(e.target.value)} required />
               </Form.Group>
-              <Button type="submit" className="w-100" disabled={submitting}>
-                {submitting ? "Requesting..." : "Request OTP"}
+              <Button type="submit" className="w-100" disabled={submitting || cooldown > 0}>
+                {submitting ? "Requesting..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Request OTP"}
               </Button>
             </Form>
           </>
