@@ -174,7 +174,13 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = '/media/'
+# Prefixed with /api on purpose — the production frontend and backend share
+# a domain but only /api/* is routed to Django (Passenger's mount, and the
+# frontend's own SPA-fallback .htaccess explicitly excludes it). A bare
+# /media/... URL would fall through to the frontend's index.html instead of
+# ever reaching Django — this was a real bug (uploaded photos always 404'd
+# via the SPA fallback, showing as a broken image).
+MEDIA_URL = '/api/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
