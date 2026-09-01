@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LoadingScreen from "./components/LoadingScreen";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const StudentProfilePage = lazy(() => import("./pages/StudentProfilePage"));
@@ -16,7 +17,7 @@ const DayAttendancePage = lazy(() => import("./pages/teacher/DayAttendancePage")
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={null}>
+      <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />

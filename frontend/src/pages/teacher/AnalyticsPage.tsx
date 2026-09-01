@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Spinner, Table, Button, ButtonGroup, Alert, Form } from "react-bootstrap";
+import { Card, Table, Button, ButtonGroup, Alert, Form } from "react-bootstrap";
 import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../../api/client";
 import type { AnalyticsResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import LoadingScreen from "../../components/LoadingScreen";
 import TablePagination from "../../components/TablePagination";
 
 const PAGE_SIZE = 70;
@@ -105,7 +106,7 @@ export default function AnalyticsPage() {
   if (!data) {
     return (
       <AppShell>
-        <Spinner animation="border" />
+        <LoadingScreen />
       </AppShell>
     );
   }

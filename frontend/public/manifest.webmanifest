@@ -3,8 +3,8 @@
   "short_name": "ClassPulse",
   "start_url": "/login",
   "display": "standalone",
-  "background_color": "#fbf8f1",
-  "theme_color": "#1f3d33",
+  "background_color": "#f6f2fb",
+  "theme_color": "#3c1e5e",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

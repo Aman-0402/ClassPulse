@@ -1,21 +1,23 @@
 /* ===== ClassPulse design system =====
    Direction: classroom attendance register meets rubber ink-stamp.
-   Chalkboard green + brass + paper cream; geometric display face,
-   humanist body, monospace for CRNs/timestamps/codes.
-   Signature element: the "stamp" badge (see .stamp below). */
+   Deep royal purple + violet accent + soft lavender paper; geometric
+   display face, humanist body, monospace for CRNs/timestamps/codes.
+   Signature element: the "stamp" badge (see .stamp below). Present/Absent
+   stay green/red on purpose — the one place color still carries meaning
+   beyond the monochromatic purple palette. */
 
 :root {
-  --chalkboard: #1f3d33;
-  --chalkboard-2: #16302a;
-  --paper: #fbf8f1;
+  --chalkboard: #3c1e5e;
+  --chalkboard-2: #2a1444;
+  --paper: #f6f2fb;
   --card: #ffffff;
-  --ink: #232019;
-  --ink-soft: #5b5648;
-  --brass: #c08a34;
-  --brass-dark: #9c6f27;
+  --ink: #241934;
+  --ink-soft: #6e6280;
+  --brass: #9d5fd1;
+  --brass-dark: #7c3fae;
   --stamp-green: #2f7d53;
   --stamp-red: #b0402c;
-  --line: #e3dcc8;
+  --line: #e4dcf0;
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -40,16 +42,16 @@
   --bs-link-color: var(--brass-dark);
   --bs-link-hover-color: var(--brass);
   --bs-primary: var(--chalkboard);
-  --bs-primary-rgb: 31, 61, 51;
+  --bs-primary-rgb: 60, 30, 94;
   --bs-secondary: var(--ink-soft);
   --bs-success: var(--stamp-green);
   --bs-success-rgb: 47, 125, 83;
   --bs-danger: var(--stamp-red);
   --bs-danger-rgb: 176, 64, 44;
   --bs-warning: var(--brass);
-  --bs-warning-rgb: 192, 138, 52;
+  --bs-warning-rgb: 157, 95, 209;
   --bs-info: var(--chalkboard-2);
-  --bs-info-rgb: 22, 48, 42;
+  --bs-info-rgb: 42, 20, 68;
 }
 
 * {
@@ -123,7 +125,7 @@ a:hover {
 .form-select:focus,
 .btn:focus-visible,
 a:focus-visible {
-  box-shadow: 0 0 0 0.2rem rgba(192, 138, 52, 0.35) !important;
+  box-shadow: 0 0 0 0.2rem rgba(157, 95, 209, 0.35) !important;
   border-color: var(--brass) !important;
 }
 
@@ -189,9 +191,38 @@ a:focus-visible {
 }
 .app-shell-nav .btn {
   --bs-btn-color: var(--paper);
-  --bs-btn-border-color: rgba(251, 248, 241, 0.35);
+  --bs-btn-border-color: rgba(246, 242, 251, 0.35);
   --bs-btn-hover-bg: var(--brass);
   --bs-btn-hover-border-color: var(--brass);
+}
+.navbar-toggler {
+  border-color: rgba(246, 242, 251, 0.35);
+}
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(157, 95, 209, 0.35);
+}
+/* Below the navbar's md breakpoint, float the opened menu as a popup card
+   anchored under the toggle — not a full-width block shoving the header
+   taller — and stack its buttons into a tap-friendly vertical list. */
+@media (max-width: 767.98px) {
+  .app-shell-header .navbar-collapse {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 1.25rem;
+    background: var(--chalkboard);
+    border: 2px solid var(--brass);
+    border-radius: 12px;
+    box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+    padding: 0.85rem;
+    min-width: 200px;
+  }
+  .app-shell-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .app-shell-nav .btn {
+    width: 100%;
+  }
 }
 .app-shell-main {
   padding: 2rem 1rem 3rem;
@@ -224,6 +255,75 @@ a:focus-visible {
 }
 .stamp-neutral {
   color: var(--brass-dark);
+}
+
+/* A solid, unmissable call-to-action pill — distinct from the outline .stamp
+   badges used for passive status tags (section, present/absent). Used for the
+   one thing on a timetable row that's actually clickable-feeling: starting or
+   jumping into a session. */
+.action-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  padding: 0.5em 1.1em;
+  border-radius: 999px;
+  background: var(--brass);
+  color: #ffffff;
+  white-space: nowrap;
+}
+.action-pill-live {
+  background: var(--stamp-green);
+}
+
+/* Primary standalone CTA (e.g. "Start Attendance" on the teacher welcome page)
+   — a plain .btn-primary read as too small/generic here, this is the single
+   most important action on the page and should look like it. */
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  padding: 0.85em 2em;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brass) 0%, var(--brass-dark) 100%);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 10px 24px -10px rgba(124, 63, 174, 0.6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cta-button:hover {
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -10px rgba(124, 63, 174, 0.7);
+}
+.cta-button:active {
+  transform: translateY(0);
+}
+
+/* Profile detail rows (StudentProfilePage/TeacherProfilePage) — label stacked
+   above value instead of a side-by-side dt/dd grid, which squeezed long
+   values (emails especially) into an awkwardly narrow column on mobile. */
+.info-row {
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+.info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.info-row-label {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
 }
 
 @keyframes stamp-in {
@@ -264,6 +364,17 @@ a:focus-visible {
 }
 .table > :not(caption) > * > * {
   padding: 0.75rem 0.9rem;
+}
+.timetable-slot {
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.timetable-slot:hover {
+  background: var(--line);
+  border-color: var(--brass);
 }
 .table td.font-mono,
 .table th.font-mono {

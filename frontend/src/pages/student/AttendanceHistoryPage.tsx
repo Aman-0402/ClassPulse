@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Spinner, Table } from "react-bootstrap";
+import { Card, Table } from "react-bootstrap";
 import { ATTENDANCE_THRESHOLD, getStudentHistory, logout } from "../../api/client";
 import type { AttendanceHistoryResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import LoadingScreen from "../../components/LoadingScreen";
 
 export default function AttendanceHistoryPage() {
   const [data, setData] = useState<AttendanceHistoryResponse | null>(null);
@@ -21,7 +22,7 @@ export default function AttendanceHistoryPage() {
   if (!data) {
     return (
       <AppShell>
-        <Spinner animation="border" />
+        <LoadingScreen />
       </AppShell>
     );
   }

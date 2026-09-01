@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { Alert } from "react-bootstrap";
+import { useEffect, useRef } from "react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
+import Swal from "sweetalert2";
 import { markAttendance } from "../../api/client";
 import AppShell from "../../components/AppShell";
 
 const SCANNER_ELEMENT_ID = "qr-scanner";
+const DUPLICATE_MESSAGE = "Attendance already marked for this session.";
+const RESCAN_COOLDOWN_MS = 2000;
 
 export default function ScanQRPage() {
-  const [message, setMessage] = useState<{ type: "success" | "danger"; text: string } | null>(null);
   const scanningRef = useRef(false);
 
   useEffect(() => {
@@ -24,21 +25,55 @@ export default function ScanQRPage() {
           scanningRef.current = true;
           try {
             await markAttendance(decodedText);
-            if (active) setMessage({ type: "success", text: "Attendance marked!" });
+            if (active) {
+              Swal.fire({
+                icon: "success",
+                title: "Attendance Marked!",
+                text: "You have marked your attendance.",
+                confirmButtonColor: "#9d5fd1",
+              });
+            }
           } catch (err: any) {
+            if (!active) return;
+            // The backend reports every rejection (duplicate, expired QR, wrong
+            // section, invalid token) as {"detail": "..."} — a DRF validation
+            // error on the token field itself (rare, malformed payload) instead
+            // uses {"token": [...]}.
             const data = err?.response?.data;
-            const detail = data?.token?.[0] || data?.non_field_errors?.[0] || "Could not mark attendance.";
-            if (active) setMessage({ type: "danger", text: detail });
+            const detail: string = data?.detail || data?.token?.[0] || "Could not mark attendance.";
+
+            if (detail === DUPLICATE_MESSAGE) {
+              Swal.fire({
+                icon: "info",
+                title: "Already Marked",
+                text: "You have already marked your attendance for this session.",
+                confirmButtonColor: "#9d5fd1",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Scan Failed",
+                text: `${detail} Please try scanning again in a few seconds.`,
+                confirmButtonColor: "#9d5fd1",
+              });
+            }
           } finally {
             debounceTimeout = setTimeout(() => {
               scanningRef.current = false;
-            }, 2000);
+            }, RESCAN_COOLDOWN_MS);
           }
         },
         () => {}
       )
       .catch(() => {
-        if (active) setMessage({ type: "danger", text: "Could not access camera." });
+        if (active) {
+          Swal.fire({
+            icon: "error",
+            title: "Camera Unavailable",
+            text: "Could not access the camera. Please allow camera access and try again.",
+            confirmButtonColor: "#9d5fd1",
+          });
+        }
       });
 
     return () => {
@@ -53,12 +88,6 @@ export default function ScanQRPage() {
   return (
     <AppShell>
       <h1 className="h3 mb-3">Scan Attendance QR</h1>
-      {message && (
-        <Alert variant={message.type}>
-          {message.type === "success" && <span className="stamp stamp-present stamp-animated me-2">Present</span>}
-          {message.text}
-        </Alert>
-      )}
       <div
         id={SCANNER_ELEMENT_ID}
         style={{ width: "100%", maxWidth: 400, borderRadius: "0.75rem", overflow: "hidden" }}

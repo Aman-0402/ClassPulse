@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Spinner, Table, Form, Button } from "react-bootstrap";
+import { Card, Form, Button } from "react-bootstrap";
 import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout } from "../api/client";
 import type { ScheduleSlot } from "../api/client";
 import AppShell from "../components/AppShell";
+import LoadingScreen from "../components/LoadingScreen";
 import { formatTime } from "../utils/time";
 import { TRAINING_SUBJECT } from "../constants";
 
@@ -63,7 +64,7 @@ export default function TeacherProfilePage() {
   if (!profile) {
     return (
       <AppShell>
-        <Spinner animation="border" />
+        <LoadingScreen />
       </AppShell>
     );
   }
@@ -74,13 +75,17 @@ export default function TeacherProfilePage() {
       <Card style={{ maxWidth: 480 }}>
         <Card.Body>
           <span className="stamp stamp-neutral mb-3 d-inline-block">Teacher</span>
-          <dl className="row mb-0">
-            <dt className="col-4 text-muted fw-normal">Name</dt>
-            <dd className="col-8">{profile.full_name || profile.username}</dd>
-            <dt className="col-4 text-muted fw-normal">Subject</dt>
-            <dd className="col-8">{TRAINING_SUBJECT}</dd>
-            <dt className="col-4 text-muted fw-normal">Email</dt>
-            <dd className="col-8">
+          <div className="d-flex flex-column gap-3">
+            <div className="info-row">
+              <div className="info-row-label">Name</div>
+              <div>{profile.full_name || profile.username}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Subject</div>
+              <div>{TRAINING_SUBJECT}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Email</div>
               {editingEmail ? (
                 <div>
                   <Form.Control
@@ -113,11 +118,11 @@ export default function TeacherProfilePage() {
                   </Button>
                 </div>
               )}
-            </dd>
-          </dl>
+            </div>
+          </div>
         </Card.Body>
       </Card>
-      <Link to="/teacher/start-attendance" className="btn btn-primary mt-3">
+      <Link to="/teacher/start-attendance" className="cta-button mt-3">
         Start Attendance
       </Link>
 
@@ -128,42 +133,38 @@ export default function TeacherProfilePage() {
             {slots.length === 0 ? (
               <p className="text-muted mb-0">No training sessions scheduled today.</p>
             ) : (
-              <div className="table-responsive">
-                <Table size="sm" borderless hover className="mb-0">
-                  <tbody>
-                    {slots.map((slot, index) => (
-                      <tr
-                        key={index}
-                        role="button"
-                        style={{ cursor: "pointer" }}
-                        onClick={() =>
-                          slot.session_id
-                            ? navigate(`/teacher/session/${slot.session_id}`)
-                            : navigate("/teacher/start-attendance", {
-                                state: { subject: slot.subject, section: slot.section, periods: slot.periods },
-                              })
-                        }
-                      >
-                        <td className="text-muted font-mono text-nowrap">
-                          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                        </td>
-                        <td className="text-nowrap">{slot.subject}</td>
-                        <td className="text-nowrap">
-                          <span className="stamp stamp-neutral">BBA III {slot.section}</span>
-                        </td>
-                        <td className="text-end text-nowrap">
-                          {slot.session_id ? (
-                            <span className={`stamp ${slot.session_status === "active" ? "stamp-present" : "stamp-neutral"}`}>
-                              {slot.session_status === "active" ? "View live" : "View attendance"}
-                            </span>
-                          ) : (
-                            <span className="stamp stamp-neutral">Start attendance</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+              <div className="d-flex flex-column gap-2">
+                {slots.map((slot, index) => (
+                  <div
+                    key={index}
+                    role="button"
+                    className="d-flex justify-content-between align-items-center flex-wrap gap-2 timetable-slot"
+                    onClick={() =>
+                      slot.session_id
+                        ? navigate(`/teacher/session/${slot.session_id}`)
+                        : navigate("/teacher/start-attendance", {
+                            state: { subject: slot.subject, section: slot.section, periods: slot.periods },
+                          })
+                    }
+                  >
+                    <div className="d-flex flex-column gap-1">
+                      <span className="text-muted font-mono text-nowrap small">
+                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                      </span>
+                      <div className="d-flex align-items-center flex-wrap gap-2">
+                        <span>{slot.subject}</span>
+                        <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                      </div>
+                    </div>
+                    {slot.session_id ? (
+                      <span className={`action-pill ${slot.session_status === "active" ? "action-pill-live" : ""}`}>
+                        {slot.session_status === "active" ? "View Live" : "View Attendance"}
+                      </span>
+                    ) : (
+                      <span className="action-pill">Start Attendance</span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </Card.Body>

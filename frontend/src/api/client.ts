@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const BASE_URL = "https://arxinfo.info/api";
+// Auto-switches so `npm run dev` always talks to a local backend and a real
+// build (`npm run build`, what actually gets deployed) always talks to
+// production — no more manually editing this before every deploy and
+// forgetting to revert it for local dev.
+const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "https://arxinfo.info/api";
 
 // Matches the backend's attendance_percentage() convention (see attendance/views.py's
 // AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Spinner, Table, Form, Button, Alert } from "react-bootstrap";
+import { Card, Table, Form, Button, Alert } from "react-bootstrap";
 import {
   getStudentProfile,
   getTodaySchedule,
@@ -12,6 +12,7 @@ import {
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
 import AppShell from "../components/AppShell";
+import LoadingScreen from "../components/LoadingScreen";
 import PhotoCropModal from "../components/PhotoCropModal";
 import { formatTime } from "../utils/time";
 
@@ -166,7 +167,7 @@ export default function StudentProfilePage() {
   if (!profile) {
     return (
       <AppShell>
-        <Spinner animation="border" />
+        <LoadingScreen />
       </AppShell>
     );
   }
@@ -174,6 +175,20 @@ export default function StudentProfilePage() {
   return (
     <AppShell>
       <h1 className="h3 mb-4">Welcome, {profile.full_name}</h1>
+      <div className="d-flex gap-2 mb-3 flex-wrap">
+        <Link to="/student/scan" className="cta-button">
+          Scan Attendance QR
+        </Link>
+        <Link to="/student/change-password" className="btn btn-outline-secondary">
+          Change Password
+        </Link>
+      </div>
+      {!profile.photo && (
+        <Alert variant="warning" className="mb-3">
+          You haven't uploaded a profile photo yet. Add one below so your teacher can recognize you when you scan
+          in.
+        </Alert>
+      )}
       <Card style={{ maxWidth: 480 }}>
         <Card.Body>
           <div className="d-flex align-items-center gap-3 mb-3">
@@ -217,21 +232,29 @@ export default function StudentProfilePage() {
           </div>
           {photoError && <Alert variant="danger" className="py-2">{photoError}</Alert>}
 
-          <div className="d-flex justify-content-between align-items-start mb-3">
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <span className="stamp stamp-neutral">Student ID</span>
             <span className="font-mono text-muted">{profile.crn}</span>
           </div>
-          <dl className="row mb-0">
-            <dt className="col-5 text-muted fw-normal">Roll No.</dt>
-            <dd className="col-7 font-mono">{profile.urn}</dd>
-            <dt className="col-5 text-muted fw-normal">Course</dt>
-            <dd className="col-7">{profile.course}</dd>
-            <dt className="col-5 text-muted fw-normal">Semester</dt>
-            <dd className="col-7">{profile.semester}</dd>
-            <dt className="col-5 text-muted fw-normal">Section</dt>
-            <dd className="col-7">{profile.section}</dd>
-            <dt className="col-5 text-muted fw-normal">Email</dt>
-            <dd className="col-7">
+          <div className="d-flex flex-column gap-3">
+            <div className="info-row">
+              <div className="info-row-label">Roll No.</div>
+              <div className="font-mono">{profile.urn}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Course</div>
+              <div>{profile.course}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Semester</div>
+              <div>{profile.semester}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Section</div>
+              <div>{profile.section}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-row-label">Email</div>
               {editingEmail ? (
                 <div>
                   <Form.Control
@@ -264,18 +287,10 @@ export default function StudentProfilePage() {
                   </Button>
                 </div>
               )}
-            </dd>
-          </dl>
+            </div>
+          </div>
         </Card.Body>
       </Card>
-      <div className="d-flex gap-2 mt-3 flex-wrap">
-        <Link to="/student/scan" className="btn btn-primary">
-          Scan Attendance QR
-        </Link>
-        <Link to="/student/change-password" className="btn btn-outline-secondary">
-          Change Password
-        </Link>
-      </div>
 
       <Card className="mt-4" style={{ maxWidth: 480 }}>
         <Card.Body>
