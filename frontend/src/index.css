@@ -137,6 +137,48 @@ a:focus-visible {
   justify-content: center;
   background: radial-gradient(ellipse at top, var(--chalkboard-2), var(--chalkboard) 70%);
   padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+/* Twinkling starfield — two box-shadow layers of randomly-positioned dots
+   (generated once, not randomized per-render) twinkling on staggered
+   durations so they don't pulse in sync. Pure CSS, no canvas/JS needed. */
+.auth-shell::before,
+.auth-shell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  animation: star-twinkle 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.auth-shell::before {
+  box-shadow: 1886px 691px #fff, 620px 269px #fff, 1621px 838px #fff, 1357px 861px #fff, 1389px 427px #fff, 1717px 263px #fff, 467px 73px #fff, 825px 139px #fff, 268px 1803px #fff, 1055px 217px #fff, 837px 1573px #fff, 609px 891px #fff, 1705px 114px #fff, 1169px 157px #fff, 685px 1195px #fff, 1081px 1484px #fff, 821px 1395px #fff, 1154px 1539px #fff, 769px 630px #fff, 1719px 1730px #fff, 1835px 1876px #fff, 1583px 282px #fff, 1200px 488px #fff, 618px 91px #fff, 1641px 1759px #fff, 353px 1316px #fff, 623px 254px #fff, 1475px 1983px #fff, 1932px 555px #fff, 672px 90px #fff, 437px 799px #fff, 483px 318px #fff, 73px 478px #fff, 160px 1276px #fff, 511px 1947px #fff, 1463px 1430px #fff, 1013px 935px #fff, 899px 1713px #fff, 1123px 50px #fff, 1671px 1280px #fff, 740px 786px #fff, 499px 384px #fff, 1330px 1920px #fff, 1519px 723px #fff, 581px 1238px #fff, 1817px 341px #fff, 472px 1911px #fff, 474px 278px #fff, 772px 1932px #fff, 628px 1730px #fff, 1800px 595px #fff, 1182px 203px #fff, 848px 277px #fff, 335px 1037px #fff, 440px 1161px #fff, 767px 1381px #fff, 1002px 640px #fff, 1831px 655px #fff, 1044px 1097px #fff, 1002px 1307px #fff, 1466px 31px #fff, 1136px 777px #fff, 701px 1263px #fff, 1873px 945px #fff, 1648px 1686px #fff, 1866px 302px #fff, 1562px 1342px #fff, 1494px 354px #fff, 1974px 714px #fff, 1475px 547px #fff, 1318px 622px #fff, 1081px 701px #fff, 924px 1823px #fff, 1167px 1368px #fff, 1316px 788px #fff, 635px 1355px #fff, 1062px 538px #fff, 896px 1520px #fff, 889px 1282px #fff, 1495px 1315px #fff, 965px 212px #fff, 1005px 707px #fff, 1442px 1405px #fff, 1853px 1708px #fff, 504px 971px #fff, 675px 62px #fff, 1444px 536px #fff, 421px 1991px #fff, 1369px 273px #fff, 234px 417px #fff, 1442px 144px #fff, 1794px 832px #fff, 864px 651px #fff, 149px 1735px #fff, 1457px 464px #fff, 1595px 1260px #fff, 227px 480px #fff, 1229px 1069px #fff, 766px 1723px #fff, 1425px 1885px #fff, 228px 352px #fff, 610px 528px #fff, 54px 1181px #fff, 1289px 42px #fff, 740px 1608px #fff, 1075px 1624px #fff, 1076px 868px #fff, 964px 686px #fff, 453px 1911px #fff, 531px 1867px #fff, 1578px 1234px #fff, 1426px 1337px #fff, 1159px 1552px #fff, 1680px 1627px #fff, 1754px 590px #fff, 701px 542px #fff, 947px 618px #fff, 1941px 1489px #fff, 921px 923px #fff, 228px 1461px #fff, 805px 643px #fff, 1486px 1430px #fff, 1768px 1213px #fff, 719px 1076px #fff, 1981px 1261px #fff, 270px 407px #fff, 567px 632px #fff, 1827px 404px #fff, 66px 509px #fff, 1827px 938px #fff, 294px 1826px #fff, 1825px 1421px #fff, 81px 839px #fff, 1295px 1947px #fff, 682px 264px #fff, 503px 1110px #fff, 298px 1333px #fff, 89px 243px #fff, 1425px 732px #fff, 574px 1418px #fff, 1415px 42px #fff, 1878px 1134px #fff, 708px 692px #fff, 1324px 1051px #fff, 876px 1135px #fff, 376px 1824px #fff, 285px 163px #fff, 1384px 1876px #fff, 306px 735px #fff, 482px 676px #fff, 1589px 1030px #fff, 1622px 902px #fff, 322px 1630px #fff, 1196px 274px #fff, 1246px 1063px #fff, 1491px 1626px #fff, 1649px 907px #fff, 825px 418px #fff, 58px 460px #fff, 933px 391px #fff, 1397px 676px #fff, 1297px 475px #fff, 1392px 1674px #fff, 1160px 910px #fff, 1221px 570px #fff, 511px 1361px #fff, 1493px 1969px #fff, 628px 1663px #fff, 748px 515px #fff, 358px 1174px #fff, 522px 1493px #fff, 200px 1133px #fff, 1607px 931px #fff, 1817px 433px #fff, 514px 351px #fff, 1618px 1303px #fff, 184px 1211px #fff, 397px 600px #fff, 424px 1581px #fff, 1161px 267px #fff;
+}
+.auth-shell::after {
+  width: 2px;
+  height: 2px;
+  animation-duration: 6s;
+  animation-delay: 1.5s;
+  box-shadow: 321px 1843px #fff, 1301px 530px #fff, 731px 236px #fff, 323px 369px #fff, 995px 1266px #fff, 515px 592px #fff, 1097px 334px #fff, 1088px 1197px #fff, 51px 962px #fff, 498px 1875px #fff, 848px 1782px #fff, 1947px 125px #fff, 1026px 585px #fff, 1779px 1035px #fff, 408px 393px #fff, 1024px 1126px #fff, 169px 1372px #fff, 1300px 447px #fff, 1117px 1193px #fff, 1228px 588px #fff, 124px 1265px #fff, 1175px 1800px #fff, 1197px 1742px #fff, 834px 518px #fff, 1989px 1047px #fff, 1181px 888px #fff, 5px 1485px #fff, 675px 735px #fff, 877px 1585px #fff, 1823px 1525px #fff, 1423px 1435px #fff, 1946px 655px #fff, 1724px 33px #fff, 1473px 906px #fff, 1282px 257px #fff, 694px 342px #fff, 1019px 1686px #fff, 1627px 158px #fff, 233px 1067px #fff, 292px 559px #fff, 1376px 1796px #fff, 1708px 736px #fff, 1853px 1366px #fff, 1960px 1480px #fff, 452px 45px #fff, 1473px 1495px #fff, 1438px 1768px #fff, 1607px 675px #fff, 324px 1449px #fff, 836px 478px #fff, 402px 698px #fff, 912px 905px #fff, 1019px 571px #fff, 1863px 1809px #fff, 22px 262px #fff, 740px 818px #fff, 1948px 867px #fff, 313px 1443px #fff, 1669px 1599px #fff, 309px 448px #fff, 1989px 1342px #fff, 964px 1226px #fff, 62px 1470px #fff, 946px 746px #fff, 951px 376px #fff, 1082px 1817px #fff, 335px 433px #fff, 1729px 88px #fff, 1447px 848px #fff, 188px 787px #fff, 1586px 1580px #fff, 1883px 1954px #fff, 1584px 1994px #fff, 406px 1502px #fff, 69px 453px #fff, 1936px 756px #fff, 1318px 1383px #fff, 1085px 1536px #fff, 1908px 994px #fff, 1447px 1474px #fff, 769px 1731px #fff, 697px 1445px #fff, 1006px 1884px #fff, 678px 282px #fff, 848px 1045px #fff, 1978px 1812px #fff, 1033px 1343px #fff, 676px 82px #fff, 347px 274px #fff, 972px 1025px #fff;
+}
+@keyframes star-twinkle {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell::before,
+  .auth-shell::after {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 .auth-card {
   background: var(--card);
@@ -146,6 +188,8 @@ a:focus-visible {
   padding: 2.25rem 2rem;
   width: 100%;
   max-width: 420px;
+  position: relative;
+  z-index: 1;
 }
 .auth-logo {
   display: block;
