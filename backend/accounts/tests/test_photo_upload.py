@@ -43,12 +43,28 @@ class ProfilePhotoUploadTest(APITestCase):
         self.profile.refresh_from_db()
         self.assertFalse(bool(self.profile.photo))
 
-    def test_photo_over_1mb_rejected(self):
-        # A 300x300 PNG is tiny on its own; pad it past 1MB to exercise the size check
-        # without needing a genuinely huge (and slow-to-generate) real image.
+    def test_oversized_photo_is_compressed_not_rejected(self):
+        # A 300x300 PNG is tiny on its own; pad it past 1MB to exercise the
+        # oversized path without needing a genuinely huge real image. Per an
+        # explicit request, an oversized photo should be auto-compressed to
+        # fit, not rejected outright.
         photo = make_image(300, 300, size_bytes_padding=1024 * 1024)
         response = self.client.post(reverse("profile-photo"), {"photo": photo}, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertTrue(bool(self.profile.photo))
+        self.assertLessEqual(self.profile.photo.size, 1024 * 1024)
+        # Compression re-encodes as JPEG regardless of the original format.
+        self.assertTrue(self.profile.photo.name.endswith(".jpg"))
+
+    def test_oversized_non_square_still_rejected_for_shape_not_size(self):
+        # Shape is checked before the size/compression path — an oversized,
+        # non-square upload should fail on "not square", not silently get
+        # compressed into something square.
+        photo = make_image(400, 200, size_bytes_padding=1024 * 1024)
+        response = self.client.post(reverse("profile-photo"), {"photo": photo}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("square", str(response.data))
 
     def test_teacher_cannot_upload(self):
         teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)

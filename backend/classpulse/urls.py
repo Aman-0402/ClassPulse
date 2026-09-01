@@ -14,10 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import re
+
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, re_path, include
+from django.views.static import serve as serve_static
 from accounts.views import (
     ChangePasswordView,
     LogoutView,
@@ -40,4 +42,18 @@ urlpatterns = [
 # Always serve media (student photos) through Django, not just in DEBUG — this
 # app has no separate media server/CDN, and shared cPanel hosting has no other
 # way to expose files outside the app's own docroot at a stable URL.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#
+# Deliberately NOT using django.conf.urls.static.static() here — that helper
+# has its own internal `if not settings.DEBUG: return []` guard baked in, so
+# it silently registers no URL pattern at all in production regardless of how
+# it's called. That was a real bug: routing correctly reached Django (after
+# the passenger_wsgi.py /api fix), but Django itself had nothing to serve it
+# with, so every photo 404'd. Calling django.views.static.serve directly
+# bypasses that guard.
+urlpatterns += [
+    re_path(
+        r"^%s(?P<path>.*)$" % re.escape(settings.MEDIA_URL.lstrip("/")),
+        serve_static,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]

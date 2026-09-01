@@ -1,7 +1,10 @@
+import io
+
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
 from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile
 
@@ -41,21 +44,56 @@ class ProfileEditRequestSerializer(serializers.ModelSerializer):
         ]
 
 
+def _compress_to_jpeg(image: Image.Image, original_name: str) -> InMemoryUploadedFile:
+    """Re-encode as JPEG, stepping quality (then dimensions, as a last resort)
+    down until it fits under MAX_PHOTO_BYTES. The frontend's crop step already
+    outputs a fixed 512x512 JPEG that's normally well under this, but this is
+    the actual enforced limit for any upload, not just the guided crop path —
+    so it compresses instead of just rejecting anything larger.
+    """
+    if image.mode not in ("RGB", "L"):
+        image = image.convert("RGB")
+
+    buffer = io.BytesIO()
+    for quality in (90, 80, 70, 60, 50, 40, 30):
+        buffer.seek(0)
+        buffer.truncate()
+        image.save(buffer, format="JPEG", quality=quality, optimize=True)
+        if buffer.tell() <= MAX_PHOTO_BYTES:
+            break
+
+    while buffer.tell() > MAX_PHOTO_BYTES and min(image.size) > 128:
+        image = image.resize((image.width * 3 // 4, image.height * 3 // 4))
+        buffer.seek(0)
+        buffer.truncate()
+        image.save(buffer, format="JPEG", quality=60, optimize=True)
+
+    buffer.seek(0)
+    name = original_name.rsplit(".", 1)[0] + ".jpg"
+    return InMemoryUploadedFile(buffer, None, name, "image/jpeg", buffer.getbuffer().nbytes, None)
+
+
 class ProfilePhotoSerializer(serializers.Serializer):
     photo = serializers.ImageField()
 
     def validate_photo(self, value):
-        if value.size > MAX_PHOTO_BYTES:
-            raise serializers.ValidationError("Photo must be under 1MB.")
         try:
             image = Image.open(value)
-            width, height = image.size
+            image.load()
         except Exception:
             raise serializers.ValidationError("Could not read this image file.")
+        width, height = image.size
         if width != height:
             raise serializers.ValidationError(f"Photo must be square (got {width}x{height}).")
-        value.seek(0)
-        return value
+
+        if value.size <= MAX_PHOTO_BYTES:
+            value.seek(0)
+            return value
+
+        compressed = _compress_to_jpeg(image, value.name or "photo.jpg")
+        if compressed.size > MAX_PHOTO_BYTES:
+            raise serializers.ValidationError("Could not compress this photo under 1MB. Try a smaller image.")
+        return compressed
 
 
 class TeacherProfileSerializer(serializers.Serializer):
