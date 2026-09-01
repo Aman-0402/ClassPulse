@@ -116,11 +116,11 @@ export async function changePassword(oldPassword: string, newPassword: string): 
 // call). No SMS/email service exists for this app, so this is deliberately
 // not a "you'll receive a code" flow.
 export async function requestPasswordResetOtp(username: string): Promise<void> {
-  await api.post("/forgot-password/", { username });
+  await api.post("/student/forgot-password/", { username });
 }
 
 export async function resetPasswordWithOtp(username: string, otp: string, newPassword: string): Promise<void> {
-  await api.post("/reset-password/", { username, otp, new_password: newPassword });
+  await api.post("/student/reset-password/", { username, otp, new_password: newPassword });
 }
 
 export interface OTPHistoryEntry {
