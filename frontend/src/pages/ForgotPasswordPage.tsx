@@ -82,7 +82,14 @@ export default function ForgotPasswordPage() {
             <Form onSubmit={handleRequestOtp}>
               <Form.Group className="mb-3" controlId="forgot-username">
                 <Form.Label>Username</Form.Label>
-                <Form.Control value={username} onChange={(e) => setUsername(e.target.value)} required />
+                <Form.Control
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.trim().toUpperCase())}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  required
+                />
               </Form.Group>
               <Button type="submit" className="w-100" disabled={submitting || cooldown > 0}>
                 {submitting ? "Requesting..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Request OTP"}
