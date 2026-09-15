@@ -27,11 +27,18 @@ class StudentProfile(models.Model):
     section = models.CharField(max_length=10)
     contact_number = models.CharField(max_length=20, blank=True, default="")
     photo = models.ImageField(upload_to="student_photos/", blank=True, null=True)
+    trusted_device_hash = models.CharField(max_length=64, blank=True, default="")
+    trusted_device_bound_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} ({self.crn})"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["section", "crn"], name="student_section_crn_idx"),
+        ]
 
 
 class ProfileEditRequest(models.Model):

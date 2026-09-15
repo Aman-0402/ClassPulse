@@ -2,6 +2,7 @@ import logging
 from typing import NamedTuple
 
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from attendance.exceptions import (
@@ -12,6 +13,7 @@ from attendance.exceptions import (
     WrongSectionError,
 )
 from accounts.models import User, StudentProfile
+from accounts.device_security import detect_or_bind_student_device
 from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, QRToken, Attendance
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ def close_session_if_window_expired(session: AttendanceSession) -> AttendanceSes
 
 def get_current_qr_token(session: AttendanceSession) -> QRToken:
     latest = session.qr_tokens.order_by("-created_at", "-id").first()
-    if latest and not latest.is_expired():
+    if latest and not latest.is_expired() and not latest.should_rotate():
         return latest
     return QRToken.objects.create(session=session)
 
@@ -57,7 +59,13 @@ def log_activity(student, session, activity_type, ip_address="", device_info="")
     return entry
 
 
-def mark_attendance(student, token_value, ip_address, device_info):
+def verify_or_bind_trusted_device(student, device_id, session, ip_address, device_info):
+    device_fingerprint = device_id or device_info
+    if detect_or_bind_student_device(student, device_fingerprint):
+        log_activity(student, session, ActivityLog.TYPE_NEW_DEVICE, ip_address, device_info)
+
+
+def mark_attendance(student, token_value, ip_address, device_info, device_id=""):
     try:
         qr_token = QRToken.objects.select_related("session").get(token=token_value)
     except QRToken.DoesNotExist:
@@ -79,6 +87,8 @@ def mark_attendance(student, token_value, ip_address, device_info):
         log_activity(student, session, ActivityLog.TYPE_EXPIRED_TOKEN, ip_address, device_info)
         raise ExpiredTokenError()
 
+    verify_or_bind_trusted_device(student, device_id, session, ip_address, device_info)
+
     if Attendance.objects.filter(student=student, session=session).exists():
         log_activity(student, session, ActivityLog.TYPE_DUPLICATE, ip_address, device_info)
         raise DuplicateAttendanceError()
@@ -91,16 +101,6 @@ def mark_attendance(student, token_value, ip_address, device_info):
     except IntegrityError:
         log_activity(student, session, ActivityLog.TYPE_DUPLICATE, ip_address, device_info)
         raise DuplicateAttendanceError()
-
-    previous_device = (
-        ActivityLog.objects.filter(student=student, activity_type=ActivityLog.TYPE_SUCCESS)
-        .exclude(device_info="")
-        .order_by("-created_at")
-        .values_list("device_info", flat=True)
-        .first()
-    )
-    if previous_device and device_info and previous_device != device_info:
-        log_activity(student, session, ActivityLog.TYPE_NEW_DEVICE, ip_address, device_info)
 
     log_activity(student, session, ActivityLog.TYPE_SUCCESS, ip_address, device_info)
     return attendance
@@ -256,6 +256,49 @@ def attendance_percentage(present: int, total: int) -> float:
 class AttendanceMatrix(NamedTuple):
     sessions: list
     rows: list
+
+
+class AnalyticsSummary(NamedTuple):
+    total_sessions: int
+    total_weight: int
+    rows: list
+
+
+def build_analytics_summary(section: str = "", date_from=None, date_to=None) -> AnalyticsSummary:
+    sessions = list(get_closed_sessions(date_from=date_from, date_to=date_to).only("id", "periods"))
+    session_ids = [session.id for session in sessions]
+    total_weight = sum(session.periods for session in sessions)
+
+    present_by_student_id = {
+        student_id: int(present_count or 0)
+        for student_id, present_count in Attendance.objects.filter(session_id__in=session_ids)
+        .values("student_id")
+        .annotate(present_count=Sum("session__periods"))
+        .values_list("student_id", "present_count")
+    }
+
+    profiles = (
+        StudentProfile.objects.select_related("user")
+        .filter(user__role=User.ROLE_STUDENT)
+        .order_by("crn")
+    )
+    if section:
+        profiles = profiles.filter(section=section)
+
+    rows = []
+    for profile in profiles:
+        present_count = present_by_student_id.get(profile.user_id, 0)
+        rows.append(
+            {
+                "name": profile.user.get_full_name() or profile.user.username,
+                "crn": profile.crn,
+                "roll_number": profile.urn,
+                "present": present_count,
+                "total": total_weight,
+                "percentage": attendance_percentage(present_count, total_weight),
+            }
+        )
+    return AnalyticsSummary(total_sessions=len(sessions), total_weight=total_weight, rows=rows)
 
 
 def build_attendance_matrix(section: str = "", date_from=None, date_to=None) -> AttendanceMatrix:

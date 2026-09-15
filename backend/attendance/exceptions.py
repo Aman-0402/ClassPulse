@@ -29,3 +29,4 @@ class WrongSectionError(AttendanceError):
     def __init__(self, session_section):
         self.message = f"This QR code is for Section {session_section} only."
         super().__init__(self.message)
+

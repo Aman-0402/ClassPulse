@@ -44,6 +44,15 @@ class ChangePasswordTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_new_password_with_outer_spaces_rejected(self):
+        response = self.client.post(
+            reverse("change-password"),
+            {"old_password": "DIVYBBA015", "new_password": " MyNewSecret123 "},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("spaces", response.data["new_password"][0])
+
     def test_changing_password_rotates_token(self):
         old_key = self.token.key
         response = self.client.post(
@@ -54,6 +63,30 @@ class ChangePasswordTest(APITestCase):
         new_key = response.data["token"]
         self.assertNotEqual(old_key, new_key)
         self.assertEqual(Token.objects.filter(user=self.user).count(), 1)
+
+    def test_student_can_login_with_new_password_after_change(self):
+        response = self.client.post(
+            reverse("change-password"),
+            {"old_password": "DIVYBBA015", "new_password": "MyNewSecret123"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.client.credentials()
+        old_login = self.client.post(
+            reverse("login"),
+            {"username": "25BBA015", "password": "DIVYBBA015"},
+            format="json",
+        )
+        self.assertEqual(old_login.status_code, status.HTTP_400_BAD_REQUEST)
+
+        new_login = self.client.post(
+            reverse("login"),
+            {"username": "25BBA015", "password": "MyNewSecret123"},
+            format="json",
+        )
+        self.assertEqual(new_login.status_code, status.HTTP_200_OK)
+        self.assertIn("token", new_login.data)
 
     def test_unauthenticated_request_rejected(self):
         self.client.credentials()

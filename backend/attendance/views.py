@@ -2,6 +2,7 @@ import csv
 from io import BytesIO
 
 from django.http import HttpResponse
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from openpyxl import Workbook
@@ -20,6 +21,7 @@ from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
 from attendance.services import (
     attendance_percentage,
+    build_analytics_summary,
     build_attendance_matrix,
     build_report_rows,
     close_session_if_window_expired,
@@ -135,6 +137,7 @@ class MarkAttendanceView(APIView):
                 token_value=serializer.validated_data["token"],
                 ip_address=request.META.get("REMOTE_ADDR"),
                 device_info=request.META.get("HTTP_USER_AGENT", "")[:255],
+                device_id=request.META.get("HTTP_X_CLASSPULSE_DEVICE_ID", "")[:255],
             )
         except AttendanceError as exc:
             return Response({"detail": exc.message}, status=400)
@@ -244,38 +247,37 @@ class AnalyticsView(APIView):
         except ValueError:
             return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
 
-        sessions, rows = build_attendance_matrix(section=section, date_from=date_from, date_to=date_to)
-        total_sessions = len(sessions)
-        total_students = len(rows)
-        overall_present = sum(r["present_count"] for r in rows)
-        weighted_total = sum(s.periods for s in sessions)
+        cache_key = "analytics:%s:%s:%s" % (
+            section or "all",
+            date_from.isoformat() if date_from else "none",
+            date_to.isoformat() if date_to else "none",
+        )
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        summary = build_analytics_summary(section=section, date_from=date_from, date_to=date_to)
+        total_sessions = summary.total_sessions
+        total_students = len(summary.rows)
+        overall_present = sum(row["present"] for row in summary.rows)
+        weighted_total = summary.total_weight
         overall_possible = total_students * weighted_total
         overall_rate = attendance_percentage(overall_present, overall_possible)
-        students_data = [
-            {
-                "name": r["name"],
-                "crn": r["crn"],
-                "roll_number": r["student"].student_profile.urn,
-                "present": r["present_count"],
-                "total": r["total"],
-                "percentage": r["percentage"],
-            }
-            for r in rows
-        ]
+        students_data = summary.rows
         below_threshold = [s for s in students_data if s["percentage"] < 75]
-        return Response(
-            {
-                "total_sessions": total_sessions,
-                "total_students": total_students,
-                "overall_rate": overall_rate,
-                "students": students_data,
-                "below_threshold": below_threshold,
-                "available_sections": get_available_sections(),
-                "section": section,
-                "date_from": date_from,
-                "date_to": date_to,
-            }
-        )
+        payload = {
+            "total_sessions": total_sessions,
+            "total_students": total_students,
+            "overall_rate": overall_rate,
+            "students": students_data,
+            "below_threshold": below_threshold,
+            "available_sections": get_available_sections(),
+            "section": section,
+            "date_from": date_from,
+            "date_to": date_to,
+        }
+        cache.set(cache_key, payload, 60)
+        return Response(payload)
 
 
 class DayAttendanceView(APIView):

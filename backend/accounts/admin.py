@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from accounts.models import PasswordResetOTP, ProfileEditRequest, User, StudentProfile
+from attendance.models import Attendance
 
 
 @admin.register(StudentProfile)
@@ -10,31 +11,104 @@ class StudentProfileAdmin(admin.ModelAdmin):
     # there's no separate student-directory page in the app itself; this is
     # the one place contact number, email, and photo are all visible together.
     list_display = (
-        "crn", "urn", "user", "get_full_name", "course", "semester", "section",
+        "get_full_name", "crn", "urn", "course", "semester", "section",
         "contact_number", "get_email",
     )
+    list_display_links = ("get_full_name", "crn")
     list_filter = ("section", "course", "semester")
     search_fields = ("crn", "urn", "user__username", "user__first_name", "contact_number", "user__email")
     ordering = ("section", "crn")
-    readonly_fields = ("photo_preview", "created_at", "updated_at")
-    fields = (
-        "user", "crn", "urn", "course", "semester", "section",
-        "contact_number", "photo", "photo_preview", "created_at", "updated_at",
+    readonly_fields = (
+        "get_full_name", "get_username", "get_email", "password_note",
+        "trusted_device_status", "photo_preview", "attendance_history", "created_at", "updated_at",
     )
+    fields = (
+        "user", "get_username", "get_full_name", "get_email", "password_note",
+        "crn", "urn", "course", "semester", "section",
+        "contact_number", "trusted_device_status", "photo", "photo_preview", "attendance_history",
+        "created_at", "updated_at",
+    )
+    actions = ["reset_passwords_to_crn", "reset_trusted_devices"]
 
     @admin.display(description="Name")
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
 
+    @admin.display(description="Username")
+    def get_username(self, obj):
+        return obj.user.username
+
     @admin.display(description="Email")
     def get_email(self, obj):
         return obj.user.email
+
+    @admin.display(description="Password")
+    def password_note(self, obj):
+        return format_html(
+            "Current password cannot be shown because Django stores only a secure one-way hash. "
+            "Use the selected-student action <strong>Reset password to CRN</strong> if the student forgot it."
+        )
+
+    @admin.display(description="Trusted device")
+    def trusted_device_status(self, obj):
+        if not obj.trusted_device_hash:
+            return "Not linked yet"
+        bound_at = timezone.localtime(obj.trusted_device_bound_at).strftime("%Y-%m-%d %I:%M %p") if obj.trusted_device_bound_at else "unknown time"
+        return f"Linked since {bound_at}"
 
     @admin.display(description="Photo preview")
     def photo_preview(self, obj):
         if not obj.photo:
             return "No photo uploaded"
         return format_html('<img src="{}" style="max-height:150px;border-radius:8px;" />', obj.photo.url)
+
+    @admin.display(description="Attendance history")
+    def attendance_history(self, obj):
+        records = (
+            Attendance.objects.filter(student=obj.user)
+            .select_related("session")
+            .order_by("-session__date", "-marked_at")[:100]
+        )
+        if not records:
+            return "No attendance marked yet."
+
+        rows = format_html_join(
+            "",
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            (
+                (
+                    record.session.date,
+                    record.session.subject,
+                    record.session.section or "-",
+                    timezone.localtime(record.marked_at).strftime("%I:%M %p"),
+                    record.ip_address or "-",
+                    record.device_info or "-",
+                )
+                for record in records
+            ),
+        )
+        return format_html(
+            '<table style="width:100%;border-collapse:collapse;">'
+            '<thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Subject</th>'
+            '<th style="text-align:left;">Section</th><th style="text-align:left;">Time</th>'
+            '<th style="text-align:left;">IP</th><th style="text-align:left;">Device</th></tr></thead>'
+            "<tbody>{}</tbody></table>",
+            rows,
+        )
+
+    @admin.action(description="Reset selected student passwords to their CRN")
+    def reset_passwords_to_crn(self, request, queryset):
+        updated = 0
+        for profile in queryset.select_related("user"):
+            profile.user.set_password(profile.crn)
+            profile.user.save(update_fields=["password"])
+            updated += 1
+        self.message_user(request, f"Reset {updated} student password(s) to their CRN.")
+
+    @admin.action(description="Reset selected trusted devices")
+    def reset_trusted_devices(self, request, queryset):
+        updated = queryset.update(trusted_device_hash="", trusted_device_bound_at=None)
+        self.message_user(request, f"Reset {updated} trusted device link(s).")
 
 
 @admin.register(ProfileEditRequest)

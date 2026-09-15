@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,6 +34,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-only-do-not-use-i
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
+if DEBUG:
+    ALLOWED_HOSTS += ["localhost", "127.0.0.1", "0.0.0.0", ".local"]
 
 
 # Application definition
@@ -89,6 +92,17 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
     if origin
 ]
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-classpulse-device-id",
+]
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+        r"^http://10\.\d+\.\d+\.\d+:\d+$",
+        r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+:\d+$",
+        r"^http://192\.168\.\d+\.\d+:\d+$",
+    ]
 
 ROOT_URLCONF = 'classpulse.urls'
 

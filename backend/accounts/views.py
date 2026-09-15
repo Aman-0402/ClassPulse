@@ -20,7 +20,9 @@ from accounts.serializers import (
     StudentProfileSerializer,
     TeacherProfileSerializer,
 )
-from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile
+from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile, User
+from attendance.models import Attendance
+from attendance.services import get_available_sections
 
 
 class RoleAwareLoginView(ObtainAuthToken):
@@ -46,9 +48,11 @@ class LogoutView(APIView):
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_new_password(self, value):
+        if value != value.strip():
+            raise serializers.ValidationError("Password cannot start or end with spaces.")
         try:
             validate_password(value, user=self.context["request"].user)
         except DjangoValidationError as exc:
@@ -216,3 +220,114 @@ class OTPHistoryView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
     serializer_class = PasswordResetOTPSerializer
     queryset = PasswordResetOTP.objects.select_related("user").all()
+
+
+class TeacherStudentDataView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        section = request.query_params.get("section", "")
+        selected_crn = request.query_params.get("crn", "")
+        sections = get_available_sections()
+        if not section and sections:
+            section = sections[0]
+
+        students_qs = (
+            StudentProfile.objects.select_related("user")
+            .filter(user__role=User.ROLE_STUDENT)
+            .order_by("section", "crn")
+        )
+        if section:
+            students_qs = students_qs.filter(section=section)
+
+        students = [
+            {
+                "crn": profile.crn,
+                "roll_number": profile.urn,
+                "name": profile.user.get_full_name() or profile.user.username,
+                "section": profile.section,
+                "email": profile.user.email,
+                "contact_number": profile.contact_number,
+                "photo": request.build_absolute_uri(profile.photo.url) if profile.photo else None,
+                "trusted_device_bound": bool(profile.trusted_device_hash),
+                "trusted_device_bound_at": profile.trusted_device_bound_at,
+            }
+            for profile in students_qs
+        ]
+
+        selected = None
+        if selected_crn:
+            profile = get_object_or_404(
+                StudentProfile.objects.select_related("user"),
+                crn=selected_crn,
+                user__role=User.ROLE_STUDENT,
+            )
+            records = (
+                Attendance.objects.filter(student=profile.user)
+                .select_related("session")
+                .only(
+                    "marked_at",
+                    "ip_address",
+                    "device_info",
+                    "session__date",
+                    "session__subject",
+                    "session__section",
+                )
+                .order_by("-session__date", "-marked_at")
+            )[:100]
+            selected = {
+                "crn": profile.crn,
+                "roll_number": profile.urn,
+                "name": profile.user.get_full_name() or profile.user.username,
+                "username": profile.user.username,
+                "section": profile.section,
+                "course": profile.course,
+                "semester": profile.semester,
+                "email": profile.user.email,
+                "contact_number": profile.contact_number,
+                "photo": request.build_absolute_uri(profile.photo.url) if profile.photo else None,
+                "trusted_device_bound": bool(profile.trusted_device_hash),
+                "trusted_device_bound_at": profile.trusted_device_bound_at,
+                "password_note": "Current password cannot be shown because it is stored as a secure hash.",
+                "attendance": [
+                    {
+                        "date": record.session.date,
+                        "subject": record.session.subject,
+                        "section": record.session.section,
+                        "marked_at": record.marked_at,
+                        "ip_address": record.ip_address,
+                        "device_info": record.device_info,
+                    }
+                    for record in records
+                ],
+            }
+
+        return Response(
+            {
+                "sections": sections,
+                "section": section,
+                "students": students,
+                "selected_student": selected,
+            }
+        )
+
+    def post(self, request):
+        crn = request.data.get("crn")
+        action = request.data.get("action")
+        if action not in ("reset_password_to_crn", "reset_trusted_device") or not crn:
+            return Response({"detail": "crn and a valid action are required."}, status=400)
+
+        profile = get_object_or_404(
+            StudentProfile.objects.select_related("user"),
+            crn=crn,
+            user__role=User.ROLE_STUDENT,
+        )
+        if action == "reset_password_to_crn":
+            profile.user.set_password(profile.crn)
+            profile.user.save(update_fields=["password"])
+            return Response({"detail": f"Password reset to CRN for {profile.crn}."})
+
+        profile.trusted_device_hash = ""
+        profile.trusted_device_bound_at = None
+        profile.save(update_fields=["trusted_device_hash", "trusted_device_bound_at"])
+        return Response({"detail": f"Trusted device reset for {profile.crn}."})

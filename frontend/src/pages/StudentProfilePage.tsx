@@ -15,6 +15,7 @@ import {
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
 import AppShell from "../components/AppShell";
+import InstallAppButton from "../components/InstallAppButton";
 import LoadingScreen from "../components/LoadingScreen";
 import PhotoCropModal from "../components/PhotoCropModal";
 import { formatTime } from "../utils/time";
@@ -235,6 +236,7 @@ export default function StudentProfilePage() {
         <Link to="/student/change-password" className="btn btn-outline-secondary">
           Change Password
         </Link>
+        <InstallAppButton />
       </div>
       <div className="d-flex flex-wrap gap-4 align-items-start" style={{ maxWidth: 980 }}>
       <Card style={{ flex: "1 1 420px" }}>

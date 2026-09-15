@@ -4,7 +4,27 @@ import axios from "axios";
 // build (`npm run build`, what actually gets deployed) always talks to
 // production — no more manually editing this before every deploy and
 // forgetting to revert it for local dev.
-const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "https://arxinfo.info/api";
+const isLocalFrontend =
+  typeof window !== "undefined" &&
+  (["localhost", "127.0.0.1"].includes(window.location.hostname) ||
+    /^10\./.test(window.location.hostname) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(window.location.hostname) ||
+    /^192\.168\./.test(window.location.hostname));
+
+function localApiUrl(): string {
+  if (typeof window === "undefined") return "http://localhost:8000/api";
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    return "http://localhost:8000/api";
+  }
+  return `${window.location.protocol}//${window.location.hostname}:8000/api`;
+}
+
+const BASE_URL = import.meta.env.VITE_API_URL || (isLocalFrontend ? localApiUrl() : "https://arxinfo.info/api");
+
+// Public site origin encoded into attendance QR codes. Keep this as the real
+// production domain even when the teacher opens a local/dev build, otherwise
+// phone camera apps will show localhost links that students cannot open.
+export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || "https://arxinfo.info";
 
 // Django admin lives alongside the API under the same mount — used to deep-link
 // a teacher straight to reviewing pending profile-edit requests.
@@ -16,6 +36,19 @@ export const ADMIN_URL = `${BASE_URL}/admin/`;
 export const ATTENDANCE_THRESHOLD = 75;
 
 export const api = axios.create({ baseURL: BASE_URL });
+
+function getOrCreateDeviceId(): string {
+  const storageKey = "classpulse_device_id";
+  const existing = localStorage.getItem(storageKey);
+  if (existing) return existing;
+
+  const generated =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem(storageKey, generated);
+  return generated;
+}
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("classpulse_token");
@@ -139,6 +172,60 @@ export async function getOtpHistory(): Promise<OTPHistoryEntry[]> {
   return data;
 }
 
+export interface TeacherStudentSummary {
+  crn: string;
+  roll_number: string;
+  name: string;
+  section: string;
+  email: string;
+  contact_number: string;
+  photo: string | null;
+  trusted_device_bound: boolean;
+  trusted_device_bound_at: string | null;
+}
+
+export interface TeacherStudentAttendanceEntry {
+  date: string;
+  subject: string;
+  section: string;
+  marked_at: string;
+  ip_address: string | null;
+  device_info: string;
+}
+
+export interface TeacherStudentDetail extends TeacherStudentSummary {
+  username: string;
+  course: string;
+  semester: number;
+  password_note: string;
+  attendance: TeacherStudentAttendanceEntry[];
+}
+
+export interface TeacherStudentDataResponse {
+  sections: string[];
+  section: string;
+  students: TeacherStudentSummary[];
+  selected_student: TeacherStudentDetail | null;
+}
+
+export async function getTeacherStudentData(section?: string, crn?: string): Promise<TeacherStudentDataResponse> {
+  const { data } = await api.get<TeacherStudentDataResponse>("/teacher/students/", {
+    params: {
+      ...(section ? { section } : {}),
+      ...(crn ? { crn } : {}),
+    },
+  });
+  return data;
+}
+
+export async function resetStudentPasswordToCrn(crn: string): Promise<void> {
+  await api.post("/teacher/students/", { crn, action: "reset_password_to_crn" });
+}
+
+export async function resetStudentTrustedDevice(crn: string): Promise<void> {
+  await api.post("/teacher/students/", { crn, action: "reset_trusted_device" });
+}
+
 export async function updateEmail(email: string) {
   const { data } = await api.post("/student/email/", { email });
   return data;
@@ -235,7 +322,15 @@ export async function getSessionQR(sessionId: number): Promise<QRTokenResponse> 
 }
 
 export async function markAttendance(token: string) {
-  const { data } = await api.post("/attendance/mark/", { token });
+  const { data } = await api.post(
+    "/attendance/mark/",
+    { token },
+    {
+      headers: {
+        "X-ClassPulse-Device-ID": getOrCreateDeviceId(),
+      },
+    }
+  );
   return data;
 }
 

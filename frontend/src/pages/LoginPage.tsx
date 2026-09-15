@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Form, Button, Alert, InputGroup, Spinner } from "react-bootstrap";
 import { login } from "../api/client";
 import logo from "../assets/logo.png";
@@ -13,6 +13,7 @@ const SLOW_LOGIN_HINT_MS = 4000;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,9 +30,17 @@ export default function LoginPage() {
     slowHintTimeout.current = setTimeout(() => setShowSlowHint(true), SLOW_LOGIN_HINT_MS);
     try {
       const { role } = await login(username, password);
-      navigate(role === "teacher" ? "/teacher/profile" : "/student/profile");
-    } catch {
-      setError("Invalid username or password.");
+      const redirectTo = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+      const requestedPath = `${redirectTo?.pathname ?? ""}${redirectTo?.search ?? ""}`;
+      const canUseRequestedPath =
+        role === "student"
+          ? requestedPath.startsWith("/student/")
+          : requestedPath.startsWith("/teacher/");
+      navigate(canUseRequestedPath ? requestedPath : role === "teacher" ? "/teacher/profile" : "/student/profile", {
+        replace: true,
+      });
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0] || "Invalid username or password.");
       setSubmitting(false);
     } finally {
       clearTimeout(slowHintTimeout.current);
@@ -47,6 +56,12 @@ export default function LoginPage() {
       <div className="auth-card">
         <img src={logo} alt="ClassPulse" className="auth-logo" />
         <h2>Welcome back</h2>
+        <a
+          href="https://aman-0402.github.io/AI-World/"
+          className="btn btn-outline-secondary w-100 mb-3"
+        >
+          Back to AI World
+        </a>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-2" controlId="login-username">

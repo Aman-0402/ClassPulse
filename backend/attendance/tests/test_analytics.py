@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
@@ -13,6 +14,7 @@ User = get_user_model()
 
 class AnalyticsTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
         self.teacher_token = Token.objects.create(user=self.teacher)
         self.student_token = Token.objects.create(
@@ -99,6 +101,7 @@ class AnalyticsTest(APITestCase):
 
 class AnalyticsDateRangeTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.teacher = User.objects.create_user(username="prof", password="pw12345678", role=User.ROLE_TEACHER)
         self.teacher_token = Token.objects.create(user=self.teacher)
         self.student = User.objects.create_user(

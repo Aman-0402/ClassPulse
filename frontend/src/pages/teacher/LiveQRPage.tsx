@@ -9,6 +9,7 @@ import {
   resumeSession,
   setManualAttendance,
   getSessionActivity,
+  FRONTEND_URL,
 } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
@@ -174,6 +175,7 @@ export default function LiveQRPage() {
   const secondsLeft = closesAt ? Math.max(0, Math.floor((new Date(closesAt).getTime() - nowTick) / 1000)) : null;
   const countdownLabel =
     secondsLeft === null ? null : `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")}`;
+  const scanUrl = token ? `${FRONTEND_URL}/student/scan?token=${encodeURIComponent(token)}` : null;
 
   const handleConfirmStop = async () => {
     if (!sessionId) return;
@@ -250,7 +252,7 @@ export default function LiveQRPage() {
             </div>
           ) : (
             <>
-              {!error && (token ? <QRCodeSVG value={token} size={256} /> : <Spinner animation="border" />)}
+              {!error && (scanUrl ? <QRCodeSVG value={scanUrl} size={256} /> : <Spinner animation="border" />)}
               <p className="mt-3 text-muted">
                 QR refreshes in <span className="font-mono">{qrSecondsLeft ?? "--"}</span>s
               </p>

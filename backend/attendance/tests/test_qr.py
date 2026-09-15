@@ -46,6 +46,17 @@ class SessionQRTest(APITestCase):
         second = self.client.get(url).data["token"]
         self.assertNotEqual(first, second)
 
+    def test_qr_rotates_after_display_window_even_while_old_token_valid(self):
+        self._auth(self.teacher_token)
+        url = reverse("session-qr", args=[self.session.id])
+        first = self.client.get(url).data["token"]
+        QRToken.objects.filter(token=first).update(
+            created_at=timezone.now() - timezone.timedelta(seconds=16),
+            expires_at=timezone.now() + timezone.timedelta(seconds=44),
+        )
+        second = self.client.get(url).data["token"]
+        self.assertNotEqual(first, second)
+
     def test_qr_rejected_once_attendance_window_elapsed(self):
         self.session.duration_minutes = 5
         self.session.start_time = timezone.now() - timezone.timedelta(minutes=6)

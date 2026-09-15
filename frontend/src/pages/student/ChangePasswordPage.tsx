@@ -25,6 +25,11 @@ export default function ChangePasswordPage() {
       return;
     }
 
+    if (newPassword !== newPassword.trim()) {
+      setError("New password cannot start or end with spaces.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await changePassword(oldPassword, newPassword);

@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-QR_TOKEN_LIFETIME_SECONDS = 15
+QR_TOKEN_ROTATION_SECONDS = 15
+QR_TOKEN_LIFETIME_SECONDS = 60
 
 
 def generate_qr_token():
@@ -34,6 +35,12 @@ class AttendanceSession(models.Model):
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "date"], name="session_status_date_idx"),
+            models.Index(fields=["section", "date"], name="session_section_date_idx"),
+        ]
 
     def __str__(self):
         return f"{self.subject} ({self.date})"
@@ -84,6 +91,9 @@ class QRToken(models.Model):
     def is_expired(self):
         return timezone.now() >= self.expires_at
 
+    def should_rotate(self):
+        return timezone.now() >= self.created_at + timezone.timedelta(seconds=QR_TOKEN_ROTATION_SECONDS)
+
     def __str__(self):
         return self.token
 
@@ -104,6 +114,9 @@ class Attendance(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["student", "session"], name="unique_attendance_per_session"),
+        ]
+        indexes = [
+            models.Index(fields=["session", "student"], name="attendance_session_student_idx"),
         ]
 
     def __str__(self):

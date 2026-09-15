@@ -24,10 +24,12 @@ version — do not reintroduce Channels without re-checking this file.
    (the file already exists at `backend/classpulse/wsgi.py`).
 2. **Environment variables**: cPanel's Python App UI has an "Environment
    Variables" section — set `SECRET_KEY` (generate a real one, never reuse
-   the dev key), `DEBUG=False`, `ALLOWED_HOSTS` (your domain), `DB_NAME`,
+   the dev key), `DEBUG=False`, `ALLOWED_HOSTS` (your domain; include both
+   `arxinfo.info,www.arxinfo.info` if both can reach the app), `DB_NAME`,
    `DB_USER`, `DB_PASSWORD`, `DB_HOST` (usually `localhost`), `DB_PORT`
    (usually `3306`), `CORS_ALLOWED_ORIGINS` (your frontend's origin, e.g.
-   `https://yourdomain.com`). These are read by `backend/classpulse/settings.py`
+   `https://yourdomain.com`; include the `www` origin too if users may open it
+   there). These are read by `backend/classpulse/settings.py`
    via `python-dotenv` — no `.env` file needed if set here, but a `.env` in
    the app root works too and is gitignored so it's safe to hand-create on
    the server. Never rely on the insecure dev-only fallback values.
@@ -42,9 +44,42 @@ version — do not reintroduce Channels without re-checking this file.
    - **Edit `.cpanel.yml` first**: replace every `USERNAME` placeholder and
      the `DEPLOYPATH`/virtualenv path with your actual cPanel username and
      the paths cPanel's Setup Python App screen shows you.
-5. Re-run "Deploy HEAD Commit" after every push to `main` you want live.
+5. **After every backend code update, confirm migrations ran**. In cPanel's
+   Terminal or "Execute Python Script" flow, run this from the deployed backend
+   app if the deploy log did not clearly show migrations completing:
+
+   ```bash
+   python manage.py migrate
+   ```
+
+   This is required for new columns and indexes. If it is missed, pages can
+   appear to load forever while the API is actually failing with database
+   errors such as `Unknown column 'accounts_studentprofile.trusted_device_hash'`.
+6. Restart/reload the Python app after migrations. In cPanel this is usually
+   "Restart" in Setup Python App, or touching `tmp/restart.txt` if using
+   Passenger directly.
+7. Re-run "Deploy HEAD Commit" after every push to `main` you want live.
    Some cPanel/WHM setups support a webhook to automate this trigger from
    GitHub — check with your host; if unavailable, this step stays manual.
+
+## Post-deploy health check
+
+After each deployment:
+
+```bash
+python manage.py check
+python manage.py migrate --check
+```
+
+Then open these pages while logged in as the teacher/admin:
+
+- `/teacher/analytics`
+- `/teacher/students`
+- `/teacher/start-attendance`
+
+Analytics should load quickly because it now uses database aggregation instead
+of building the full student/session matrix in Python. Student Data should load
+one section by default instead of pulling every student first.
 
 ## Frontend (React/Vite) — static files, deployed separately
 
@@ -61,17 +96,20 @@ server. It's built by GitHub Actions and uploaded as static files instead:
    - Variables: `CPANEL_DEPLOY_ENABLED` = `true` (this is the on/off switch —
      the `deploy-frontend` job in `ci.yml` is a no-op until this is set,
      so nothing tries to deploy to a host that isn't configured yet).
-4. Before the first real deploy, update `frontend/src/api/client.ts`'s
-   `BASE_URL` (currently hardcoded to `http://localhost:8000/api`) to your
-   real backend URL — it needs to change per environment eventually; for now,
-   edit it before deploying to production and revert for local dev.
+4. `frontend/src/api/client.ts` automatically uses the local API in dev and
+   `https://arxinfo.info/api` in production builds. QR codes use
+   `FRONTEND_URL` (`https://arxinfo.info` by default); override it with
+   `VITE_FRONTEND_URL` only if the public frontend domain changes.
 5. Once configured, every push to `main` that passes CI automatically builds
    the frontend and FTP-uploads `dist/` to the configured directory.
+   `frontend/public/.htaccess` is included in the build output so direct React
+   Router links like `/student/scan?token=...` work from Google Lens/phone
+   camera apps, and `www.arxinfo.info` redirects to `arxinfo.info`.
 
 ## What's intentionally not automated
 
 - Backend deploy still needs a manual click in cPanel's Git Version Control
-  UI (step 5 above) unless your specific host offers a webhook — most shared
+  UI (step 7 above) unless your specific host offers a webhook — most shared
   plans don't expose the SSH/API access GitHub Actions would need to trigger
   it directly.
 - Media uploads (student photos) live on the server's filesystem
