@@ -1,9 +1,17 @@
 RewriteEngine On
 
+# Always use HTTPS. Without this, browsers that try plain http://arxinfo.info
+# can fail before the React app ever loads.
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
 # Keep one public origin. QR codes use arxinfo.info, but this also catches
 # students who type or open www.arxinfo.info.
 RewriteCond %{HTTP_HOST} ^www\.arxinfo\.info$ [NC]
 RewriteRule ^ https://arxinfo.info%{REQUEST_URI} [R=301,L]
+
+# Common typed variant. React Router uses lowercase paths.
+RewriteRule ^LOGIN/?$ /login [R=301,L,NC]
 
 # Django/Passenger owns /api.
 RewriteRule ^api(/|$) - [L]

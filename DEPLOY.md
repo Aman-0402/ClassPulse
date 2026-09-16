@@ -81,6 +81,45 @@ Analytics should load quickly because it now uses database aggregation instead
 of building the full student/session matrix in Python. Student Data should load
 one section by default instead of pulling every student first.
 
+## cPanel Python App troubleshooting
+
+If cPanel shows `Incorrect server response`, `Run script: Unknown error
+occurred`, or `APPLICATION DOES NOT EXIST` even though the app row says
+`started`, check these first:
+
+1. Confirm the app root in Setup Python App matches the deploy path exactly.
+   Current production path:
+
+   ```text
+   /home/fmmkirqf/classpulse-backend
+   ```
+
+2. Confirm `.cpanel.yml` uses the same cPanel username and Python virtualenv
+   version as Setup Python App. Current production app is Python 3.11, so the
+   deploy script uses:
+
+   ```text
+   /home/fmmkirqf/virtualenv/classpulse-backend/3.11/bin/python
+   ```
+
+3. If cPanel's "Run Script" button fails, run the same command from Terminal
+   to see the real error:
+
+   ```bash
+   cd /home/fmmkirqf/classpulse-backend
+   /home/fmmkirqf/virtualenv/classpulse-backend/3.11/bin/python manage.py check
+   /home/fmmkirqf/virtualenv/classpulse-backend/3.11/bin/python manage.py migrate
+   ```
+
+4. Restart the Python app after fixing paths, installing requirements, or
+   running migrations.
+
+The Chrome `ERR_QUIC_PROTOCOL_ERROR` screenshot is separate from Django. It
+usually means the browser/server/CDN had an HTTP/3/QUIC connection problem.
+First confirm `https://arxinfo.info/api/` or another `/api/...` URL works after
+the Python app is healthy, then clear browser cache or temporarily disable
+QUIC/HTTP3 if only Chrome shows that error.
+
 ## Frontend (React/Vite) — static files, deployed separately
 
 Shared cPanel has no Node runtime, so the frontend can't be built on the
