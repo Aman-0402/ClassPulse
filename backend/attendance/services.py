@@ -8,11 +8,12 @@ from django.utils import timezone
 from attendance.exceptions import (
     DuplicateAttendanceError,
     ExpiredTokenError,
+    IncompleteProfileError,
     InvalidTokenError,
     SessionClosedError,
     WrongSectionError,
 )
-from accounts.models import User, StudentProfile
+from accounts.models import User, StudentProfile, StudentScanPolicy
 from accounts.device_security import detect_or_bind_student_device
 from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, QRToken, Attendance
 
@@ -65,6 +66,15 @@ def verify_or_bind_trusted_device(student, device_id, session, ip_address, devic
         log_activity(student, session, ActivityLog.TYPE_NEW_DEVICE, ip_address, device_info)
 
 
+def verify_profile_complete_for_scan(student):
+    if not StudentScanPolicy.current().require_complete_profile:
+        return
+    profile = getattr(student, "student_profile", None)
+    if profile is None or not profile.is_scan_profile_complete:
+        missing = profile.missing_scan_profile_fields if profile else ["profile"]
+        raise IncompleteProfileError(missing)
+
+
 def mark_attendance(student, token_value, ip_address, device_info, device_id=""):
     try:
         qr_token = QRToken.objects.select_related("session").get(token=token_value)
@@ -87,6 +97,7 @@ def mark_attendance(student, token_value, ip_address, device_info, device_id="")
         log_activity(student, session, ActivityLog.TYPE_EXPIRED_TOKEN, ip_address, device_info)
         raise ExpiredTokenError()
 
+    verify_profile_complete_for_scan(student)
     verify_or_bind_trusted_device(student, device_id, session, ip_address, device_info)
 
     if Attendance.objects.filter(student=student, session=session).exists():

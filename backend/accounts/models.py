@@ -35,10 +35,38 @@ class StudentProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} ({self.crn})"
 
+    @property
+    def missing_scan_profile_fields(self):
+        missing = []
+        if not self.photo:
+            missing.append("profile photo")
+        if not self.user.email or self.user.email.endswith("@bba.local"):
+            missing.append("email")
+        if not self.contact_number:
+            missing.append("contact number")
+        return missing
+
+    @property
+    def is_scan_profile_complete(self):
+        return not self.missing_scan_profile_fields
+
     class Meta:
         indexes = [
             models.Index(fields=["section", "crn"], name="student_section_crn_idx"),
         ]
+
+
+class StudentScanPolicy(models.Model):
+    require_complete_profile = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def current(cls):
+        policy, _ = cls.objects.get_or_create(pk=1)
+        return policy
+
+    def __str__(self):
+        return "Require complete profile before scan" if self.require_complete_profile else "Profile scan lock disabled"
 
 
 class ProfileEditRequest(models.Model):

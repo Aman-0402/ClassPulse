@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from accounts.models import StudentProfile, StudentScanPolicy
 from attendance.models import AttendanceSession, QRToken, Attendance, ActivityLog
 
 User = get_user_model()
@@ -66,8 +67,6 @@ class MarkAttendanceTest(APITestCase):
         self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)
 
     def test_student_from_wrong_section_rejected_and_logged(self):
-        from accounts.models import StudentProfile
-
         StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="B")
         self.session.section = "A"
         self.session.save()
@@ -79,8 +78,6 @@ class MarkAttendanceTest(APITestCase):
         self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_WRONG_SECTION).count(), 1)
 
     def test_student_from_correct_section_allowed(self):
-        from accounts.models import StudentProfile
-
         StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="A")
         self.session.section = "A"
         self.session.save()
@@ -106,3 +103,21 @@ class MarkAttendanceTest(APITestCase):
         self.session.refresh_from_db()
         self.assertEqual(self.session.status, AttendanceSession.STATUS_CLOSED)
         self.assertEqual(ActivityLog.objects.filter(activity_type=ActivityLog.TYPE_SESSION_CLOSED).count(), 1)
+
+    def test_incomplete_profile_can_scan_when_lock_disabled(self):
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="A")
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_incomplete_profile_blocked_when_lock_enabled(self):
+        StudentProfile.objects.create(user=self.student, crn="101", course="BBA", semester=3, section="A")
+        policy = StudentScanPolicy.current()
+        policy.require_complete_profile = True
+        policy.save(update_fields=["require_complete_profile"])
+
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Complete your profile", response.data["detail"])
+        self.assertEqual(Attendance.objects.count(), 0)

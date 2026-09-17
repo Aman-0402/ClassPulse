@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Alert, Button, Card, Form, Spinner, Table } from "react-bootstrap";
+import { Alert, Button, Card, Form, Modal, Spinner, Table } from "react-bootstrap";
 import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
 import type { DayAttendanceResponse, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import TablePagination from "../../components/TablePagination";
 import { formatSessionTime } from "../../utils/time";
+import { notifyError, notifySuccess } from "../../utils/alerts";
 
 const PAGE_SIZE = 70;
 
@@ -43,6 +44,25 @@ function todayIsoDate(): string {
   return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
+function formatPromptDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}-${month}-${year}`;
+}
+
+function buildErpPrompt(section: string, date: string, presentStudents: DayAttendanceStudent[]): string {
+  const list = presentStudents.map((student) => `${student.crn} — ${student.name}`).join("\n");
+  return `Go to the ERP attendance module and mark attendance for Section ${section}, dated ${formatPromptDate(date)}.
+
+Open the daily attendance / class attendance marking page for this section and date. For each student below, set their status to "Present" (match by CRN first; if CRN isn't visible, match by Name). Leave any student NOT in this list as "Absent" (or the ERP's default).
+
+Present students (CRN — Name):
+${list}
+
+Total: ${presentStudents.length} present.
+
+Before submitting: show me a summary of which students got checked as Present and flag any CRN you couldn't find on the page, so I can confirm before you click submit/save.`;
+}
+
 export default function DayAttendancePage() {
   const [sections, setSections] = useState<string[]>([]);
   const [section, setSection] = useState("");
@@ -54,6 +74,8 @@ export default function DayAttendancePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<"all" | "present" | "absent">("all");
+  const [promptText, setPromptText] = useState("");
+  const [showPrompt, setShowPrompt] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -120,6 +142,24 @@ export default function DayAttendancePage() {
     ];
     const suffix = statusFilter === "all" ? "" : `_${statusFilter}`;
     downloadCsv(`day_attendance_${section}_${date}${suffix}.csv`, rows);
+  };
+
+  const handleCreatePrompt = async () => {
+    if (!data) return;
+    const presentStudents = data.students.filter((student) => student.present);
+    if (presentStudents.length === 0) {
+      notifyError("No Present Students", "There are no present students for this section and date.");
+      return;
+    }
+    const prompt = buildErpPrompt(data.section, data.date, presentStudents);
+    setPromptText(prompt);
+    setShowPrompt(true);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      notifySuccess("Prompt Copied", "The ERP attendance prompt was copied to your clipboard.");
+    } catch {
+      notifySuccess("Prompt Ready", "Copy the prompt from the preview box.");
+    }
   };
 
   const canToggle = data?.sessions.length === 1;
@@ -218,9 +258,14 @@ export default function DayAttendancePage() {
               const pageStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
               return (
                 <>
-                  <Button variant="outline-secondary" size="sm" className="mb-2" onClick={handleExport}>
-                    Export CSV{statusFilter !== "all" ? ` (${statusFilter} only)` : ""}
-                  </Button>
+                  <div className="d-flex gap-2 flex-wrap mb-2">
+                    <Button variant="outline-secondary" size="sm" onClick={handleExport}>
+                      Export CSV{statusFilter !== "all" ? ` (${statusFilter} only)` : ""}
+                    </Button>
+                    <Button variant="outline-primary" size="sm" onClick={handleCreatePrompt}>
+                      Create Prompt
+                    </Button>
+                  </div>
                   <div className="table-responsive">
                     <Table striped bordered>
                       <thead>
@@ -271,6 +316,36 @@ export default function DayAttendancePage() {
           )}
         </>
       )}
+      <Modal show={showPrompt} onHide={() => setShowPrompt(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5">ERP Attendance Prompt</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Control
+            as="textarea"
+            rows={16}
+            value={promptText}
+            readOnly
+            className="font-mono"
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="outline-secondary"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(promptText);
+                notifySuccess("Copied", "Prompt copied to clipboard.");
+              } catch {
+                notifyError("Copy Failed", "Select the text and copy it manually.");
+              }
+            }}
+          >
+            Copy Prompt
+          </Button>
+          <Button onClick={() => setShowPrompt(false)}>Done</Button>
+        </Modal.Footer>
+      </Modal>
     </AppShell>
   );
 }

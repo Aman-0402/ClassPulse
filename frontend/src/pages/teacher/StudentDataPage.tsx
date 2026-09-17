@@ -6,6 +6,7 @@ import {
   logout,
   resetStudentPasswordToCrn,
   resetStudentTrustedDevice,
+  setProfileScanLock,
 } from "../../api/client";
 import type { TeacherStudentDataResponse, TeacherStudentSummary } from "../../api/client";
 import AppShell from "../../components/AppShell";
@@ -31,6 +32,7 @@ export default function StudentDataPage() {
   const [error, setError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resettingDevice, setResettingDevice] = useState(false);
+  const [savingScanLock, setSavingScanLock] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export default function StudentDataPage() {
     [data?.students, query]
   );
   const effectiveSection = section || data?.section || "";
+  const incompleteCount = data?.students.filter((student) => !student.scan_profile_complete).length ?? 0;
 
   const handleSectionChange = (nextSection: string) => {
     setSection(nextSection);
@@ -109,11 +112,52 @@ export default function StudentDataPage() {
     }
   };
 
+  const handleToggleScanLock = async () => {
+    if (!data) return;
+    const nextEnabled = !data.profile_scan_lock_enabled;
+    setSavingScanLock(true);
+    try {
+      const result = await setProfileScanLock(nextEnabled);
+      setData((prev) => (prev ? { ...prev, profile_scan_lock_enabled: result.profile_scan_lock_enabled } : prev));
+      notifySuccess(
+        result.profile_scan_lock_enabled ? "Scan Lock Enabled" : "Scan Lock Disabled",
+        result.profile_scan_lock_enabled
+          ? "Students must add photo, email, and contact number before scanning."
+          : "Students can scan attendance even if their profile is incomplete."
+      );
+    } catch {
+      notifyError("Update Failed", "Could not update the student scan lock.");
+    } finally {
+      setSavingScanLock(false);
+    }
+  };
+
   return (
     <AppShell>
       <div className="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-4">
-        <h1 className="h3 mb-0">Student Data</h1>
+        <div>
+          <h1 className="h3 mb-1">Student Data</h1>
+          {data && (
+            <div className="text-muted small">
+              Profile scan lock is {data.profile_scan_lock_enabled ? "enabled" : "disabled"}.
+              {incompleteCount > 0 ? ` ${incompleteCount} student${incompleteCount === 1 ? "" : "s"} missing required profile data.` : " All visible students are complete."}
+            </div>
+          )}
+        </div>
         <div className="d-flex gap-2 flex-wrap">
+          {data && (
+            <Button
+              variant={data.profile_scan_lock_enabled ? "danger" : "outline-secondary"}
+              onClick={handleToggleScanLock}
+              disabled={savingScanLock}
+            >
+              {savingScanLock
+                ? "Saving..."
+                : data.profile_scan_lock_enabled
+                ? "Disable Scan Lock"
+                : "Enable Scan Lock"}
+            </Button>
+          )}
           <Form.Group controlId="student-data-section" style={{ minWidth: 180 }}>
             <Form.Label className="small text-muted mb-1">Section</Form.Label>
             <Form.Select value={effectiveSection} onChange={(event) => handleSectionChange(event.target.value)}>
@@ -149,6 +193,7 @@ export default function StudentDataPage() {
                     <th>Roll No.</th>
                     <th>Name</th>
                     <th>Contact</th>
+                    <th>Profile</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,6 +208,11 @@ export default function StudentDataPage() {
                       <td>{student.name}</td>
                       <td className={student.contact_number ? "font-mono" : "text-muted"}>
                         {student.contact_number || "-"}
+                      </td>
+                      <td>
+                        <span className={`stamp ${student.scan_profile_complete ? "stamp-present" : "stamp-absent"}`}>
+                          {student.scan_profile_complete ? "Complete" : "Incomplete"}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -230,6 +280,14 @@ export default function StudentDataPage() {
                         {data.selected_student.trusted_device_bound
                           ? `Linked${data.selected_student.trusted_device_bound_at ? ` on ${data.selected_student.trusted_device_bound_at.slice(0, 10)}` : ""}`
                           : "Not linked yet"}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-row-label">Scan Profile</span>
+                      <span>
+                        {data.selected_student.scan_profile_complete
+                          ? "Complete"
+                          : `Missing ${data.selected_student.missing_scan_profile_fields.join(", ")}`}
                       </span>
                     </div>
                   </div>

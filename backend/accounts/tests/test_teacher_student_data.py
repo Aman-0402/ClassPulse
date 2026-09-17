@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from accounts.models import StudentProfile
+from accounts.models import StudentProfile, StudentScanPolicy
 from attendance.models import Attendance, AttendanceSession
 
 User = get_user_model()
@@ -44,8 +44,11 @@ class TeacherStudentDataTest(APITestCase):
         response = self.client.get(reverse("teacher-student-data"), {"section": "A"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["sections"], ["A", "B"])
+        self.assertFalse(response.data["profile_scan_lock_enabled"])
         self.assertEqual(len(response.data["students"]), 1)
         self.assertEqual(response.data["students"][0]["crn"], "25BBA001")
+        self.assertFalse(response.data["students"][0]["scan_profile_complete"])
+        self.assertIn("profile photo", response.data["students"][0]["missing_scan_profile_fields"])
 
     def test_teacher_student_data_defaults_to_first_section(self):
         self._auth(self.teacher_token)
@@ -102,3 +105,17 @@ class TeacherStudentDataTest(APITestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.trusted_device_hash, "")
         self.assertIsNone(profile.trusted_device_bound_at)
+
+    def test_teacher_can_toggle_profile_scan_lock(self):
+        self._auth(self.teacher_token)
+        response = self.client.post(
+            reverse("teacher-student-data"),
+            {"action": "toggle_profile_scan_lock", "enabled": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["profile_scan_lock_enabled"])
+        self.assertTrue(StudentScanPolicy.current().require_complete_profile)
+
+        response = self.client.get(reverse("teacher-student-data"), {"section": "A"})
+        self.assertTrue(response.data["profile_scan_lock_enabled"])

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
-from accounts.models import PasswordResetOTP, ProfileEditRequest, User, StudentProfile
+from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentScanPolicy, User, StudentProfile
 from attendance.models import Attendance
 
 
@@ -186,6 +186,14 @@ class PasswordResetOTPAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(StudentScanPolicy)
+class StudentScanPolicyAdmin(admin.ModelAdmin):
+    list_display = ("id", "require_complete_profile", "updated_at")
+
+    def has_add_permission(self, request):
+        return not StudentScanPolicy.objects.exists()
 
 
 admin.site.register(User)

@@ -30,3 +30,11 @@ class WrongSectionError(AttendanceError):
         self.message = f"This QR code is for Section {session_section} only."
         super().__init__(self.message)
 
+
+class IncompleteProfileError(AttendanceError):
+    activity_type = "invalid_token"
+
+    def __init__(self, missing_fields):
+        fields = ", ".join(missing_fields)
+        self.message = f"Complete your profile before scanning attendance. Missing: {fields}."
+        super().__init__(self.message)

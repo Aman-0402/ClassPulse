@@ -20,7 +20,7 @@ from accounts.serializers import (
     StudentProfileSerializer,
     TeacherProfileSerializer,
 )
-from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile, User
+from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile, StudentScanPolicy, User
 from attendance.models import Attendance
 from attendance.services import get_available_sections
 
@@ -229,6 +229,7 @@ class TeacherStudentDataView(APIView):
         section = request.query_params.get("section", "")
         selected_crn = request.query_params.get("crn", "")
         sections = get_available_sections()
+        policy = StudentScanPolicy.current()
         if not section and sections:
             section = sections[0]
 
@@ -251,6 +252,8 @@ class TeacherStudentDataView(APIView):
                 "photo": request.build_absolute_uri(profile.photo.url) if profile.photo else None,
                 "trusted_device_bound": bool(profile.trusted_device_hash),
                 "trusted_device_bound_at": profile.trusted_device_bound_at,
+                "scan_profile_complete": profile.is_scan_profile_complete,
+                "missing_scan_profile_fields": profile.missing_scan_profile_fields,
             }
             for profile in students_qs
         ]
@@ -288,6 +291,8 @@ class TeacherStudentDataView(APIView):
                 "photo": request.build_absolute_uri(profile.photo.url) if profile.photo else None,
                 "trusted_device_bound": bool(profile.trusted_device_hash),
                 "trusted_device_bound_at": profile.trusted_device_bound_at,
+                "scan_profile_complete": profile.is_scan_profile_complete,
+                "missing_scan_profile_fields": profile.missing_scan_profile_fields,
                 "password_note": "Current password cannot be shown because it is stored as a secure hash.",
                 "attendance": [
                     {
@@ -306,6 +311,7 @@ class TeacherStudentDataView(APIView):
             {
                 "sections": sections,
                 "section": section,
+                "profile_scan_lock_enabled": policy.require_complete_profile,
                 "students": students,
                 "selected_student": selected,
             }
@@ -314,6 +320,15 @@ class TeacherStudentDataView(APIView):
     def post(self, request):
         crn = request.data.get("crn")
         action = request.data.get("action")
+        if action == "toggle_profile_scan_lock":
+            enabled = request.data.get("enabled")
+            if not isinstance(enabled, bool):
+                return Response({"detail": "enabled must be true or false."}, status=400)
+            policy = StudentScanPolicy.current()
+            policy.require_complete_profile = enabled
+            policy.save(update_fields=["require_complete_profile", "updated_at"])
+            return Response({"profile_scan_lock_enabled": policy.require_complete_profile})
+
         if action not in ("reset_password_to_crn", "reset_trusted_device") or not crn:
             return Response({"detail": "crn and a valid action are required."}, status=400)
 

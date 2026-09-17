@@ -182,6 +182,8 @@ export interface TeacherStudentSummary {
   photo: string | null;
   trusted_device_bound: boolean;
   trusted_device_bound_at: string | null;
+  scan_profile_complete: boolean;
+  missing_scan_profile_fields: string[];
 }
 
 export interface TeacherStudentAttendanceEntry {
@@ -204,6 +206,7 @@ export interface TeacherStudentDetail extends TeacherStudentSummary {
 export interface TeacherStudentDataResponse {
   sections: string[];
   section: string;
+  profile_scan_lock_enabled: boolean;
   students: TeacherStudentSummary[];
   selected_student: TeacherStudentDetail | null;
 }
@@ -224,6 +227,14 @@ export async function resetStudentPasswordToCrn(crn: string): Promise<void> {
 
 export async function resetStudentTrustedDevice(crn: string): Promise<void> {
   await api.post("/teacher/students/", { crn, action: "reset_trusted_device" });
+}
+
+export async function setProfileScanLock(enabled: boolean): Promise<{ profile_scan_lock_enabled: boolean }> {
+  const { data } = await api.post<{ profile_scan_lock_enabled: boolean }>("/teacher/students/", {
+    action: "toggle_profile_scan_lock",
+    enabled,
+  });
+  return data;
 }
 
 export async function updateEmail(email: string) {
