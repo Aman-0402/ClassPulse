@@ -70,119 +70,170 @@ export default function TeacherProfilePage() {
     );
   }
 
+  const displayName = profile.full_name || profile.username;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const pending = profile.pending_edit_requests_count;
+  const initials = displayName
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const actions = [
+    { to: "/teacher/start-attendance", icon: "▶", title: "Start Attendance", hint: "Open a live QR session", primary: true, badge: 0 },
+    {
+      to: "/teacher/corrections",
+      icon: "✎",
+      title: "Corrections",
+      hint: pending ? `${pending} awaiting review` : "No pending requests",
+      primary: false,
+      badge: pending,
+    },
+    { to: "/teacher/students", icon: "☰", title: "Student Data", hint: "Profiles and contact details", primary: false, badge: 0 },
+    { to: "/teacher/analytics", icon: "▤", title: "Analytics", hint: "Attendance percentages", primary: false, badge: 0 },
+    { to: "/teacher/day-attendance", icon: "▦", title: "Day-wise", hint: "Who was present, by day", primary: false, badge: 0 },
+  ];
+
   return (
     <AppShell>
-      <h1 className="h3 mb-4">Welcome, {profile.full_name || profile.username}</h1>
-      {profile.pending_edit_requests_count > 0 && (
-        <Link
-          to="/teacher/corrections"
-          className="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none"
-        >
-          <span className="action-pill">
-            {profile.pending_edit_requests_count} pending profile correction
-            {profile.pending_edit_requests_count === 1 ? "" : "s"}
-          </span>
-          <span className="text-muted small">Review →</span>
-        </Link>
-      )}
-      <Card style={{ maxWidth: 480 }}>
-        <Card.Body>
-          <span className="stamp stamp-neutral mb-3 d-inline-block">Teacher</span>
-          <div className="d-flex flex-column gap-3">
-            <div className="info-row">
-              <div className="info-row-label">Name</div>
-              <div>{profile.full_name || profile.username}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Subject</div>
-              <div>{TRAINING_SUBJECT}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Email</div>
-              {editingEmail ? (
-                <div>
-                  <Form.Control
-                    size="sm"
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    autoFocus
-                  />
-                  {emailError && <div className="text-danger small mt-1">{emailError}</div>}
-                  <div className="d-flex gap-2 mt-2">
-                    <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
-                      {emailSaving ? "Saving..." : "Save"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline-secondary"
-                      onClick={() => setEditingEmail(false)}
-                      disabled={emailSaving}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className="text-break">{profile.email}</span>
-                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditEmail}>
-                    Edit
-                  </Button>
-                </div>
-              )}
-            </div>
+      <section className="tp-hero">
+        <div className="tp-avatar" aria-hidden="true">
+          {initials || "T"}
+        </div>
+        <div className="tp-hero-text">
+          <div className="tp-hello">{greeting}</div>
+          <h1 className="tp-name">{displayName}</h1>
+          <div className="tp-chips">
+            <span className="tp-chip">Teacher</span>
+            <span className="tp-chip tp-chip-soft">{TRAINING_SUBJECT}</span>
           </div>
-        </Card.Body>
-      </Card>
-      <Link to="/teacher/start-attendance" className="cta-button mt-3">
-        Start Attendance
-      </Link>
+        </div>
+        <Link to="/teacher/start-attendance" className="tp-hero-cta">
+          Start Attendance
+        </Link>
+      </section>
 
-      {scheduleDay && (
-        <Card className="mt-4">
+      <section className="tp-actions" aria-label="Quick actions">
+        {actions.map((action) => (
+          <Link key={action.to} to={action.to} className={`tp-action ${action.primary ? "tp-action-primary" : ""}`}>
+            <span className="tp-action-icon" aria-hidden="true">
+              {action.icon}
+            </span>
+            <span className="tp-action-body">
+              <span className="tp-action-title">{action.title}</span>
+              <span className="tp-action-hint">{action.hint}</span>
+            </span>
+            {action.badge > 0 && <span className="tp-action-badge">{action.badge}</span>}
+          </Link>
+        ))}
+      </section>
+
+      <div className="tp-grid">
+        <Card>
           <Card.Body>
-            <h2 className="h6 mb-3">{scheduleDay}'s Timetable</h2>
+            <h2 className="tp-card-title">Account</h2>
+            <dl className="tp-details">
+              <div>
+                <dt>Name</dt>
+                <dd>{displayName}</dd>
+              </div>
+              <div>
+                <dt>Username</dt>
+                <dd className="font-mono">{profile.username}</dd>
+              </div>
+              <div>
+                <dt>Subject</dt>
+                <dd>{TRAINING_SUBJECT}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  {editingEmail ? (
+                    <div>
+                      <Form.Control
+                        size="sm"
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        autoFocus
+                      />
+                      {emailError && <div className="text-danger small mt-1">{emailError}</div>}
+                      <div className="d-flex gap-2 mt-2">
+                        <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
+                          {emailSaving ? "Saving..." : "Save"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline-secondary"
+                          onClick={() => setEditingEmail(false)}
+                          disabled={emailSaving}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                      <span className="text-break">{profile.email || "Not added yet"}</span>
+                      <Button size="sm" variant="outline-secondary" onClick={handleStartEditEmail}>
+                        Edit
+                      </Button>
+                    </div>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </Card.Body>
+        </Card>
+
+        <Card>
+          <Card.Body>
+            <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-2 mb-3">
+              <h2 className="tp-card-title mb-0">{scheduleDay ? `${scheduleDay}'s Timetable` : "Today's Timetable"}</h2>
+              <span className="text-muted small">
+                {slots.length} session{slots.length === 1 ? "" : "s"}
+              </span>
+            </div>
             {slots.length === 0 ? (
               <p className="text-muted mb-0">No training sessions scheduled today.</p>
             ) : (
-              <div className="d-flex flex-column gap-2">
-                {slots.map((slot, index) => (
-                  <div
-                    key={index}
-                    role="button"
-                    className="d-flex justify-content-between align-items-center flex-wrap gap-2 timetable-slot"
-                    onClick={() =>
-                      slot.session_id
-                        ? navigate(`/teacher/session/${slot.session_id}`)
-                        : navigate("/teacher/start-attendance", {
-                            state: { subject: slot.subject, section: slot.section, periods: slot.periods },
-                          })
-                    }
-                  >
-                    <div className="d-flex flex-column gap-1">
-                      <span className="text-muted font-mono text-nowrap small">
-                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                      </span>
-                      <div className="d-flex align-items-center flex-wrap gap-2">
-                        <span>{slot.subject}</span>
-                        <span className="stamp stamp-neutral">BBA III {slot.section}</span>
-                      </div>
-                    </div>
-                    {slot.session_id ? (
-                      <span className={`action-pill ${slot.session_status === "active" ? "action-pill-live" : ""}`}>
-                        {slot.session_status === "active" ? "View Live" : "View Attendance"}
-                      </span>
-                    ) : (
-                      <span className="action-pill">Start Attendance</span>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <ol className="tp-timeline">
+                {slots.map((slot, index) => {
+                  const live = slot.session_status === "active";
+                  return (
+                    <li key={index} className={`tp-slot ${live ? "tp-slot-live" : ""}`}>
+                      <button
+                        type="button"
+                        className="tp-slot-btn"
+                        onClick={() =>
+                          slot.session_id
+                            ? navigate(`/teacher/session/${slot.session_id}`)
+                            : navigate("/teacher/start-attendance", {
+                                state: { subject: slot.subject, section: slot.section, periods: slot.periods },
+                              })
+                        }
+                      >
+                        <span className="tp-slot-time font-mono">
+                          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                        </span>
+                        <span className="tp-slot-main">
+                          <span>{slot.subject}</span>
+                          <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                        </span>
+                        <span className={`action-pill ${live ? "action-pill-live" : ""}`}>
+                          {live ? "View Live" : slot.session_id ? "View Attendance" : "Start"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
             )}
           </Card.Body>
         </Card>
-      )}
+      </div>
     </AppShell>
   );
 }
