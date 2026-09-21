@@ -17,3 +17,6 @@ frontend/dist/
 
 # Real student roster data (PII) — never commit
 Data/
+
+# Deploy zips (built on demand)
+deploy/
