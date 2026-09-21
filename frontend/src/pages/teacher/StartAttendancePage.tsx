@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, Form, Button, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import { getAnalytics, getCurrentSchedule, startSession, logout } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import { TRAINING_SUBJECT } from "../../constants";
@@ -23,6 +23,7 @@ export default function StartAttendancePage() {
   const [duration, setDuration] = useState(5);
   const [merged, setMerged] = useState(prefill?.periods === 2);
   const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const [scheduleHint, setScheduleHint] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -57,71 +58,137 @@ export default function StartAttendancePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!section) {
+      setError("Choose a section first.");
+      return;
+    }
+    setStarting(true);
     try {
       const session = await startSession(SUBJECT, duration, merged ? 2 : 1, section);
       navigate(`/teacher/session/${session.id}`);
     } catch {
       setError("Could not start attendance session.");
+    } finally {
+      setStarting(false);
     }
   };
 
   return (
     <AppShell>
-      <h1 className="h3 mb-4">Start Attendance</h1>
-      <Card style={{ maxWidth: 400 }}>
-        <Card.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {scheduleHint && <Alert variant="info">{scheduleHint}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="subject">
-              <Form.Label>Subject</Form.Label>
-              <Form.Control value={SUBJECT} disabled readOnly />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="section">
-              <Form.Label>Section</Form.Label>
-              <Form.Select value={section} onChange={(e) => setSection(e.target.value)} required>
-                <option value="" disabled>
-                  Select a section
-                </option>
+      <div className="sa-head">
+        <h1 className="h3 mb-1">Start Attendance</h1>
+        <p className="text-muted mb-0">Pick a section and how long students have to scan. A live QR opens next.</p>
+      </div>
+
+      {error && <Alert variant="danger">{error}</Alert>}
+      {scheduleHint && <Alert variant="info">{scheduleHint}</Alert>}
+
+      <form className="sa-layout" onSubmit={handleSubmit}>
+        <div className="sa-form">
+          <section className="sa-step">
+            <div className="sa-step-title">
+              <span className="sa-step-num">1</span> Section
+            </div>
+            {sections.length === 0 ? (
+              <p className="text-muted mb-0">Loading sections...</p>
+            ) : (
+              <div className="sa-chips" role="radiogroup" aria-label="Section">
                 {sections.map((s) => (
-                  <option key={s} value={s}>
-                    BBA III {s}
-                  </option>
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={section === s}
+                    className={`sa-chip ${section === s ? "sa-chip-on" : ""}`}
+                    onClick={() => setSection(s)}
+                  >
+                    <span className="sa-chip-small">BBA III</span>
+                    <span className="sa-chip-big">{s}</span>
+                  </button>
                 ))}
-              </Form.Select>
-              <Form.Text className="text-muted">Only Section {section || "..."} students can mark this attendance.</Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="duration">
-              <Form.Label>Attendance window</Form.Label>
-              <Form.Select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                {DURATION_OPTIONS.map((minutes) => (
-                  <option key={minutes} value={minutes}>
-                    {minutes} minutes
-                  </option>
-                ))}
-              </Form.Select>
-              <Form.Text className="text-muted">
-                Students can mark attendance until this window closes.
-              </Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="merged">
-              <Form.Check
-                type="checkbox"
-                label="Merge with next continuous period (double period)"
-                checked={merged}
-                onChange={(e) => setMerged(e.target.checked)}
-              />
-              <Form.Text className="text-muted">
-                One QR scan marks attendance for both periods, and it counts as 2 sessions in
-                reports.
-              </Form.Text>
-            </Form.Group>
-            <Button type="submit" className="w-100">
-              Start Session
-            </Button>
-          </Form>
-        </Card.Body>
-      </Card>
+              </div>
+            )}
+          </section>
+
+          <section className="sa-step">
+            <div className="sa-step-title">
+              <span className="sa-step-num">2</span> Attendance window
+            </div>
+            <div className="sa-chips" role="radiogroup" aria-label="Attendance window">
+              {DURATION_OPTIONS.map((minutes) => (
+                <button
+                  key={minutes}
+                  type="button"
+                  role="radio"
+                  aria-checked={duration === minutes}
+                  className={`sa-chip ${duration === minutes ? "sa-chip-on" : ""}`}
+                  onClick={() => setDuration(minutes)}
+                >
+                  <span className="sa-chip-big">{minutes}</span>
+                  <span className="sa-chip-small">min</span>
+                </button>
+              ))}
+            </div>
+            <p className="sa-help">Students can mark attendance until this window closes.</p>
+          </section>
+
+          <section className="sa-step">
+            <div className="sa-step-title">
+              <span className="sa-step-num">3</span> Periods
+            </div>
+            <div className="sa-segment" role="radiogroup" aria-label="Periods">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!merged}
+                className={!merged ? "sa-segment-on" : ""}
+                onClick={() => setMerged(false)}
+              >
+                Single period
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={merged}
+                className={merged ? "sa-segment-on" : ""}
+                onClick={() => setMerged(true)}
+              >
+                Double period
+              </button>
+            </div>
+            <p className="sa-help">
+              {merged
+                ? "One QR scan marks attendance for both periods, and it counts as 2 sessions in reports."
+                : "One QR scan marks attendance for this period."}
+            </p>
+          </section>
+        </div>
+
+        <aside className="sa-summary">
+          <div className="sa-summary-label">Session summary</div>
+          <div className="sa-summary-subject">{SUBJECT}</div>
+          <dl className="sa-summary-list">
+            <div>
+              <dt>Section</dt>
+              <dd>{section ? `BBA III ${section}` : "Not chosen"}</dd>
+            </div>
+            <div>
+              <dt>Window</dt>
+              <dd>{duration} minutes</dd>
+            </div>
+            <div>
+              <dt>Counts as</dt>
+              <dd>{merged ? "2 sessions" : "1 session"}</dd>
+            </div>
+          </dl>
+          <p className="sa-summary-note">
+            {section ? `Only Section ${section} students can mark this attendance.` : "Choose a section to continue."}
+          </p>
+          <button type="submit" className="sa-start" disabled={starting || !section}>
+            {starting ? "Starting..." : "Start Session"}
+          </button>
+        </aside>
+      </form>
     </AppShell>
   );
 }
