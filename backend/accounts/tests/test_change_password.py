@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -104,6 +105,8 @@ class LogoutTest(APITestCase):
             username="25BBA015", password="DIVYBBA015", role=User.ROLE_STUDENT
         )
         self.token = Token.objects.create(user=self.user)
+        # Students can't log out in their first 10 minutes; age the token past that.
+        Token.objects.filter(pk=self.token.pk).update(created=timezone.now() - timezone.timedelta(minutes=11))
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     def test_logout_revokes_token(self):
