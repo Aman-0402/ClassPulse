@@ -227,7 +227,8 @@ class StudentHistoryView(APIView):
                 "subject": s.subject,
                 "status": "present" if s.id in present_session_ids else "absent",
             }
-            for s in sessions
+            # Newest first - today's class is the one a student looks for.
+            for s in sessions.order_by("-date", "-start_time")
         ]
         total = sum(s.periods for s in sessions)
         present = sum(s.periods for s in sessions if s.id in present_session_ids)

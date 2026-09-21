@@ -32,8 +32,29 @@ class RoleAwareLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
 
+    @staticmethod
+    def _forgive_default_password_typos(data):
+        """Students whose password is still the default (their CRN) often fail
+        to log in only because the phone keyboard capitalised/lowercased it or
+        added a space. Match the username case-insensitively and, ONLY while the
+        account is still on its default password, ignore case/space in the
+        password. Any password the student chose themselves stays exact."""
+        username = str(data.get("username", "")).strip()
+        password = str(data.get("password", ""))
+        if not username or not password:
+            return data
+        user = User.objects.filter(username__iexact=username, role=User.ROLE_STUDENT).first()
+        if user is None:
+            return data
+        fixed = {"username": user.username, "password": password}
+        if not user.check_password(password) and user.check_password(user.username):
+            if password.strip().lower() == user.username.lower():
+                fixed["password"] = user.username
+        return fixed
+
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={"request": request})
+        data = self._forgive_default_password_typos(request.data)
+        serializer = self.serializer_class(data=data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
