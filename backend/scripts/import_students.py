@@ -66,7 +66,6 @@ def import_file(path: Path):
             user = User.objects.create_user(
                 username=username,
                 password=password,
-                email=f"{urn}@bba.local",
                 first_name=name,
                 role=User.ROLE_STUDENT,
             )

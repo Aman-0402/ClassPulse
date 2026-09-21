@@ -6,7 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
-from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile
+from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile, StudentScanPolicy
 
 MAX_PHOTO_BYTES = 1 * 1024 * 1024
 
@@ -15,13 +15,22 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     full_name = serializers.CharField(source="user.first_name", read_only=True)
+    # What still blocks scanning, and whether that block is actually on right
+    # now - the profile page marks these fields red. Recomputed on every
+    # response, so saving one field clears its mark without a reload.
+    missing_scan_fields = serializers.ListField(source="missing_scan_profile_field_keys", read_only=True)
+    scan_lock_enabled = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
         fields = [
             "id", "username", "email", "full_name",
             "crn", "urn", "course", "semester", "section", "contact_number", "photo",
+            "missing_scan_fields", "scan_lock_enabled",
         ]
+
+    def get_scan_lock_enabled(self, obj):
+        return StudentScanPolicy.current().require_complete_profile
 
 
 class ProfileEditRequestCreateSerializer(serializers.ModelSerializer):
@@ -166,3 +175,41 @@ class PasswordResetOTPSerializer(serializers.ModelSerializer):
         if obj.used_at:
             return "used"
         return "active" if obj.is_valid else "expired"
+
+
+class ProfileEditRequestReviewSerializer(serializers.ModelSerializer):
+    """What the teacher sees when reviewing: the request next to the student's
+    current values, so each change reads as old -> new."""
+
+    username = serializers.CharField(source="student.username", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    current_crn = serializers.SerializerMethodField()
+    current_urn = serializers.SerializerMethodField()
+    reviewed_by_username = serializers.CharField(source="reviewed_by.username", read_only=True, default=None)
+
+    class Meta:
+        model = ProfileEditRequest
+        fields = [
+            "id", "username", "full_name", "section", "current_crn", "current_urn",
+            "requested_name", "requested_crn", "requested_urn", "reason",
+            "status", "created_at", "reviewed_at", "reviewed_by_username",
+        ]
+
+    def _profile(self, obj):
+        return getattr(obj.student, "student_profile", None)
+
+    def get_full_name(self, obj):
+        return obj.student.get_full_name() or obj.student.username
+
+    def get_section(self, obj):
+        profile = self._profile(obj)
+        return profile.section if profile else ""
+
+    def get_current_crn(self, obj):
+        profile = self._profile(obj)
+        return profile.crn if profile else ""
+
+    def get_current_urn(self, obj):
+        profile = self._profile(obj)
+        return profile.urn if profile else ""

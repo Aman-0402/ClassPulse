@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, Form, Button } from "react-bootstrap";
-import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout, ADMIN_URL } from "../api/client";
+import { getTeacherProfile, getTodaySchedule, updateTeacherEmail, logout } from "../api/client";
 import type { ScheduleSlot } from "../api/client";
 import AppShell from "../components/AppShell";
 import LoadingScreen from "../components/LoadingScreen";
@@ -74,18 +74,16 @@ export default function TeacherProfilePage() {
     <AppShell>
       <h1 className="h3 mb-4">Welcome, {profile.full_name || profile.username}</h1>
       {profile.pending_edit_requests_count > 0 && (
-        <a
-          href={ADMIN_URL}
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to="/teacher/corrections"
           className="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none"
         >
           <span className="action-pill">
             {profile.pending_edit_requests_count} pending profile correction
             {profile.pending_edit_requests_count === 1 ? "" : "s"}
           </span>
-          <span className="text-muted small">Review in Admin →</span>
-        </a>
+          <span className="text-muted small">Review →</span>
+        </Link>
       )}
       <Card style={{ maxWidth: 480 }}>
         <Card.Body>
@@ -142,7 +140,7 @@ export default function TeacherProfilePage() {
       </Link>
 
       {scheduleDay && (
-        <Card className="mt-4" style={{ maxWidth: 820 }}>
+        <Card className="mt-4">
           <Card.Body>
             <h2 className="h6 mb-3">{scheduleDay}'s Timetable</h2>
             {slots.length === 0 ? (

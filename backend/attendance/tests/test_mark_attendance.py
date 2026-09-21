@@ -119,5 +119,52 @@ class MarkAttendanceTest(APITestCase):
         self._auth(self.student_token)
         response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Complete your profile", response.data["detail"])
+        self.assertEqual(response.data["detail"], "Add your profile photo, email and contact number to mark attendance.")
+        self.assertEqual(response.data["code"], "incomplete_profile")
+        self.assertEqual(response.data["missing_fields"], ["photo", "email", "contact_number"])
         self.assertEqual(Attendance.objects.count(), 0)
+
+    def _lock_on_with_profile(self, **profile_fields):
+        self.student.email = profile_fields.pop("email", "")
+        self.student.save(update_fields=["email"])
+        StudentProfile.objects.create(
+            user=self.student, crn="101", course="BBA", semester=3, section="A", **profile_fields
+        )
+        policy = StudentScanPolicy.current()
+        policy.require_complete_profile = True
+        policy.save(update_fields=["require_complete_profile"])
+        self._auth(self.student_token)
+
+    def test_message_names_only_what_is_still_missing(self):
+        # The reported flow: they add the photo, scan again, and the error must
+        # now name just the email and contact number - not repeat the photo.
+        self._lock_on_with_profile(photo="student_photos/me.jpg")
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.data["detail"], "Add your email and contact number to mark attendance.")
+        self.assertEqual(response.data["missing_fields"], ["email", "contact_number"])
+
+    def test_complete_profile_is_allowed_through_when_lock_enabled(self):
+        self._lock_on_with_profile(photo="student_photos/me.jpg", contact_number="9876543210", email="me@gmail.com")
+        # nothing missing, so the lock lets this one through
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_only_photo_missing(self):
+        self._lock_on_with_profile(contact_number="9876543210", email="me@gmail.com")
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.data["detail"], "Add your profile photo to mark attendance.")
+        self.assertEqual(response.data["missing_fields"], ["photo"])
+
+    def test_placeholder_bba_local_email_counts_as_missing(self):
+        self._lock_on_with_profile(
+            photo="student_photos/me.jpg", contact_number="9876543210", email="25262101709@bba.local"
+        )
+        response = self.client.post(reverse("attendance-mark"), {"token": self.qr.token}, format="json")
+        self.assertEqual(response.data["missing_fields"], ["email"])
+        self.assertEqual(response.data["detail"], "Add your email to mark attendance.")
+
+    def test_other_rejections_have_no_incomplete_profile_code(self):
+        self._auth(self.student_token)
+        response = self.client.post(reverse("attendance-mark"), {"token": "nope"}, format="json")
+        self.assertNotIn("code", response.data)
+        self.assertNotIn("missing_fields", response.data)

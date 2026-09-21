@@ -12,3 +12,13 @@ export function formatTime(value: string): string {
 export function formatSessionTime(isoDatetime: string): string {
   return new Date(isoDatetime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
+
+// Date + time for things that can be days old (e.g. a pending request), where a bare clock time is ambiguous.
+export function formatDateTime(isoDatetime: string): string {
+  return new Date(isoDatetime).toLocaleString([], {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}

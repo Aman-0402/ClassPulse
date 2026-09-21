@@ -71,7 +71,7 @@ def verify_profile_complete_for_scan(student):
         return
     profile = getattr(student, "student_profile", None)
     if profile is None or not profile.is_scan_profile_complete:
-        missing = profile.missing_scan_profile_fields if profile else ["profile"]
+        missing = profile.missing_scan_profile_field_keys if profile else ["profile"]
         raise IncompleteProfileError(missing)
 
 

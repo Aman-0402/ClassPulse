@@ -26,10 +26,6 @@ const BASE_URL = import.meta.env.VITE_API_URL || (isLocalFrontend ? localApiUrl(
 // phone camera apps will show localhost links that students cannot open.
 export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || "https://arxinfo.info";
 
-// Django admin lives alongside the API under the same mount — used to deep-link
-// a teacher straight to reviewing pending profile-edit requests.
-export const ADMIN_URL = `${BASE_URL}/admin/`;
-
 // Matches the backend's attendance_percentage() convention (see attendance/views.py's
 // AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and
 // the backend's below-threshold list can't silently drift apart.
@@ -106,7 +102,7 @@ export async function getMyEditRequests(): Promise<ProfileEditRequestRecord[]> {
   return data;
 }
 
-export async function uploadProfilePhoto(file: File): Promise<{ photo: string | null }> {
+export async function uploadProfilePhoto(file: File): Promise<{ photo: string | null; missing_scan_fields: ("photo" | "email" | "contact_number")[]; scan_lock_enabled: boolean }> {
   const formData = new FormData();
   formData.append("photo", file);
   const { data } = await api.post("/student/photo/", formData, {
@@ -169,6 +165,38 @@ export interface OTPHistoryEntry {
 
 export async function getOtpHistory(): Promise<OTPHistoryEntry[]> {
   const { data } = await api.get<OTPHistoryEntry[]>("/teacher/otp-history/");
+  return data;
+}
+
+export interface EditRequestReviewEntry {
+  id: number;
+  username: string;
+  full_name: string;
+  section: string;
+  current_crn: string;
+  current_urn: string;
+  requested_name: string;
+  requested_crn: string;
+  requested_urn: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by_username: string | null;
+}
+
+export async function getEditRequestsForReview(): Promise<EditRequestReviewEntry[]> {
+  const { data } = await api.get<EditRequestReviewEntry[]>("/teacher/edit-requests/");
+  return data;
+}
+
+export async function approveEditRequest(id: number): Promise<EditRequestReviewEntry> {
+  const { data } = await api.post<EditRequestReviewEntry>(`/teacher/edit-requests/${id}/approve/`);
+  return data;
+}
+
+export async function rejectEditRequest(id: number): Promise<EditRequestReviewEntry> {
+  const { data } = await api.post<EditRequestReviewEntry>(`/teacher/edit-requests/${id}/reject/`);
   return data;
 }
 

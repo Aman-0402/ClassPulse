@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 from accounts.models import StudentProfile
 from accounts.permissions import IsTeacher, IsStudent
-from attendance.exceptions import AttendanceError
+from attendance.exceptions import AttendanceError, IncompleteProfileError
 from attendance.models import AttendanceSession, Attendance, ActivityLog
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
 from attendance.services import (
@@ -138,6 +138,13 @@ class MarkAttendanceView(APIView):
                 ip_address=request.META.get("REMOTE_ADDR"),
                 device_info=request.META.get("HTTP_USER_AGENT", "")[:255],
                 device_id=request.META.get("HTTP_X_CLASSPULSE_DEVICE_ID", "")[:255],
+            )
+        except IncompleteProfileError as exc:
+            # Structured, not just a sentence: the scan screen offers a button
+            # to the profile page and the profile marks exactly these fields.
+            return Response(
+                {"detail": exc.message, "code": "incomplete_profile", "missing_fields": exc.missing_keys},
+                status=400,
             )
         except AttendanceError as exc:
             return Response({"detail": exc.message}, status=400)

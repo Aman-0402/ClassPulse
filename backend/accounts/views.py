@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Case, IntegerField, Value, When
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -14,12 +15,14 @@ from accounts.serializers import (
     ForgotPasswordSerializer,
     PasswordResetOTPSerializer,
     ProfileEditRequestCreateSerializer,
+    ProfileEditRequestReviewSerializer,
     ProfileEditRequestSerializer,
     ProfilePhotoSerializer,
     ResetPasswordSerializer,
     StudentProfileSerializer,
     TeacherProfileSerializer,
 )
+from accounts.services import EditRequestError, approve_edit_request, reject_edit_request
 from accounts.models import PasswordResetOTP, ProfileEditRequest, StudentProfile, StudentScanPolicy, User
 from attendance.models import Attendance
 from attendance.services import get_available_sections
@@ -346,3 +349,47 @@ class TeacherStudentDataView(APIView):
         profile.trusted_device_bound_at = None
         profile.save(update_fields=["trusted_device_hash", "trusted_device_bound_at"])
         return Response({"detail": f"Trusted device reset for {profile.crn}."})
+
+
+class EditRequestReviewListView(generics.ListAPIView):
+    # Pending first (that's what needs action), then newest first — resolved
+    # ones stay listed as the history of what was approved/rejected and by whom.
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    serializer_class = ProfileEditRequestReviewSerializer
+
+    def get_queryset(self):
+        return (
+            ProfileEditRequest.objects.select_related("student", "student__student_profile", "reviewed_by")
+            .annotate(
+                pending_first=Case(
+                    When(status=ProfileEditRequest.STATUS_PENDING, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("pending_first", "-created_at")
+        )
+
+
+class _EditRequestActionView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    action = None
+
+    def post(self, request, pk):
+        edit_request = get_object_or_404(
+            ProfileEditRequest.objects.select_related("student", "student__student_profile"), pk=pk
+        )
+        try:
+            self.action(edit_request, request.user)
+        except EditRequestError as exc:
+            return Response({"detail": str(exc)}, status=400)
+        edit_request.refresh_from_db()
+        return Response(ProfileEditRequestReviewSerializer(edit_request).data)
+
+
+class EditRequestApproveView(_EditRequestActionView):
+    action = staticmethod(approve_edit_request)
+
+
+class EditRequestRejectView(_EditRequestActionView):
+    action = staticmethod(reject_edit_request)

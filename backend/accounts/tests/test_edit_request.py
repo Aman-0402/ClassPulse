@@ -104,15 +104,10 @@ class ProfileEditRequestApprovalTest(APITestCase):
         self.assertEqual(edit_request.status, ProfileEditRequest.STATUS_APPROVED)
         self.assertEqual(edit_request.reviewed_by, reviewer)
 
-    def test_approving_a_crn_change_keeps_username_and_password_in_sync(self):
-        # Real reported bug: approving a CRN correction updated
-        # StudentProfile.crn but left User.username stale, so the login
-        # scheme (username = password = CRN) broke — the student's actual
-        # current CRN stopped being their real password.
+    def _approve_via_admin(self, edit_request):
         from accounts.admin import ProfileEditRequestAdmin
         from django.contrib.admin.sites import AdminSite
 
-        edit_request = ProfileEditRequest.objects.create(student=self.student, requested_crn="25BBA999")
         admin_instance = ProfileEditRequestAdmin(ProfileEditRequest, AdminSite())
         reviewer = User.objects.create_user(username="admin2", password="pw12345678", role=User.ROLE_TEACHER)
 
@@ -126,8 +121,29 @@ class ProfileEditRequestApprovalTest(APITestCase):
 
         admin_instance.approve_requests(FakeRequest(), ProfileEditRequest.objects.filter(id=edit_request.id))
 
+    def test_approving_a_crn_change_keeps_username_and_default_password_in_sync(self):
+        # Real reported bug: approving a CRN correction updated
+        # StudentProfile.crn but left User.username stale, so the login
+        # scheme (username = password = CRN) broke.
+        self.student.set_password("25BBA015")  # the default: password == CRN
+        self.student.save(update_fields=["password"])
+        edit_request = ProfileEditRequest.objects.create(student=self.student, requested_crn="25BBA999")
+
+        self._approve_via_admin(edit_request)
+
         self.student.refresh_from_db()
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.crn, "25BBA999")
         self.assertEqual(self.student.username, "25BBA999")
         self.assertTrue(self.student.check_password("25BBA999"))
+
+    def test_approving_a_crn_change_keeps_a_password_the_student_chose(self):
+        # setUp gave this student "pw12345678" - a password they picked, not
+        # the CRN default. Overwriting it would silently lock them out.
+        edit_request = ProfileEditRequest.objects.create(student=self.student, requested_crn="25BBA999")
+
+        self._approve_via_admin(edit_request)
+
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.username, "25BBA999")
+        self.assertTrue(self.student.check_password("pw12345678"))

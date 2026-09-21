@@ -16,3 +16,15 @@ export function notifyError(title: string, text?: string) {
 export function notifyInfo(title: string, text?: string) {
   return Swal.fire({ icon: "info", title, text, confirmButtonColor: CONFIRM_COLOR });
 }
+
+export async function confirmAction(title: string, text: string, confirmText: string): Promise<boolean> {
+  const result = await Swal.fire({
+    icon: "question",
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    confirmButtonColor: CONFIRM_COLOR,
+  });
+  return result.isConfirmed;
+}

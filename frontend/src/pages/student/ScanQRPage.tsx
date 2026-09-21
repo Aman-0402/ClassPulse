@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { markAttendance } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import Swal from "sweetalert2";
 import { notifySuccess, notifyError, notifyInfo } from "../../utils/alerts";
 
 const SCANNER_ELEMENT_ID = "qr-scanner";
@@ -74,6 +75,23 @@ export default function ScanQRPage() {
           });
         }
         notifyInfo("Already Marked", "You have already marked your attendance for this session.");
+      } else if (data?.code === "incomplete_profile") {
+        // The message already names exactly what's still missing; the button
+        // takes them to the profile page where those fields are marked red.
+        if (showScreenStatus) {
+          setStatus({ variant: "danger", title: "Complete Your Profile", message: detail });
+        }
+        Swal.fire({
+          icon: "warning",
+          title: "Complete Your Profile",
+          text: detail,
+          confirmButtonText: "Complete profile",
+          confirmButtonColor: "#9d5fd1",
+          showCancelButton: true,
+          cancelButtonText: "Later",
+        }).then((result) => {
+          if (result.isConfirmed) navigate("/student/profile", { state: { fromScan: true } });
+        });
       } else {
         if (showScreenStatus) {
           setStatus({
@@ -89,7 +107,7 @@ export default function ScanQRPage() {
         scanningRef.current = false;
       }, RESCAN_COOLDOWN_MS);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!urlToken) return;

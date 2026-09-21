@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Card, Table, Form, Button, Alert } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { notifySuccess, notifyError } from "../utils/alerts";
@@ -20,6 +20,8 @@ import LoadingScreen from "../components/LoadingScreen";
 import PhotoCropModal from "../components/PhotoCropModal";
 import { formatTime } from "../utils/time";
 
+type ScanField = "photo" | "email" | "contact_number";
+
 interface Profile {
   full_name: string;
   crn: string;
@@ -30,6 +32,47 @@ interface Profile {
   email: string;
   contact_number: string;
   photo: string | null;
+  // What still blocks scanning, and whether that block is switched on. Every
+  // profile save returns a fresh copy, so a field's red mark clears the moment
+  // it's fixed.
+  missing_scan_fields: ScanField[];
+  scan_lock_enabled: boolean;
+}
+
+const FIELD_LABELS: Record<ScanField, string> = {
+  photo: "profile photo",
+  email: "email",
+  contact_number: "contact number",
+};
+
+function joinLabels(fields: ScanField[]): string {
+  const labels = fields.map((f) => FIELD_LABELS[f]);
+  return labels.length <= 1 ? labels.join("") : `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
+}
+
+// A small QR-style mark for the scan card: three finder squares plus data dots.
+function QrGlyph() {
+  return (
+    <svg className="scan-hero-glyph" viewBox="0 0 64 64" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="4">
+        <rect x="4" y="4" width="20" height="20" rx="3" />
+        <rect x="40" y="4" width="20" height="20" rx="3" />
+        <rect x="4" y="40" width="20" height="20" rx="3" />
+      </g>
+      <g fill="currentColor">
+        <rect x="11" y="11" width="6" height="6" />
+        <rect x="47" y="11" width="6" height="6" />
+        <rect x="11" y="47" width="6" height="6" />
+        <rect x="32" y="8" width="5" height="5" />
+        <rect x="32" y="20" width="5" height="5" />
+        <rect x="32" y="32" width="8" height="8" />
+        <rect x="46" y="34" width="5" height="5" />
+        <rect x="54" y="42" width="6" height="6" />
+        <rect x="42" y="48" width="6" height="6" />
+        <rect x="54" y="54" width="6" height="6" />
+      </g>
+    </svg>
+  );
 }
 
 export default function StudentProfilePage() {
@@ -60,6 +103,9 @@ export default function StudentProfilePage() {
     () => sessionStorage.getItem("classpulse_photo_reminder_dismissed") === "1"
   );
   const navigate = useNavigate();
+  // Set by the scan screen's "Complete profile" button - they were just told
+  // exactly what's missing, so go straight to it instead of stacking another popup.
+  const fromScan = Boolean((useLocation().state as { fromScan?: boolean } | null)?.fromScan);
 
   const loadEditRequests = () => {
     getMyEditRequests()
@@ -89,9 +135,20 @@ export default function StudentProfilePage() {
     loadEditRequests();
   }, [navigate]);
 
+  const scrollToProfile = () =>
+    document.getElementById("profile-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const scrolledFromScanRef = useRef(false);
+  useEffect(() => {
+    if (!profile || !fromScan || scrolledFromScanRef.current) return;
+    scrolledFromScanRef.current = true;
+    // Let the cards lay out first, or the scroll lands short.
+    setTimeout(scrollToProfile, 150);
+  }, [profile, fromScan]);
+
   const photoPromptShownRef = useRef(false);
   useEffect(() => {
-    if (!profile || profile.photo || photoReminderDismissed || photoPromptShownRef.current) return;
+    if (!profile || profile.photo || photoReminderDismissed || fromScan || photoPromptShownRef.current) return;
     photoPromptShownRef.current = true;
     Swal.fire({
       icon: "warning",
@@ -107,7 +164,7 @@ export default function StudentProfilePage() {
         setPhotoReminderDismissed(true);
       }
     });
-  }, [profile, photoReminderDismissed]);
+  }, [profile, photoReminderDismissed, fromScan]);
 
   const MAX_SOURCE_PHOTO_BYTES = 15 * 1024 * 1024;
 
@@ -137,7 +194,16 @@ export default function StudentProfilePage() {
     setPhotoUploading(true);
     try {
       const result = await uploadProfilePhoto(croppedFile);
-      setProfile((prev) => (prev ? { ...prev, photo: result.photo } : prev));
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              photo: result.photo,
+              missing_scan_fields: result.missing_scan_fields,
+              scan_lock_enabled: result.scan_lock_enabled,
+            }
+          : prev
+      );
       setCropSrc(null);
       setCropFileName("");
       notifySuccess("Photo Updated", "Your profile photo has been updated.");
@@ -158,7 +224,9 @@ export default function StudentProfilePage() {
     setEmailSaving(true);
     try {
       const updated = await updateEmail(emailInput);
-      setProfile((prev) => (prev ? { ...prev, email: updated.email } : prev));
+      setProfile((prev) =>
+        prev ? { ...prev, email: updated.email, missing_scan_fields: updated.missing_scan_fields } : prev
+      );
       setEditingEmail(false);
       notifySuccess("Email Updated", "Your email has been updated.");
     } catch (err: any) {
@@ -177,7 +245,11 @@ export default function StudentProfilePage() {
     setContactSaving(true);
     try {
       const updated = await updateContactNumber(contactInput);
-      setProfile((prev) => (prev ? { ...prev, contact_number: updated.contact_number } : prev));
+      setProfile((prev) =>
+        prev
+          ? { ...prev, contact_number: updated.contact_number, missing_scan_fields: updated.missing_scan_fields }
+          : prev
+      );
       setEditingContact(false);
       notifySuccess("Contact Number Updated", "Your contact number has been updated.");
     } catch (err: any) {
@@ -226,187 +298,231 @@ export default function StudentProfilePage() {
     );
   }
 
+  // Red only while it actually blocks scanning (lock on) - with the lock off
+  // these fields are just nice-to-have and shouldn't look like errors.
+  const blocked = profile.scan_lock_enabled ? profile.missing_scan_fields : [];
+  const isMissing = (field: ScanField) => blocked.includes(field);
+  const missingClass = (field: ScanField) => (isMissing(field) ? "info-row-missing" : "");
+
   return (
     <AppShell>
-      <h1 className="h3 mb-4">Welcome, {profile.full_name}</h1>
-      <div className="d-flex gap-2 mb-3 flex-wrap">
-        <Link to="/student/scan" className="cta-button">
+      <div className="mb-3">
+        <h1 className="h3 mb-1">Welcome, {profile.full_name}</h1>
+        <div className="text-muted small font-mono">
+          {profile.crn} · Section {profile.section} · Semester {profile.semester}
+        </div>
+      </div>
+
+      <div className="scan-hero">
+        <div className="scan-hero-body">
+          <QrGlyph />
+          <div>
+            <h2 className="scan-hero-title">Mark your attendance</h2>
+            <p className="scan-hero-text">Scan the QR code your teacher is showing on screen.</p>
+          </div>
+        </div>
+        {blocked.length > 0 && (
+          <div className="scan-hero-alert" role="alert">
+            <span>
+              Before you can scan, add your <strong>{joinLabels(blocked)}</strong>.
+            </span>
+            <button type="button" className="scan-hero-alert-link" onClick={scrollToProfile}>
+              Complete profile
+            </button>
+          </div>
+        )}
+        <Link to="/student/scan" className="scan-hero-btn">
           Scan Attendance QR
         </Link>
-        <Link to="/student/change-password" className="btn btn-outline-secondary">
-          Change Password
-        </Link>
-        <InstallAppButton />
       </div>
-      <div className="d-flex flex-wrap gap-4 align-items-start" style={{ maxWidth: 980 }}>
-      <Card style={{ flex: "1 1 420px" }}>
-        <Card.Body>
-          <div className="d-flex align-items-center gap-3 mb-3">
-            {profile.photo ? (
-              <img
-                src={profile.photo}
-                alt="Profile"
-                width={72}
-                height={72}
-                style={{ borderRadius: "12px", objectFit: "cover", border: "2px solid var(--line)" }}
-              />
-            ) : (
-              <span
-                className="d-inline-flex align-items-center justify-content-center"
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: "12px",
-                  background: "var(--line)",
-                  color: "var(--ink-soft)",
-                  fontWeight: 700,
-                  fontSize: "1.5rem",
-                }}
-              >
-                {(profile.full_name || "?").charAt(0).toUpperCase()}
-              </span>
-            )}
-            <div>
-              <label className="btn btn-outline-secondary btn-sm mb-0">
-                {photoUploading ? "Uploading..." : profile.photo ? "Change photo" : "Add photo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  disabled={photoUploading}
-                  onChange={handlePhotoChange}
-                />
-              </label>
-              <div className="text-muted small mt-1">You'll get to crop it next</div>
-            </div>
-          </div>
 
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <span className="stamp stamp-neutral">Student ID</span>
-            <span className="font-mono text-muted">{profile.crn}</span>
-          </div>
-          <div className="d-flex flex-column gap-3">
-            <div className="info-row">
-              <div className="info-row-label">Roll No.</div>
-              <div className="font-mono">{profile.urn}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Course</div>
-              <div>{profile.course}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Semester</div>
-              <div>{profile.semester}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Section</div>
-              <div>{profile.section}</div>
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Email</div>
-              {editingEmail ? (
-                <div>
-                  <Form.Control
-                    size="sm"
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    autoFocus
-                  />
-                  <div className="d-flex gap-2 mt-2">
-                    <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
-                      {emailSaving ? "Saving..." : "Save"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline-secondary"
-                      onClick={() => setEditingEmail(false)}
-                      disabled={emailSaving}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className="text-break">{profile.email}</span>
-                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditEmail}>
-                    Edit
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="info-row">
-              <div className="info-row-label">Contact Number</div>
-              {editingContact ? (
-                <div>
-                  <Form.Control
-                    size="sm"
-                    type="tel"
-                    value={contactInput}
-                    onChange={(e) => setContactInput(e.target.value)}
-                    autoFocus
-                  />
-                  <div className="d-flex gap-2 mt-2">
-                    <Button size="sm" onClick={handleSaveContact} disabled={contactSaving}>
-                      {contactSaving ? "Saving..." : "Save"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline-secondary"
-                      onClick={() => setEditingContact(false)}
-                      disabled={contactSaving}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className={profile.contact_number ? "" : "text-muted"}>
-                    {profile.contact_number || "Not added yet"}
-                  </span>
-                  <Button size="sm" variant="outline-secondary" onClick={handleStartEditContact}>
-                    {profile.contact_number ? "Edit" : "Add"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </Card.Body>
-      </Card>
-
-      {scheduleDay && (
-        <Card style={{ flex: "1 1 420px" }}>
+      <div className="d-flex flex-wrap gap-4 align-items-start mt-4">
+        <Card id="profile-card" style={{ flex: "1 1 420px" }}>
           <Card.Body>
-            <h2 className="h6 mb-3">{scheduleDay}'s Timetable — Section {profile.section}</h2>
-            {(() => {
-              const mySlots = slots.filter((slot) => slot.section === profile.section);
-              return mySlots.length === 0 ? (
-                <p className="text-muted mb-0">No training sessions scheduled today.</p>
+            <div className={`d-flex align-items-center gap-3 mb-3 ${isMissing("photo") ? "photo-block-missing" : ""}`}>
+              {profile.photo ? (
+                <img
+                  src={profile.photo}
+                  alt="Profile"
+                  width={72}
+                  height={72}
+                  style={{ borderRadius: "12px", objectFit: "cover", border: "2px solid var(--line)" }}
+                />
               ) : (
-                <div className="table-responsive">
-                  <Table size="sm" borderless className="mb-0">
-                    <tbody>
-                      {mySlots.map((slot, index) => (
-                        <tr key={index}>
-                          <td className="text-muted font-mono">
-                            {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                          </td>
-                          <td>{slot.subject}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
+                <span
+                  className="d-inline-flex align-items-center justify-content-center"
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: "12px",
+                    background: "var(--line)",
+                    color: "var(--ink-soft)",
+                    fontWeight: 700,
+                    fontSize: "1.5rem",
+                  }}
+                >
+                  {(profile.full_name || "?").charAt(0).toUpperCase()}
+                </span>
+              )}
+              <div>
+                <label className="btn btn-outline-secondary btn-sm mb-0">
+                  {photoUploading ? "Uploading..." : profile.photo ? "Change photo" : "Add photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={photoUploading}
+                    onChange={handlePhotoChange}
+                  />
+                </label>
+                {isMissing("photo") ? (
+                  <div className="required-tag mt-1">Profile photo required to scan</div>
+                ) : (
+                  <div className="text-muted small mt-1">You'll get to crop it next</div>
+                )}
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <span className="stamp stamp-neutral">Student ID</span>
+              <span className="font-mono text-muted">{profile.crn}</span>
+            </div>
+            <div className="d-flex flex-column gap-3">
+              <div className="info-row">
+                <div className="info-row-label">Roll No.</div>
+                <div className="font-mono">{profile.urn}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-row-label">Course</div>
+                <div>{profile.course}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-row-label">Semester</div>
+                <div>{profile.semester}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-row-label">Section</div>
+                <div>{profile.section}</div>
+              </div>
+              <div className={`info-row ${missingClass("email")}`}>
+                <div className="info-row-label">
+                  Email {isMissing("email") && <span className="required-tag">Required to scan</span>}
                 </div>
-              );
-            })()}
+                {editingEmail ? (
+                  <div>
+                    <Form.Control
+                      size="sm"
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="d-flex gap-2 mt-2">
+                      <Button size="sm" onClick={handleSaveEmail} disabled={emailSaving}>
+                        {emailSaving ? "Saving..." : "Save"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline-secondary"
+                        onClick={() => setEditingEmail(false)}
+                        disabled={emailSaving}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span className={`text-break ${isMissing("email") ? "text-muted" : ""}`}>
+                      {isMissing("email") ? "Not added yet" : profile.email}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={isMissing("email") ? "danger" : "outline-secondary"}
+                      onClick={handleStartEditEmail}
+                    >
+                      {isMissing("email") ? "Add" : "Edit"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className={`info-row ${missingClass("contact_number")}`}>
+                <div className="info-row-label">
+                  Contact Number {isMissing("contact_number") && <span className="required-tag">Required to scan</span>}
+                </div>
+                {editingContact ? (
+                  <div>
+                    <Form.Control
+                      size="sm"
+                      type="tel"
+                      value={contactInput}
+                      onChange={(e) => setContactInput(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="d-flex gap-2 mt-2">
+                      <Button size="sm" onClick={handleSaveContact} disabled={contactSaving}>
+                        {contactSaving ? "Saving..." : "Save"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline-secondary"
+                        onClick={() => setEditingContact(false)}
+                        disabled={contactSaving}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span className={profile.contact_number ? "" : "text-muted"}>
+                      {profile.contact_number || "Not added yet"}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={isMissing("contact_number") ? "danger" : "outline-secondary"}
+                      onClick={handleStartEditContact}
+                    >
+                      {profile.contact_number ? "Edit" : "Add"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </Card.Body>
         </Card>
-      )}
+
+        {scheduleDay && (
+          <Card style={{ flex: "1 1 420px" }}>
+            <Card.Body>
+              <h2 className="h6 mb-3">{scheduleDay}'s Timetable — Section {profile.section}</h2>
+              {(() => {
+                const mySlots = slots.filter((slot) => slot.section === profile.section);
+                return mySlots.length === 0 ? (
+                  <p className="text-muted mb-0">No training sessions scheduled today.</p>
+                ) : (
+                  <div className="table-responsive">
+                    <Table size="sm" borderless className="mb-0">
+                      <tbody>
+                        {mySlots.map((slot, index) => (
+                          <tr key={index}>
+                            <td className="text-muted font-mono">
+                              {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                            </td>
+                            <td>{slot.subject}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                );
+              })()}
+            </Card.Body>
+          </Card>
+        )}
       </div>
 
-      <Card className="mt-4" style={{ maxWidth: 980 }}>
+      <Card className="mt-4">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h2 className="h6 mb-0">Request a Profile Correction</h2>
@@ -482,6 +598,19 @@ export default function StudentProfilePage() {
           )}
         </Card.Body>
       </Card>
+
+      <Card className="mt-4">
+        <Card.Body className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h2 className="h6 mb-0">Account</h2>
+          <div className="d-flex gap-2 flex-wrap">
+            <Link to="/student/change-password" className="btn btn-outline-secondary btn-sm">
+              Change Password
+            </Link>
+            <InstallAppButton />
+          </div>
+        </Card.Body>
+      </Card>
+
       <PhotoCropModal
         show={!!cropSrc}
         imageSrc={cropSrc}

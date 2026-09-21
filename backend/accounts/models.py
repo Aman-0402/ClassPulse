@@ -6,6 +6,14 @@ from django.utils import timezone
 
 OTP_VALIDITY_MINUTES = 10
 
+# Human wording for each field the scan lock can require, keyed by the stable
+# machine key the API and frontend use.
+SCAN_PROFILE_FIELD_LABELS = {
+    "photo": "profile photo",
+    "email": "email",
+    "contact_number": "contact number",
+}
+
 
 class User(AbstractUser):
     ROLE_STUDENT = "student"
@@ -36,15 +44,21 @@ class StudentProfile(models.Model):
         return f"{self.user.get_full_name() or self.user.username} ({self.crn})"
 
     @property
-    def missing_scan_profile_fields(self):
+    def missing_scan_profile_field_keys(self):
+        # Stable machine keys (the frontend uses them to mark the exact fields
+        # red); missing_scan_profile_fields below is the human-readable form.
         missing = []
         if not self.photo:
-            missing.append("profile photo")
+            missing.append("photo")
         if not self.user.email or self.user.email.endswith("@bba.local"):
             missing.append("email")
         if not self.contact_number:
-            missing.append("contact number")
+            missing.append("contact_number")
         return missing
+
+    @property
+    def missing_scan_profile_fields(self):
+        return [SCAN_PROFILE_FIELD_LABELS[key] for key in self.missing_scan_profile_field_keys]
 
     @property
     def is_scan_profile_complete(self):

@@ -22,6 +22,9 @@ from django.urls import path, re_path, include
 from django.views.static import serve as serve_static
 from accounts.views import (
     ChangePasswordView,
+    EditRequestApproveView,
+    EditRequestRejectView,
+    EditRequestReviewListView,
     LogoutView,
     OTPHistoryView,
     TeacherProfileView,
@@ -36,6 +39,9 @@ urlpatterns = [
     path('api/teacher/email/', UpdateEmailView.as_view(), name='teacher-update-email'),
     path('api/teacher/otp-history/', OTPHistoryView.as_view(), name='otp-history'),
     path('api/teacher/students/', TeacherStudentDataView.as_view(), name='teacher-student-data'),
+    path('api/teacher/edit-requests/', EditRequestReviewListView.as_view(), name='edit-request-review-list'),
+    path('api/teacher/edit-requests/<int:pk>/approve/', EditRequestApproveView.as_view(), name='edit-request-approve'),
+    path('api/teacher/edit-requests/<int:pk>/reject/', EditRequestRejectView.as_view(), name='edit-request-reject'),
     path('api/logout/', LogoutView.as_view(), name='logout'),
     path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/attendance/', include('attendance.urls')),
