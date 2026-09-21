@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Alert, Spinner } from "react-bootstrap";
 import { getLateReport } from "../api/client";
-import type { LateReportResponse } from "../api/client";
+import type { LateReportResponse, LateStudent } from "../api/client";
 import { formatDateTime } from "../utils/time";
 
 // 0 = list every scan time, not just late ones.
@@ -12,6 +12,15 @@ const THRESHOLDS = [
   { minutes: 30, label: "30+ min" },
   { minutes: 0, label: "All scans" },
 ];
+
+type SortKey = "late_count" | "late_rate" | "avg_late" | "max_late";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  late_count: "Times late",
+  late_rate: "Late rate",
+  avg_late: "Avg (min)",
+  max_late: "Worst (min)",
+};
 
 interface Props {
   section: string;
@@ -56,6 +65,16 @@ export default function LateArrivalsPanel({ section, dateFrom, dateTo }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("late_count");
+
+  const sorted = useMemo<LateStudent[]>(() => {
+    if (!report) return [];
+    return [...report.students].sort((a, b) => b[sortKey] - a[sortKey] || b.late_count - a.late_count);
+  }, [report, sortKey]);
+  const regularCount = report ? report.students.filter((s) => s.regular).length : 0;
+  const worst = report && report.students.length > 0
+    ? report.students.reduce((top, s) => (s.max_late > top.max_late ? s : top))
+    : null;
 
   useEffect(() => {
     let active = true;
@@ -128,6 +147,20 @@ export default function LateArrivalsPanel({ section, dateFrom, dateTo }: Props) 
               <span className="stat-label">Students</span>
               <span className="stat-value">{report.students.length}</span>
             </div>
+            {!everyScan && (
+              <div className="stat-tile stat-tile-bad">
+                <span className="stat-label">Regularly late</span>
+                <span className="stat-value">{regularCount}</span>
+                <span className="late-of">3+ times and over half their scans</span>
+              </div>
+            )}
+            {worst && (
+              <div className="stat-tile stat-tile-bad">
+                <span className="stat-label">Longest delay</span>
+                <span className="stat-value">{worst.max_late} min</span>
+                <span className="late-of">{worst.name} · {worst.crn}</span>
+              </div>
+            )}
             {report.sections.map((s) => (
               <div key={s.section} className="stat-tile">
                 <span className="stat-label">Section {s.section}</span>
@@ -151,14 +184,23 @@ export default function LateArrivalsPanel({ section, dateFrom, dateTo }: Props) 
                     <th>Section</th>
                     <th>CRN</th>
                     <th>Name</th>
-                    <th>{everyScan ? "Scans" : "Times late"}</th>
-                    <th>Avg (min)</th>
-                    <th>Worst (min)</th>
+                    {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                      <th key={key} aria-sort={sortKey === key ? "descending" : "none"}>
+                        <button
+                          type="button"
+                          className={`late-sort ${sortKey === key ? "late-sort-on" : ""}`}
+                          onClick={() => setSortKey(key)}
+                        >
+                          {key === "late_count" && everyScan ? "Scans" : SORT_LABELS[key]}
+                          {sortKey === key ? " ▾" : ""}
+                        </button>
+                      </th>
+                    ))}
                     <th aria-label="Details" />
                   </tr>
                 </thead>
                 <tbody>
-                  {report.students.map((student) => {
+                  {sorted.map((student) => {
                     const expanded = open === student.crn;
                     return (
                       <Fragment key={student.crn}>
@@ -167,8 +209,20 @@ export default function LateArrivalsPanel({ section, dateFrom, dateTo }: Props) 
                             <span className="stamp stamp-neutral">{student.section || "-"}</span>
                           </td>
                           <td className="font-mono">{student.crn}</td>
-                          <td>{student.name}</td>
-                          <td>{student.late_count}</td>
+                          <td>
+                            {student.name}
+                            {student.regular && !everyScan && <span className="late-regular">Regular</span>}
+                          </td>
+                          <td>
+                            {student.late_count}
+                            <span className="late-of"> of {student.scan_count}</span>
+                          </td>
+                          <td>
+                            <span className="late-rate">
+                              <span className="late-rate-bar" style={{ width: `${Math.min(student.late_rate, 100)}%` }} />
+                            </span>
+                            <span className="font-mono ms-2">{student.late_rate}%</span>
+                          </td>
                           <td className="font-mono">{student.avg_late}</td>
                           <td>
                             <span className={`late-badge ${student.max_late >= 15 ? "late-badge-bad" : ""}`}>
@@ -179,7 +233,7 @@ export default function LateArrivalsPanel({ section, dateFrom, dateTo }: Props) 
                         </tr>
                         {expanded && (
                           <tr className="late-detail">
-                            <td colSpan={7}>
+                            <td colSpan={8}>
                               <ul className="late-entries">
                                 {student.entries.map((entry, i) => (
                                   <li key={`${entry.scanned_at}-${i}`}>

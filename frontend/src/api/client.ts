@@ -479,6 +479,9 @@ export interface LateStudent {
   late_count: number;
   max_late: number;
   avg_late: number;
+  scan_count: number;
+  late_rate: number;
+  regular: boolean;
   entries: LateEntry[];
 }
 

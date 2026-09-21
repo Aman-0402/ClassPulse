@@ -82,3 +82,22 @@ class LateReportTest(APITestCase):
     def test_bad_params_rejected(self):
         self.assertEqual(self._get(min_minutes="abc").status_code, 400)
         self.assertEqual(self._get(min_minutes=-1).status_code, 400)
+
+    def test_late_rate_and_regular_flag(self):
+        user = self._student("R1", "A", 12)
+        for _ in range(3):
+            session = self._session("A")
+            record = Attendance.objects.create(student=user, session=session, device_info="phone")
+            Attendance.objects.filter(pk=record.pk).update(marked_at=self.start + timezone.timedelta(minutes=14))
+        ontime_session = self._session("A")
+        record = Attendance.objects.create(student=user, session=ontime_session, device_info="phone")
+        Attendance.objects.filter(pk=record.pk).update(marked_at=self.start + timezone.timedelta(minutes=1))
+        student = self._get(min_minutes=10).data["students"][0]
+        self.assertEqual(student["late_count"], 4)
+        self.assertEqual(student["scan_count"], 5)
+        self.assertEqual(student["late_rate"], 80.0)
+        self.assertTrue(student["regular"])
+
+    def test_one_off_lateness_is_not_regular(self):
+        self._student("O1", "A", 20)
+        self.assertFalse(self._get(min_minutes=10).data["students"][0]["regular"])

@@ -1663,3 +1663,46 @@ div.required-tag {
   gap: 0.4rem 1.25rem;
   font-size: 0.9rem;
 }
+
+.late-sort {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.late-sort:hover,
+.late-sort-on {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.late-regular {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--stamp-red);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.late-rate {
+  display: inline-block;
+  width: 70px;
+  height: 8px;
+  border-radius: 8px;
+  background: var(--line);
+  vertical-align: middle;
+  overflow: hidden;
+}
+.late-rate-bar {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brass), var(--stamp-red));
+}
