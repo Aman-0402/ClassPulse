@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Button, Card } from "react-bootstrap";
+import { Alert, Button } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { markAttendance } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 import Swal from "sweetalert2";
 import { notifySuccess, notifyError, notifyInfo } from "../../utils/alerts";
 
@@ -155,7 +156,7 @@ export default function ScanQRPage() {
 
   return (
     <AppShell>
-      <h1 className="h3 mb-3">Scan Attendance QR</h1>
+      <PageHeader eyebrow="Student" title="Scan Attendance QR" subtitle="Point your camera at the QR your teacher is showing." />
       {urlToken ? (
         <Alert variant={status?.variant ?? "info"}>
           <Alert.Heading className="h5">{status?.title ?? "Marking Attendance"}</Alert.Heading>
@@ -169,20 +170,24 @@ export default function ScanQRPage() {
               <p className="mb-0">{status.message}</p>
             </Alert>
           )}
-          <Card style={{ maxWidth: 460 }}>
-            <Card.Body>
-              <p className="text-muted">
-                ClassPulse needs camera access to scan the attendance QR. Choose Allow when your browser asks.
-              </p>
-              <Button onClick={() => setCameraStarted(true)}>Start Camera</Button>
-            </Card.Body>
-          </Card>
+          <div className="scanp-start">
+            <div className="scanp-frame" aria-hidden="true">
+              <span /><span /><span /><span />
+              <div className="scanp-line" />
+            </div>
+            <p className="text-muted mb-3">
+              ClassPulse needs camera access to scan the attendance QR. Choose Allow when your browser asks.
+            </p>
+            <Button className="scanp-btn" onClick={() => setCameraStarted(true)}>
+              Start Camera
+            </Button>
+          </div>
         </>
       ) : (
-        <div
-          id={SCANNER_ELEMENT_ID}
-          style={{ width: "100%", maxWidth: 400, borderRadius: "0.75rem", overflow: "hidden" }}
-        />
+        <div className="scanp-live">
+          <div id={SCANNER_ELEMENT_ID} className="scanp-reader" />
+          <p className="text-muted small mt-3 mb-0 text-center">Hold steady - it scans automatically.</p>
+        </div>
       )}
     </AppShell>
   );

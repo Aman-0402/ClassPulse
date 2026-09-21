@@ -9,6 +9,7 @@ import {
 } from "../../api/client";
 import type { EditRequestReviewEntry } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 import LoadingScreen from "../../components/LoadingScreen";
 import { confirmAction, notifyError, notifySuccess } from "../../utils/alerts";
 import { formatDateTime } from "../../utils/time";
@@ -108,8 +109,11 @@ export default function ProfileCorrectionsPage() {
 
   return (
     <AppShell>
-      <div className="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
-        <h1 className="h3 mb-0">Profile Corrections</h1>
+      <PageHeader
+        eyebrow="Teacher"
+        title="Profile Corrections"
+        subtitle="Students ask for name, CRN or roll number fixes here. Approving applies the change."
+        actions={
         <ButtonGroup>
           <Button variant={filter === "pending" ? "dark" : "outline-secondary"} onClick={() => setFilter("pending")}>
             Pending ({pendingCount})
@@ -118,8 +122,9 @@ export default function ProfileCorrectionsPage() {
             All
           </Button>
         </ButtonGroup>
-      </div>
-      <p className="text-muted small">
+        }
+      />
+      <p className="d-none">
         Students can't edit their name, CRN or roll number themselves — they request a change and it lands here.
       </p>
 

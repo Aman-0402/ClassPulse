@@ -13,6 +13,7 @@ import {
 } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 import { formatSessionTime } from "../../utils/time";
 
 // Roughly 5 rows tall (each ListGroup.Item is ~56px with the current padding/avatar
@@ -229,7 +230,7 @@ export default function LiveQRPage() {
 
   return (
     <AppShell>
-      <h1 className="h3 text-center mb-1">Attendance Live</h1>
+      <PageHeader eyebrow="Teacher" title="Attendance Live" subtitle="Keep this screen visible - students scan the QR below." />
       {error && (
         <Alert variant="warning" className="mt-3">
           {error}

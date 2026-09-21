@@ -4,6 +4,7 @@ import { Alert, Table } from "react-bootstrap";
 import { getOtpHistory, logout } from "../../api/client";
 import type { OTPHistoryEntry } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 import LoadingScreen from "../../components/LoadingScreen";
 import { formatSessionTime } from "../../utils/time";
 
@@ -41,11 +42,11 @@ export default function OTPHistoryPage() {
 
   return (
     <AppShell>
-      <h1 className="h3 mb-4">Password Reset OTP History</h1>
-      <p className="text-muted small">
-        Every OTP a student has requested — active codes still work, used/expired ones are kept for the audit
-        trail. Read the code here and relay it to the student after confirming who they are.
-      </p>
+      <PageHeader
+        eyebrow="Teacher"
+        title="Password Reset OTP History"
+        subtitle="Every OTP a student has requested. Active codes still work; used and expired ones stay for the audit trail. Confirm who they are before relaying a code."
+      />
       {error && <Alert variant="danger">{error}</Alert>}
       {history && history.length === 0 && <p className="text-muted">No OTP requests yet.</p>}
       {history && history.length > 0 && (

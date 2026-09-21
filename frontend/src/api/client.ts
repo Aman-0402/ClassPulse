@@ -465,6 +465,48 @@ export interface AnalyticsResponse {
   date_to: string | null;
 }
 
+export interface LateEntry {
+  date: string;
+  subject: string;
+  scanned_at: string;
+  minutes_late: number;
+}
+
+export interface LateStudent {
+  name: string;
+  crn: string;
+  section: string;
+  late_count: number;
+  max_late: number;
+  avg_late: number;
+  entries: LateEntry[];
+}
+
+export interface LateReportResponse {
+  min_minutes: number;
+  total_scans: number;
+  late_scans: number;
+  sections: { section: string; late_students: number; late_scans: number }[];
+  students: LateStudent[];
+}
+
+export async function getLateReport(
+  minMinutes: number,
+  section?: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<LateReportResponse> {
+  const { data } = await api.get<LateReportResponse>("/attendance/late-report/", {
+    params: {
+      min_minutes: minMinutes,
+      ...(section ? { section } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
+    },
+  });
+  return data;
+}
+
 export async function getAnalytics(
   section?: string,
   dateFrom?: string,

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Card, Form, Button, Alert, InputGroup } from "react-bootstrap";
 import { changePassword } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 
 export default function ChangePasswordPage() {
   const [oldPassword, setOldPassword] = useState("");
@@ -47,8 +48,9 @@ export default function ChangePasswordPage() {
 
   return (
     <AppShell>
-      <h1 className="h3 mb-4">Change Password</h1>
-      <Card style={{ maxWidth: 440 }} className="mx-auto">
+      <PageHeader eyebrow="Account" title="Change Password" subtitle="Pick something only you know." />
+      <div className="pw-layout">
+      <Card className="pw-card">
         <Card.Body className="p-4">
           {error && <Alert variant="danger">{error}</Alert>}
           {success && (
@@ -117,6 +119,16 @@ export default function ChangePasswordPage() {
           </Form>
         </Card.Body>
       </Card>
+      <aside className="pw-tips">
+        <h2 className="h6">A good password</h2>
+        <ul>
+          <li className={newPassword.length >= 8 ? "ok" : ""}>At least 8 characters</li>
+          <li className={/[A-Za-z]/.test(newPassword) && /\d/.test(newPassword) ? "ok" : ""}>Mixes letters and numbers</li>
+          <li className={newPassword !== "" && newPassword === confirmPassword ? "ok" : ""}>Both boxes match</li>
+          <li className={newPassword !== "" && newPassword === newPassword.trim() ? "ok" : ""}>No spaces at the start or end</li>
+        </ul>
+      </aside>
+      </div>
     </AppShell>
   );
 }

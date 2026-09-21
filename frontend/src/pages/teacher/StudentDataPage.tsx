@@ -136,9 +136,10 @@ export default function StudentDataPage() {
     <AppShell>
       <div className="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-4">
         <div>
-          <h1 className="h3 mb-1">Student Data</h1>
+          <div className="pg-eyebrow">Teacher</div>
+          <h1 className="pg-title">Student Data</h1>
           {data && (
-            <div className="text-muted small">
+            <div className="pg-subtitle">
               Profile scan lock is {data.profile_scan_lock_enabled ? "enabled" : "disabled"}.
               {incompleteCount > 0 ? ` ${incompleteCount} student${incompleteCount === 1 ? "" : "s"} missing required profile data.` : " All visible students are complete."}
             </div>

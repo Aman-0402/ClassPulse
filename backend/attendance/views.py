@@ -449,3 +449,24 @@ class ExportPDFView(APIView):
         response = HttpResponse(buffer.read(), content_type="application/pdf")
         response["Content-Disposition"] = f"attachment; filename={filename}"
         return response
+
+
+class LateReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        from attendance.late_report import build_late_report
+
+        section = request.query_params.get("section", "")
+        try:
+            date_from, date_to = _parse_date_range(request)
+            min_minutes = int(request.query_params.get("min_minutes", 10))
+        except ValueError:
+            return Response(
+                {"detail": "date_from/date_to must be YYYY-MM-DD and min_minutes a whole number."}, status=400
+            )
+        if min_minutes < 0:
+            return Response({"detail": "min_minutes cannot be negative."}, status=400)
+        return Response(
+            build_late_report(section=section, date_from=date_from, date_to=date_to, min_minutes=min_minutes)
+        )

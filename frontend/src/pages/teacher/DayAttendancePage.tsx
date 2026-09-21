@@ -4,6 +4,7 @@ import { Alert, Button, Card, Form, Modal, Spinner, Table } from "react-bootstra
 import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
 import type { DayAttendanceResponse, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
 import TablePagination from "../../components/TablePagination";
 import { formatSessionTime } from "../../utils/time";
 import { notifyError, notifySuccess } from "../../utils/alerts";
@@ -182,8 +183,11 @@ export default function DayAttendancePage() {
 
   return (
     <AppShell>
-      <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
-        <h1 className="h3 mb-0">Day-wise Attendance</h1>
+      <PageHeader
+        eyebrow="Teacher"
+        title="Day-wise Attendance"
+        subtitle="Who was present on a given day."
+        actions={
         <div className="d-flex gap-2 flex-wrap">
           <Form.Group controlId="day-section" style={{ minWidth: 180 }}>
             <Form.Label className="small text-muted mb-1">Section</Form.Label>
@@ -211,7 +215,8 @@ export default function DayAttendancePage() {
             </Form.Select>
           </Form.Group>
         </div>
-      </div>
+        }
+      />
 
       {error && <Alert variant="danger">{error}</Alert>}
 
@@ -219,7 +224,7 @@ export default function DayAttendancePage() {
 
       {!loading && data && (
         <>
-          <Card className="mb-4" style={{ maxWidth: 480 }}>
+          <Card className="mb-4 stat-strip">
             <Card.Body className="d-flex justify-content-between align-items-center">
               <div>
                 <div className="text-muted small">Present</div>

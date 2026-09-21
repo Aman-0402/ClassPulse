@@ -4,6 +4,8 @@ import { Card, Table, Button, ButtonGroup, Alert, Form } from "react-bootstrap";
 import { ATTENDANCE_THRESHOLD, getAnalytics, downloadReport, logout } from "../../api/client";
 import type { AnalyticsResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import PageHeader from "../../components/PageHeader";
+import LateArrivalsPanel from "../../components/LateArrivalsPanel";
 import LoadingScreen from "../../components/LoadingScreen";
 import TablePagination from "../../components/TablePagination";
 
@@ -113,8 +115,11 @@ export default function AnalyticsPage() {
 
   return (
     <AppShell>
-      <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
-        <h1 className="h3 mb-0">Attendance Analytics</h1>
+      <PageHeader
+        eyebrow="Teacher"
+        title="Attendance Analytics"
+        subtitle="Per-student attendance across sessions."
+        actions={
         <div className="d-flex gap-2 flex-wrap">
           <Form.Group controlId="student-search" style={{ minWidth: 220 }}>
             <Form.Label className="small text-muted mb-1">Search student</Form.Label>
@@ -137,9 +142,10 @@ export default function AnalyticsPage() {
             </Form.Select>
           </Form.Group>
         </div>
-      </div>
+        }
+      />
 
-      <div className="d-flex align-items-end gap-2 flex-wrap mb-4">
+      <div className="filter-bar">
         <Form.Group controlId="date-from" style={{ minWidth: 160 }}>
           <Form.Label className="small text-muted mb-1">From</Form.Label>
           <Form.Control type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
@@ -172,7 +178,7 @@ export default function AnalyticsPage() {
 
       {loadError && <Alert variant="danger">{loadError}</Alert>}
 
-      <Card className="mb-4" style={{ maxWidth: 480 }}>
+      <Card className="mb-4 stat-strip">
         <Card.Body className="d-flex justify-content-between align-items-center">
           <div>
             <div className="text-muted small">Total Sessions</div>
@@ -187,6 +193,8 @@ export default function AnalyticsPage() {
           </span>
         </Card.Body>
       </Card>
+
+      <LateArrivalsPanel section={section} dateFrom={dateFrom} dateTo={dateTo} />
 
       {downloadError && <Alert variant="danger">{downloadError}</Alert>}
       <ButtonGroup className="mb-3">
