@@ -127,6 +127,23 @@ export function logout() {
   localStorage.removeItem("classpulse_role");
 }
 
+// Logout for the Log Out button: unlike logout() it waits for the server, because
+// students are locked out of logging out for 10 minutes after signing in. Resolves
+// to a message when refused (and keeps the session), or null once logged out.
+export async function requestLogout(): Promise<string | null> {
+  try {
+    await api.post("/logout/");
+  } catch (err: any) {
+    if (err?.response?.data?.code === "logout_locked") {
+      return err.response.data.detail as string;
+    }
+    // Any other failure (already expired token, offline): still let them out locally.
+  }
+  localStorage.removeItem("classpulse_token");
+  localStorage.removeItem("classpulse_role");
+  return null;
+}
+
 export interface ChangePasswordResponse {
   token: string;
 }

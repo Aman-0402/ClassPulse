@@ -61,8 +61,29 @@ class RoleAwareLoginView(ObtainAuthToken):
         return Response({"token": token.key, "role": user.role, "username": user.username})
 
 
+LOGOUT_LOCK_SECONDS = 10 * 60
+
+
 class LogoutView(APIView):
     def post(self, request):
+        # Students can't log out for the first 10 minutes after signing in, so a
+        # student can't hop straight from their own account into a friend's on
+        # the same phone to mark proxy attendance. Token.created is the login
+        # time (logout deletes the token, so every fresh login makes a new one).
+        if request.user.role == User.ROLE_STUDENT and request.auth is not None:
+            created = getattr(request.auth, "created", None)
+            if created:
+                remaining = LOGOUT_LOCK_SECONDS - int((timezone.now() - created).total_seconds())
+                if remaining > 0:
+                    minutes = -(-remaining // 60)
+                    return Response(
+                        {
+                            "detail": f"You can log out {minutes} minute{'s' if minutes != 1 else ''} from now.",
+                            "code": "logout_locked",
+                            "retry_after": remaining,
+                        },
+                        status=403,
+                    )
         # Actually revoke the token server-side — without this, a token issued at
         # login stays valid forever even after the client "logs out" (which was
         # previously just clearing localStorage), a real risk on shared/lab machines.

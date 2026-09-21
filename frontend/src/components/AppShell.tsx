@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar, Nav, Button } from "react-bootstrap";
-import { logout } from "../api/client";
+import { requestLogout } from "../api/client";
+import { notifyInfo } from "../utils/alerts";
 import logo from "../assets/logo.png";
 import InstallPrompt from "./InstallPrompt";
 
@@ -13,8 +14,12 @@ export default function AppShell({ children }: AppShellProps) {
   const navigate = useNavigate();
   const role = localStorage.getItem("classpulse_role");
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    const blocked = await requestLogout();
+    if (blocked) {
+      notifyInfo("Can't Log Out Yet", blocked);
+      return;
+    }
     navigate("/login", { replace: true });
   };
 

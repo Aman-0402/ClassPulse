@@ -103,3 +103,36 @@ class DefaultPasswordForgivenessTest(APITestCase):
 
     def test_wrong_default_password_still_rejected(self):
         self.assertEqual(self._login("25BBA136", "25BBA137").status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutLockTest(APITestCase):
+    def setUp(self):
+        cache.clear()
+        from rest_framework.authtoken.models import Token
+        from django.utils import timezone
+        self.Token, self.timezone = Token, timezone
+        self.student = User.objects.create_user(username="s1", password="pw12345678", role=User.ROLE_STUDENT)
+        self.teacher = User.objects.create_user(username="t1", password="pw12345678", role=User.ROLE_TEACHER)
+
+    def _as(self, user, age_minutes):
+        token = self.Token.objects.create(user=user)
+        self.Token.objects.filter(pk=token.pk).update(
+            created=self.timezone.now() - self.timezone.timedelta(minutes=age_minutes)
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_student_cannot_logout_within_ten_minutes(self):
+        self._as(self.student, 2)
+        response = self.client.post(reverse("logout"))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["code"], "logout_locked")
+        self.assertTrue(self.Token.objects.filter(user=self.student).exists())
+
+    def test_student_can_logout_after_ten_minutes(self):
+        self._as(self.student, 11)
+        self.assertEqual(self.client.post(reverse("logout")).status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(self.Token.objects.filter(user=self.student).exists())
+
+    def test_teacher_can_logout_immediately(self):
+        self._as(self.teacher, 0)
+        self.assertEqual(self.client.post(reverse("logout")).status_code, status.HTTP_204_NO_CONTENT)
