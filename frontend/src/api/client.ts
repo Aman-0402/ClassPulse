@@ -589,3 +589,31 @@ export async function downloadReport(
   // asynchronous; a short delay costs nothing and removes the cross-browser risk.
   setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 }
+
+export interface TimetableSlot {
+  id: number;
+  day_of_week: number;
+  day_name: string;
+  start_time: string;
+  end_time: string;
+  section: string;
+  subject: string;
+}
+
+export type TimetableSlotInput = Omit<TimetableSlot, "id" | "day_name">;
+
+export async function getTimetable(): Promise<TimetableSlot[]> {
+  const { data } = await api.get<TimetableSlot[]>("/attendance/timetable/");
+  return data;
+}
+
+export async function saveTimetableSlot(input: TimetableSlotInput, id?: number): Promise<TimetableSlot> {
+  const { data } = id
+    ? await api.put<TimetableSlot>(`/attendance/timetable/${id}/`, input)
+    : await api.post<TimetableSlot>("/attendance/timetable/", input);
+  return data;
+}
+
+export async function deleteTimetableSlot(id: number): Promise<void> {
+  await api.delete(`/attendance/timetable/${id}/`);
+}

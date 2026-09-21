@@ -1,4 +1,5 @@
 from django.urls import path
+from attendance.timetable import TimetableDetailView, TimetableListCreateView
 from attendance.views import (
     AnalyticsView,
     CurrentScheduleView,
@@ -20,6 +21,8 @@ from attendance.views import (
 )
 
 urlpatterns = [
+    path("timetable/", TimetableListCreateView.as_view(), name="timetable-list"),
+    path("timetable/<int:pk>/", TimetableDetailView.as_view(), name="timetable-detail"),
     path("schedule/current/", CurrentScheduleView.as_view(), name="schedule-current"),
     path("schedule/today/", TodayScheduleView.as_view(), name="schedule-today"),
     path("sessions/start/", StartSessionView.as_view(), name="session-start"),
