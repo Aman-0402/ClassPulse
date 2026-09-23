@@ -15,6 +15,7 @@ import {
 } from "../api/client";
 import type { ScheduleSlot, ProfileEditRequestRecord } from "../api/client";
 import AppShell from "../components/AppShell";
+import Avatar from "../components/Avatar";
 import InstallAppButton from "../components/InstallAppButton";
 import LoadingScreen from "../components/LoadingScreen";
 import PhotoCropModal from "../components/PhotoCropModal";
@@ -340,30 +341,7 @@ export default function StudentProfilePage() {
         <Card id="profile-card" style={{ flex: "1 1 420px" }}>
           <Card.Body>
             <div className={`d-flex align-items-center gap-3 mb-3 ${isMissing("photo") ? "photo-block-missing" : ""}`}>
-              {profile.photo ? (
-                <img
-                  src={profile.photo}
-                  alt="Profile"
-                  width={72}
-                  height={72}
-                  style={{ borderRadius: "12px", objectFit: "cover", border: "2px solid var(--line)" }}
-                />
-              ) : (
-                <span
-                  className="d-inline-flex align-items-center justify-content-center"
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: "12px",
-                    background: "var(--line)",
-                    color: "var(--ink-soft)",
-                    fontWeight: 700,
-                    fontSize: "1.5rem",
-                  }}
-                >
-                  {(profile.full_name || "?").charAt(0).toUpperCase()}
-                </span>
-              )}
+              <Avatar src={profile.photo} name={profile.full_name} size={72} rounded="square" />
               <div>
                 <label className="btn btn-outline-secondary btn-sm mb-0">
                   {photoUploading ? "Uploading..." : profile.photo ? "Change photo" : "Add photo"}

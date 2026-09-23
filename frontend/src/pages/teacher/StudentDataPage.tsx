@@ -10,6 +10,7 @@ import {
 } from "../../api/client";
 import type { TeacherStudentDataResponse, TeacherStudentSummary } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import Avatar from "../../components/Avatar";
 import { formatSessionTime } from "../../utils/time";
 import { notifySuccess, notifyError } from "../../utils/alerts";
 
@@ -234,30 +235,12 @@ export default function StudentDataPage() {
               <Card>
                 <Card.Body>
                   <div className="d-flex gap-3 align-items-center mb-3">
-                    {data.selected_student.photo ? (
-                      <img
-                        src={data.selected_student.photo}
-                        alt=""
-                        width={84}
-                        height={84}
-                        style={{ borderRadius: 8, objectFit: "cover", border: "2px solid var(--line)" }}
-                      />
-                    ) : (
-                      <span
-                        className="d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{
-                          width: 84,
-                          height: 84,
-                          borderRadius: 8,
-                          background: "var(--line)",
-                          color: "var(--ink-soft)",
-                          fontWeight: 700,
-                          fontSize: "1.7rem",
-                        }}
-                      >
-                        {data.selected_student.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                    <Avatar
+                      src={data.selected_student.photo}
+                      name={data.selected_student.name}
+                      size={84}
+                      rounded="square"
+                    />
                     <div>
                       <h2 className="h5 mb-1">{data.selected_student.name}</h2>
                       <div className="font-mono text-muted">{data.selected_student.crn}</div>

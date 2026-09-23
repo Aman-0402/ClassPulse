@@ -13,6 +13,7 @@ import {
 } from "../../api/client";
 import type { AttendanceRecord, ActivityLogEntry, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
+import Avatar from "../../components/Avatar";
 import PageHeader from "../../components/PageHeader";
 import { formatSessionTime } from "../../utils/time";
 
@@ -279,34 +280,7 @@ export default function LiveQRPage() {
                   key={`${record.crn}-${record.marked_at}-${index}`}
                   className="d-flex align-items-center gap-3"
                 >
-                  {record.photo ? (
-                    <img
-                      src={record.photo}
-                      alt=""
-                      width={44}
-                      height={44}
-                      style={{
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "2px solid var(--line)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <span
-                      className="d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "50%",
-                        background: "var(--line)",
-                        color: "var(--ink-soft)",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {record.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
+                  <Avatar src={record.photo} name={record.name} size={44} />
                   <span className="flex-grow-1">
                     {record.name} <span className="text-muted font-mono">({record.crn})</span>
                   </span>
