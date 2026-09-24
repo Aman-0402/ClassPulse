@@ -617,3 +617,37 @@ export async function saveTimetableSlot(input: TimetableSlotInput, id?: number):
 export async function deleteTimetableSlot(id: number): Promise<void> {
   await api.delete(`/attendance/timetable/${id}/`);
 }
+
+export interface Task {
+  id: number;
+  title: string;
+  description: string;
+  section: string;
+  due_date: string | null;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TaskInput = Pick<Task, "title" | "description" | "section" | "due_date">;
+
+export async function getTeacherTasks(section?: string): Promise<Task[]> {
+  const { data } = await api.get<Task[]>("/tasks/teacher/", { params: section ? { section } : {} });
+  return data;
+}
+
+export async function saveTask(input: TaskInput, id?: number): Promise<Task> {
+  const { data } = id
+    ? await api.patch<Task>(`/tasks/teacher/${id}/`, input)
+    : await api.post<Task>("/tasks/teacher/", input);
+  return data;
+}
+
+export async function deleteTask(id: number): Promise<void> {
+  await api.delete(`/tasks/teacher/${id}/`);
+}
+
+export async function getStudentTasks(): Promise<Task[]> {
+  const { data } = await api.get<Task[]>("/tasks/student/");
+  return data;
+}

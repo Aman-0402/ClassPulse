@@ -1784,3 +1784,57 @@ div.required-tag {
 .tt-slot-actions .tt-danger {
   color: var(--stamp-red);
 }
+
+/* ===== Tasks list (admin post / student view) ===== */
+.tk-list {
+  display: grid;
+  gap: 0.9rem;
+}
+.tk-card {
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--brass);
+  box-shadow: var(--shadow-soft);
+}
+.tk-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.tk-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.tk-desc {
+  margin: 0.5rem 0 0;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+}
+.tk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.tk-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.tk-actions button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--brass-dark);
+  font-size: 0.82rem;
+  font-weight: 600;
+}

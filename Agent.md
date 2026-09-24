@@ -123,6 +123,8 @@ if scope changes.
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-09-24** — Phase 2 of the Tasks + Exam System plan done: Tasks frontend. `frontend/src/pages/teacher/TasksPage.tsx` — section tabs (same pattern as Timetable), add/edit modal, delete with confirm. `frontend/src/pages/student/TasksPage.tsx` — read-only list for the student's own section, overdue due-dates shown in red. New routes `/teacher/tasks` and `/student/tasks`, nav links in `AppShell`, a "Tasks" tile on the teacher dashboard. Verified: `npm run build` passes, `manage.py check` clean (no backend change this phase).
+
 - **2026-09-24** — Phase 1 of the Tasks + Exam System plan (see above) done: Tasks backend. New `tasks` app: `Task` model (title, description, section, due_date, created_by), `GET/POST /api/tasks/teacher/` + `GET/PATCH/DELETE /api/tasks/teacher/<id>/` (teacher-role only, optional `?section=` filter), `GET /api/tasks/student/` (student-role only, auto-scoped to their own `StudentProfile.section`, 403 with a clear message if their profile has no section). No submission model — view-only per spec. Verified: 8 new tests pass, full suite 244/244 pass, `manage.py check` clean. No frontend yet — that's Phase 2.
 
 - **2026-09-24** — Added Non-Negotiable Rule 8 (student photo/profile data safety) after `scripts/find_missing_photos.py --fix` correctly cleared 193 students' broken `photo` references on 2026-09-23. The fix itself was right and asked-for, but the user asked for a standing rule so this class of action — a script that bulk-writes to every student's data — never happens again without them explicitly asking that day, and never gets folded into a routine/automatic deploy step. See Rule 8.

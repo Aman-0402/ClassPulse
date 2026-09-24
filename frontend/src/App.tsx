@@ -18,6 +18,8 @@ const OTPHistoryPage = lazy(() => import("./pages/teacher/OTPHistoryPage"));
 const StudentDataPage = lazy(() => import("./pages/teacher/StudentDataPage"));
 const TimetablePage = lazy(() => import("./pages/teacher/TimetablePage"));
 const ProfileCorrectionsPage = lazy(() => import("./pages/teacher/ProfileCorrectionsPage"));
+const TeacherTasksPage = lazy(() => import("./pages/teacher/TasksPage"));
+const StudentTasksPage = lazy(() => import("./pages/student/TasksPage"));
 
 export default function App() {
   return (
@@ -32,6 +34,7 @@ export default function App() {
             <Route path="/student/scan" element={<ScanQRPage />} />
             <Route path="/student/history" element={<AttendanceHistoryPage />} />
             <Route path="/student/change-password" element={<ChangePasswordPage />} />
+            <Route path="/student/tasks" element={<StudentTasksPage />} />
             <Route path="/teacher/profile" element={<TeacherProfilePage />} />
             <Route path="/teacher/start-attendance" element={<StartAttendancePage />} />
             <Route path="/teacher/session/:sessionId" element={<LiveQRPage />} />
@@ -41,6 +44,7 @@ export default function App() {
             <Route path="/teacher/students" element={<StudentDataPage />} />
             <Route path="/teacher/timetable" element={<TimetablePage />} />
             <Route path="/teacher/corrections" element={<ProfileCorrectionsPage />} />
+            <Route path="/teacher/tasks" element={<TeacherTasksPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
