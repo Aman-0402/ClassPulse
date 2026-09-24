@@ -232,71 +232,94 @@ export default function StudentDataPage() {
                 </Card.Body>
               </Card>
             ) : (
-              <Card>
+              <Card className="sd-detail-card">
                 <Card.Body>
-                  <div className="d-flex gap-3 align-items-center mb-3">
+                  <div className="sd-detail-head">
                     <Avatar
                       src={data.selected_student.photo}
                       name={data.selected_student.name}
-                      size={84}
+                      size={72}
                       rounded="square"
                     />
-                    <div>
+                    <div className="sd-detail-head-text">
                       <h2 className="h5 mb-1">{data.selected_student.name}</h2>
-                      <div className="font-mono text-muted">{data.selected_student.crn}</div>
+                      <div className="d-flex align-items-center gap-2 flex-wrap">
+                        <span className="font-mono text-muted small">{data.selected_student.crn}</span>
+                        <span className="stamp stamp-neutral">Section {data.selected_student.section}</span>
+                        <span
+                          className={`stamp ${
+                            data.selected_student.scan_profile_complete ? "stamp-present" : "stamp-absent"
+                          }`}
+                        >
+                          {data.selected_student.scan_profile_complete ? "Profile complete" : "Profile incomplete"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="d-flex flex-column gap-2 mb-3">
-                    <div className="info-row"><span className="info-row-label">Username</span><span className="font-mono">{data.selected_student.username}</span></div>
-                    <div className="info-row"><span className="info-row-label">Roll No.</span><span className="font-mono">{data.selected_student.roll_number}</span></div>
-                    <div className="info-row"><span className="info-row-label">Section</span><span>{data.selected_student.section}</span></div>
-                    <div className="info-row"><span className="info-row-label">Course</span><span>{data.selected_student.course}</span></div>
-                    <div className="info-row"><span className="info-row-label">Semester</span><span>{data.selected_student.semester}</span></div>
-                    <div className="info-row"><span className="info-row-label">Email</span><span className="text-break">{data.selected_student.email}</span></div>
-                    <div className="info-row">
-                      <span className="info-row-label">Contact</span>
-                      <span>{data.selected_student.contact_number || "Not added"}</span>
+                  <dl className="tp-details sd-detail-facts">
+                    <div>
+                      <dt>Username</dt>
+                      <dd className="font-mono">{data.selected_student.username}</dd>
                     </div>
-                    <div className="info-row">
-                      <span className="info-row-label">Trusted Device</span>
-                      <span>
+                    <div>
+                      <dt>Roll No.</dt>
+                      <dd className="font-mono">{data.selected_student.roll_number}</dd>
+                    </div>
+                    <div>
+                      <dt>Course</dt>
+                      <dd>{data.selected_student.course}</dd>
+                    </div>
+                    <div>
+                      <dt>Semester</dt>
+                      <dd>{data.selected_student.semester}</dd>
+                    </div>
+                    <div>
+                      <dt>Email</dt>
+                      <dd className="text-break">{data.selected_student.email || "Not added"}</dd>
+                    </div>
+                    <div>
+                      <dt>Contact</dt>
+                      <dd>{data.selected_student.contact_number || "Not added"}</dd>
+                    </div>
+                    <div>
+                      <dt>Trusted Device</dt>
+                      <dd>
                         {data.selected_student.trusted_device_bound
                           ? `Linked${data.selected_student.trusted_device_bound_at ? ` on ${data.selected_student.trusted_device_bound_at.slice(0, 10)}` : ""}`
                           : "Not linked yet"}
-                      </span>
+                      </dd>
                     </div>
-                    <div className="info-row">
-                      <span className="info-row-label">Scan Profile</span>
-                      <span>
-                        {data.selected_student.scan_profile_complete
-                          ? "Complete"
-                          : `Missing ${data.selected_student.missing_scan_profile_fields.join(", ")}`}
-                      </span>
+                    {!data.selected_student.scan_profile_complete && (
+                      <div>
+                        <dt>Missing for scan</dt>
+                        <dd>{data.selected_student.missing_scan_profile_fields.join(", ")}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  <div className="sd-danger-zone">
+                    <p className="mb-2 small text-muted">{data.selected_student.password_note}</p>
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Button variant="outline-danger" size="sm" onClick={handleResetPassword} disabled={resetting}>
+                        {resetting ? "Resetting..." : "Reset Password to CRN"}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={handleResetDevice}
+                        disabled={resettingDevice}
+                      >
+                        {resettingDevice ? "Resetting..." : "Reset Trusted Device"}
+                      </Button>
                     </div>
                   </div>
 
-                  <Alert variant="warning" className="py-2">
-                    {data.selected_student.password_note}
-                  </Alert>
-                  <Button variant="outline-danger" size="sm" onClick={handleResetPassword} disabled={resetting}>
-                    {resetting ? "Resetting..." : "Reset Password to CRN"}
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    className="ms-2"
-                    onClick={handleResetDevice}
-                    disabled={resettingDevice}
-                  >
-                    {resettingDevice ? "Resetting..." : "Reset Trusted Device"}
-                  </Button>
-
-                  <h3 className="h6 mt-4">Attendance History</h3>
+                  <h3 className="h6 mt-4 mb-2">Attendance History</h3>
                   {data.selected_student.attendance.length === 0 ? (
                     <p className="text-muted mb-0">No attendance marked yet.</p>
                   ) : (
-                    <ListGroup style={{ maxHeight: 340, overflowY: "auto" }}>
+                    <ListGroup className="sd-attendance-list">
                       {data.selected_student.attendance.map((record, index) => (
                         <ListGroup.Item key={`${record.marked_at}-${index}`}>
                           <div className="d-flex justify-content-between gap-2">

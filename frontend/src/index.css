@@ -1907,7 +1907,36 @@ div.required-tag {
     position: sticky;
     top: 5.5rem;
     align-self: flex-start;
+    /* Own scrollbar only if the card genuinely can't fit the viewport at all —
+       normally it shouldn't need one; the attendance list scrolls internally
+       instead so the header/actions above it are never pushed off-screen. */
     max-height: calc(100vh - 6.5rem);
     overflow-y: auto;
   }
+}
+
+/* ===== Student Data: detail card ===== */
+.sd-detail-head {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.sd-detail-head-text {
+  min-width: 0;
+}
+.sd-detail-facts {
+  margin: 0 0 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.sd-danger-zone {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(209, 67, 67, 0.06);
+  border: 1px solid rgba(209, 67, 67, 0.25);
+}
+.sd-attendance-list {
+  max-height: 320px;
+  overflow-y: auto;
 }
