@@ -23,6 +23,8 @@ const QuestionBankPage = lazy(() => import("./pages/teacher/QuestionBankPage"));
 const ExamsPage = lazy(() => import("./pages/teacher/ExamsPage"));
 const ExamResultsPage = lazy(() => import("./pages/teacher/ExamResultsPage"));
 const StudentTasksPage = lazy(() => import("./pages/student/TasksPage"));
+const StudentExamsPage = lazy(() => import("./pages/student/ExamsPage"));
+const ExamTakePage = lazy(() => import("./pages/student/ExamTakePage"));
 
 export default function App() {
   return (
@@ -38,6 +40,8 @@ export default function App() {
             <Route path="/student/history" element={<AttendanceHistoryPage />} />
             <Route path="/student/change-password" element={<ChangePasswordPage />} />
             <Route path="/student/tasks" element={<StudentTasksPage />} />
+            <Route path="/student/exams" element={<StudentExamsPage />} />
+            <Route path="/student/exams/:examId" element={<ExamTakePage />} />
             <Route path="/teacher/profile" element={<TeacherProfilePage />} />
             <Route path="/teacher/start-attendance" element={<StartAttendancePage />} />
             <Route path="/teacher/session/:sessionId" element={<LiveQRPage />} />

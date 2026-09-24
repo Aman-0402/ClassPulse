@@ -83,6 +83,9 @@ export default function AppShell({ children }: AppShellProps) {
                 <Link to="/student/tasks" className="btn btn-outline-light btn-sm">
                   Tasks
                 </Link>
+                <Link to="/student/exams" className="btn btn-outline-light btn-sm">
+                  Exams
+                </Link>
               </>
             )}
             <Button variant="outline-light" size="sm" onClick={handleLogout}>
