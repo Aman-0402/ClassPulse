@@ -157,3 +157,37 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.get_activity_type_display()} - {self.student} ({self.created_at})"
+
+
+class NotAttendingMark(models.Model):
+    """A per-day flag: this student is known not to be attending class that
+    day (dropped out temporarily, on leave, etc.) — visually distinct from a
+    plain unexplained Absent on Day-wise Attendance, but counts exactly the
+    same as absent everywhere attendance percentage is calculated (it's just
+    the absence of an Attendance row, same as always — this model only
+    records the label, it never creates or blocks an Attendance row).
+
+    Scoped by date, not by a specific AttendanceSession, since a section can
+    have more than one session in a day and this label applies to the whole
+    day. If the student does scan in later that day, the real Attendance row
+    takes precedence in `get_day_attendance` — this mark is simply ignored,
+    not deleted, so re-marking is idempotent.
+    """
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="not_attending_marks"
+    )
+    section = models.CharField(max_length=10)
+    date = models.DateField()
+    marked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="marked_not_attending"
+    )
+    marked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["student", "date"], name="one_not_attending_mark_per_student_per_day"),
+        ]
+
+    def __str__(self):
+        return f"{self.student} not attending on {self.date}"

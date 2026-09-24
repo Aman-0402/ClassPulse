@@ -15,7 +15,7 @@ from attendance.exceptions import (
 )
 from accounts.models import User, StudentProfile, StudentScanPolicy
 from accounts.device_security import detect_or_bind_student_device
-from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, QRToken, Attendance
+from attendance.models import ActivityLog, AttendanceSession, ClassSchedule, NotAttendingMark, QRToken, Attendance
 
 logger = logging.getLogger(__name__)
 
@@ -180,12 +180,18 @@ def get_day_attendance(section, date):
     present_student_ids = set(
         Attendance.objects.filter(session__in=sessions).values_list("student_id", flat=True)
     )
+    # An actual scan always wins — a not-attending mark is a label for days
+    # nothing else is known, not a block, so it's ignored once real data exists.
+    not_attending_ids = set(
+        NotAttendingMark.objects.filter(section=section, date=date).values_list("student_id", flat=True)
+    ) - present_student_ids
     rows = [
         {
             "crn": student.student_profile.crn,
             "roll_number": student.student_profile.urn,
             "name": student.get_full_name() or student.username,
             "present": student.id in present_student_ids,
+            "not_attending": student.id in not_attending_ids,
         }
         for student in students
     ]

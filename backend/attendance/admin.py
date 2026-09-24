@@ -1,5 +1,5 @@
 from django.contrib import admin
-from attendance.models import AttendanceSession, ClassSchedule, QRToken, Attendance, ActivityLog
+from attendance.models import AttendanceSession, ClassSchedule, NotAttendingMark, QRToken, Attendance, ActivityLog
 
 
 @admin.register(ClassSchedule)
@@ -40,3 +40,4 @@ class AttendanceAdmin(admin.ModelAdmin):
     @admin.display(description="Section")
     def session_section(self, obj):
         return obj.session.section or "-"
+admin.site.register(NotAttendingMark)

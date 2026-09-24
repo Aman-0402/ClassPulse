@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, Button, Card, Form, Modal, Spinner, Table } from "react-bootstrap";
-import { getAnalytics, getDayAttendance, logout, setManualAttendance } from "../../api/client";
+import {
+  getAnalytics,
+  getDayAttendance,
+  logout,
+  markNotAttending,
+  setManualAttendance,
+  unmarkNotAttending,
+} from "../../api/client";
 import type { DayAttendanceResponse, DayAttendanceStudent } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import PageHeader from "../../components/PageHeader";
@@ -20,12 +27,33 @@ function sanitizeCell(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
-function filterByStatus(
-  students: DayAttendanceStudent[],
-  statusFilter: "all" | "present" | "absent"
-): DayAttendanceStudent[] {
-  if (statusFilter === "all") return students;
-  return students.filter((s) => (statusFilter === "present" ? s.present : !s.present));
+type StatusFilter = "all" | "present" | "absent" | "not_attending";
+
+const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
+  all: "",
+  present: "present",
+  absent: "absent",
+  not_attending: "not attending",
+};
+
+function statusLabel(s: DayAttendanceStudent): "Present" | "Absent" | "Not Attending" {
+  if (s.present) return "Present";
+  if (s.not_attending) return "Not Attending";
+  return "Absent";
+}
+
+function filterByStatus(students: DayAttendanceStudent[], statusFilter: StatusFilter): DayAttendanceStudent[] {
+  switch (statusFilter) {
+    case "present":
+      return students.filter((s) => s.present);
+    case "not_attending":
+      return students.filter((s) => s.not_attending);
+    case "absent":
+      // "Absent only" means plain unexplained absences — not attending has its own filter.
+      return students.filter((s) => !s.present && !s.not_attending);
+    default:
+      return students;
+  }
 }
 
 function downloadCsv(filename: string, rows: string[][]) {
@@ -74,7 +102,7 @@ export default function DayAttendancePage() {
   const [savingCrn, setSavingCrn] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<"all" | "present" | "absent">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [promptText, setPromptText] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
   const navigate = useNavigate();
@@ -138,7 +166,7 @@ export default function DayAttendancePage() {
         s.crn,
         s.roll_number,
         s.name,
-        s.present ? "Present" : "Absent",
+        statusLabel(s),
       ]),
     ];
     const suffix = statusFilter === "all" ? "" : `_${statusFilter}`;
@@ -181,6 +209,34 @@ export default function DayAttendancePage() {
     }
   };
 
+  // Not-attending isn't tied to a session, so it works even on a day with
+  // more than one session (unlike the present/absent toggle above).
+  const handleMarkNotAttending = async (crn: string) => {
+    setSavingCrn(crn);
+    setSaveError(null);
+    try {
+      await markNotAttending(crn, section, date);
+      setData(await getDayAttendance(section, date));
+    } catch {
+      setSaveError("Could not mark that student as not attending. Please try again.");
+    } finally {
+      setSavingCrn(null);
+    }
+  };
+
+  const handleUnmarkNotAttending = async (crn: string) => {
+    setSavingCrn(crn);
+    setSaveError(null);
+    try {
+      await unmarkNotAttending(crn, section, date);
+      setData(await getDayAttendance(section, date));
+    } catch {
+      setSaveError("Could not undo that. Please try again.");
+    } finally {
+      setSavingCrn(null);
+    }
+  };
+
   return (
     <AppShell>
       <PageHeader
@@ -207,11 +263,12 @@ export default function DayAttendancePage() {
             <Form.Label className="small text-muted mb-1">Status</Form.Label>
             <Form.Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as "all" | "present" | "absent")}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             >
               <option value="all">All</option>
               <option value="present">Present only</option>
               <option value="absent">Absent only</option>
+              <option value="not_attending">Not attending only</option>
             </Form.Select>
           </Form.Group>
         </div>
@@ -257,7 +314,7 @@ export default function DayAttendancePage() {
             (() => {
               const filteredStudents = filterByStatus(data.students, statusFilter);
               if (filteredStudents.length === 0) {
-                return <p className="text-muted">No {statusFilter} students for this date.</p>;
+                return <p className="text-muted">No {STATUS_FILTER_LABEL[statusFilter]} students for this date.</p>;
               }
               const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
               const pageStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -265,7 +322,7 @@ export default function DayAttendancePage() {
                 <>
                   <div className="d-flex gap-2 flex-wrap mb-2">
                     <Button variant="outline-secondary" size="sm" onClick={handleExport}>
-                      Export CSV{statusFilter !== "all" ? ` (${statusFilter} only)` : ""}
+                      Export CSV{statusFilter !== "all" ? ` (${STATUS_FILTER_LABEL[statusFilter]} only)` : ""}
                     </Button>
                     <Button variant="outline-primary" size="sm" onClick={handleCreatePrompt}>
                       Create Prompt
@@ -290,24 +347,52 @@ export default function DayAttendancePage() {
                             <td className="font-mono">{s.roll_number}</td>
                             <td>{s.name}</td>
                             <td>
-                              <button
-                                type="button"
-                                className={`stamp ${s.present ? "stamp-present" : "stamp-absent"}`}
-                                style={{
-                                  border: "none",
-                                  cursor: canToggle ? "pointer" : "default",
-                                  opacity: savingCrn === s.crn ? 0.5 : 1,
-                                }}
-                                disabled={!canToggle || savingCrn !== null}
-                                title={
-                                  canToggle
-                                    ? "Click to toggle present/absent"
-                                    : "Only editable when there's exactly one session this day"
-                                }
-                                onClick={() => handleToggle(s.crn, s.present)}
-                              >
-                                {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
-                              </button>
+                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <button
+                                  type="button"
+                                  className={`stamp ${
+                                    s.present
+                                      ? "stamp-present"
+                                      : s.not_attending
+                                      ? "stamp-not-attending"
+                                      : "stamp-absent"
+                                  }`}
+                                  style={{
+                                    border: "none",
+                                    cursor: canToggle ? "pointer" : "default",
+                                    opacity: savingCrn === s.crn ? 0.5 : 1,
+                                  }}
+                                  disabled={!canToggle || savingCrn !== null}
+                                  title={
+                                    canToggle
+                                      ? "Click to toggle present/absent"
+                                      : "Only editable when there's exactly one session this day"
+                                  }
+                                  onClick={() => handleToggle(s.crn, s.present)}
+                                >
+                                  {savingCrn === s.crn ? "Saving..." : statusLabel(s)}
+                                </button>
+                                {!s.present &&
+                                  (s.not_attending ? (
+                                    <button
+                                      type="button"
+                                      className="day-not-attending-link"
+                                      disabled={savingCrn !== null}
+                                      onClick={() => handleUnmarkNotAttending(s.crn)}
+                                    >
+                                      Undo
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="day-not-attending-link"
+                                      disabled={savingCrn !== null}
+                                      onClick={() => handleMarkNotAttending(s.crn)}
+                                    >
+                                      Mark not attending
+                                    </button>
+                                  ))}
+                              </div>
                             </td>
                           </tr>
                         ))}

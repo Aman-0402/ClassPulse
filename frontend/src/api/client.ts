@@ -538,6 +538,10 @@ export interface DayAttendanceStudent {
   roll_number: string;
   name: string;
   present: boolean;
+  // A distinct label for a day the student is known not to be attending
+  // (leave, dropped, etc.) — never true at the same time as `present`, and
+  // counts exactly like absent for percentages. See NotAttendingMark.
+  not_attending: boolean;
   // Only populated on the live-session roster (SessionLiveView) — the
   // per-day attendance view has no single "the" session to time-stamp against.
   marked_at?: string | null;
@@ -561,6 +565,14 @@ export async function getDayAttendance(section: string, date: string): Promise<D
 
 export async function setManualAttendance(sessionId: number, crn: string, present: boolean): Promise<void> {
   await api.post(`/attendance/sessions/${sessionId}/manual/`, { crn, present });
+}
+
+export async function markNotAttending(crn: string, section: string, date: string): Promise<void> {
+  await api.post("/attendance/day/not-attending/", { crn, section, date });
+}
+
+export async function unmarkNotAttending(crn: string, section: string, date: string): Promise<void> {
+  await api.delete("/attendance/day/not-attending/", { params: { crn, section, date } });
 }
 
 export async function downloadReport(

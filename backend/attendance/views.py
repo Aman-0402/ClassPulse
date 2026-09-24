@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from accounts.models import StudentProfile
 from accounts.permissions import IsTeacher, IsStudent
 from attendance.exceptions import AttendanceError, IncompleteProfileError
-from attendance.models import AttendanceSession, Attendance, ActivityLog
+from attendance.models import AttendanceSession, Attendance, ActivityLog, NotAttendingMark
 from attendance.serializers import QRTokenSerializer, SessionSerializer, StartSessionSerializer, TokenInputSerializer
 from attendance.services import (
     attendance_percentage,
@@ -340,6 +340,45 @@ class ManualAttendanceView(APIView):
 
         set_manual_attendance(session, profile.user, present, device_info="manual override by teacher")
         return Response({"crn": crn, "present": present})
+
+
+class NotAttendingView(APIView):
+    """Mark/unmark a student as "not attending" for a whole day (not tied to
+    one session — see NotAttendingMark's docstring). Scoped by section+date
+    rather than session_id since Day-wise Attendance itself is section+date
+    scoped and a day can have more than one session."""
+
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def _validated_student(self, request):
+        crn = request.data.get("crn") or request.query_params.get("crn")
+        section = (request.data.get("section") or request.query_params.get("section") or "").strip().upper()
+        date = request.data.get("date") or request.query_params.get("date")
+        if not crn or not section or not date:
+            return None, None, None, Response({"detail": "crn, section and date are all required."}, status=400)
+        profile = get_object_or_404(StudentProfile.objects.select_related("user"), crn=crn)
+        if profile.section != section:
+            name = profile.user.get_full_name() or profile.user.username
+            return None, None, None, Response({"detail": f"{name} is not in Section {section}."}, status=400)
+        return profile, section, date, None
+
+    def post(self, request):
+        profile, section, date, error = self._validated_student(request)
+        if error:
+            return error
+        NotAttendingMark.objects.update_or_create(
+            student=profile.user, date=date, defaults={"section": section, "marked_by": request.user}
+        )
+        return Response({"crn": profile.crn, "not_attending": True}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        profile, section, date, error = self._validated_student(request)
+        if error:
+            return error
+        deleted, _ = NotAttendingMark.objects.filter(student=profile.user, date=date).delete()
+        if not deleted:
+            return Response({"detail": "No not-attending mark for that date."}, status=404)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ExportCSVView(APIView):

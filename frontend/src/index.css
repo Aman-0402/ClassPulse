@@ -399,6 +399,28 @@ a:focus-visible {
 .stamp-neutral {
   color: var(--brass-dark);
 }
+/* Distinct from plain "absent" — a known reason (leave/dropped/etc), not an
+   unexplained no-show, so it gets its own color rather than reusing red. */
+.stamp-not-attending {
+  color: #b45309;
+}
+.day-not-attending-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.day-not-attending-link:hover {
+  color: var(--brass-dark);
+}
+.day-not-attending-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* A solid, unmissable call-to-action pill — distinct from the outline .stamp
    badges used for passive status tags (section, present/absent). Used for the
