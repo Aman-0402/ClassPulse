@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
 import {
+  bulkUploadMCQs,
   deleteMCQQuestion,
   deletePracticalQuestion,
   getMCQQuestions,
@@ -49,6 +51,9 @@ export default function QuestionBankPage() {
   const [practicalForm, setPracticalForm] = useState<PracticalQuestionInput>(EMPTY_PRACTICAL);
   const [practicalFormError, setPracticalFormError] = useState<string | null>(null);
   const [savingPractical, setSavingPractical] = useState(false);
+
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
 
@@ -127,6 +132,34 @@ export default function QuestionBankPage() {
     }
   };
 
+  const handleCsvChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await bulkUploadMCQs(file);
+      loadAll();
+      if (result.errors.length === 0) {
+        notifySuccess("Questions Uploaded", `${result.created} MCQ(s) added to the bank.`);
+      } else {
+        Swal.fire({
+          icon: result.created > 0 ? "warning" : "error",
+          title: result.created > 0 ? "Uploaded With Some Rows Skipped" : "Upload Failed",
+          html: `<p>${result.created} question(s) added. ${result.errors.length} row(s) skipped:</p>
+                 <ul style="text-align:left;max-height:220px;overflow:auto;padding-left:1.2em">
+                   ${result.errors.map((e) => `<li>${e}</li>`).join("")}
+                 </ul>`,
+          confirmButtonColor: "#9d5fd1",
+        });
+      }
+    } catch (err: any) {
+      notifyError("Upload Failed", err?.response?.data?.detail || "Could not read that CSV file.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const openNewPractical = () => {
     setPracticalForm(EMPTY_PRACTICAL);
     setPracticalFormError(null);
@@ -197,11 +230,37 @@ export default function QuestionBankPage() {
         title="Question Bank"
         subtitle="Build the pool exams draw from. Each student gets 5 random active MCQs; you pick 1 easy + 1 hard practical per exam."
         actions={
-          <Button onClick={tab === "mcq" ? openNewMcq : openNewPractical}>
-            + Add {tab === "mcq" ? "MCQ" : "practical question"}
-          </Button>
+          <div className="d-flex gap-2 flex-wrap">
+            {tab === "mcq" && (
+              <>
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? "Uploading..." : "Upload CSV"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  hidden
+                  onChange={handleCsvChange}
+                />
+              </>
+            )}
+            <Button onClick={tab === "mcq" ? openNewMcq : openNewPractical}>
+              + Add {tab === "mcq" ? "MCQ" : "practical question"}
+            </Button>
+          </div>
         }
       />
+      {tab === "mcq" && (
+        <p className="text-muted small mb-3">
+          CSV columns (any order, header required): <code>text, option_a, option_b, option_c, option_d, correct_option</code>{" "}
+          — correct_option is a/b/c/d.
+        </p>
+      )}
 
       {error && <Alert variant="danger">{error}</Alert>}
 

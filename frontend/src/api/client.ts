@@ -833,3 +833,17 @@ export async function submitExam(examId: number): Promise<ExamAttemptState> {
   const { data } = await api.post<ExamAttemptState>(`/exams/student/exams/${examId}/submit/`);
   return data;
 }
+
+export interface MCQBulkUploadResult {
+  created: number;
+  errors: string[];
+}
+
+export async function bulkUploadMCQs(file: File): Promise<MCQBulkUploadResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<MCQBulkUploadResult>("/exams/mcq/bulk-upload/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}

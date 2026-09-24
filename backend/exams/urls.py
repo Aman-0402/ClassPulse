@@ -4,6 +4,7 @@ from exams.attempts import StudentExamAttemptView, StudentExamListView, StudentE
 from exams.views import (
     ExamDetailView,
     ExamListCreateView,
+    MCQBulkUploadView,
     MCQQuestionDetailView,
     MCQQuestionListCreateView,
     PracticalQuestionDetailView,
@@ -13,6 +14,7 @@ from exams.views import (
 urlpatterns = [
     path("mcq/", MCQQuestionListCreateView.as_view(), name="mcq-list"),
     path("mcq/<int:pk>/", MCQQuestionDetailView.as_view(), name="mcq-detail"),
+    path("mcq/bulk-upload/", MCQBulkUploadView.as_view(), name="mcq-bulk-upload"),
     path("practical/", PracticalQuestionListCreateView.as_view(), name="practical-list"),
     path("practical/<int:pk>/", PracticalQuestionDetailView.as_view(), name="practical-detail"),
     path("exam/", ExamListCreateView.as_view(), name="exam-list"),
