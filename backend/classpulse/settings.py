@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'attendance',
     'tasks',
     'exams',
+    'syllabus',
 ]
 
 MIDDLEWARE = [

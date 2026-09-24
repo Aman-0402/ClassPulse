@@ -95,6 +95,7 @@ export default function TeacherProfilePage() {
     { to: "/teacher/tasks", icon: "☑", title: "Tasks", hint: "Post tasks to a section", primary: false, badge: 0 },
     { to: "/teacher/question-bank", icon: "❓", title: "Question Bank", hint: "MCQ and practical questions", primary: false, badge: 0 },
     { to: "/teacher/exams", icon: "📝", title: "Exams", hint: "Schedule exams per section", primary: false, badge: 0 },
+    { to: "/syllabus", icon: "📚", title: "Syllabus", hint: "Session-wise course topics", primary: false, badge: 0 },
     { to: "/teacher/students", icon: "☰", title: "Student Data", hint: "Profiles and contact details", primary: false, badge: 0 },
     { to: "/teacher/analytics", icon: "▤", title: "Analytics", hint: "Attendance percentages", primary: false, badge: 0 },
     { to: "/teacher/day-attendance", icon: "▦", title: "Day-wise", hint: "Who was present, by day", primary: false, badge: 0 },

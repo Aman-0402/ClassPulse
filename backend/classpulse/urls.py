@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/attendance/', include('attendance.urls')),
     path('api/tasks/', include('tasks.urls')),
     path('api/exams/', include('exams.urls')),
+    path('api/syllabus/', include('syllabus.urls')),
 ]
 
 # Always serve media (student photos) through Django, not just in DEBUG — this

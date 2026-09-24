@@ -848,3 +848,27 @@ export async function bulkUploadMCQs(file: File): Promise<MCQBulkUploadResult> {
   });
   return data;
 }
+
+export interface SyllabusSession {
+  id: number;
+  session_number: number;
+  topics: string;
+}
+
+export type SyllabusSessionInput = Pick<SyllabusSession, "session_number" | "topics">;
+
+export async function getSyllabus(): Promise<SyllabusSession[]> {
+  const { data } = await api.get<SyllabusSession[]>("/syllabus/");
+  return data;
+}
+
+export async function saveSyllabusSession(input: SyllabusSessionInput, id?: number): Promise<SyllabusSession> {
+  const { data } = id
+    ? await api.patch<SyllabusSession>(`/syllabus/manage/${id}/`, input)
+    : await api.post<SyllabusSession>("/syllabus/manage/", input);
+  return data;
+}
+
+export async function deleteSyllabusSession(id: number): Promise<void> {
+  await api.delete(`/syllabus/manage/${id}/`);
+}

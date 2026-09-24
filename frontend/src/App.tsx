@@ -25,6 +25,7 @@ const ExamResultsPage = lazy(() => import("./pages/teacher/ExamResultsPage"));
 const StudentTasksPage = lazy(() => import("./pages/student/TasksPage"));
 const StudentExamsPage = lazy(() => import("./pages/student/ExamsPage"));
 const ExamTakePage = lazy(() => import("./pages/student/ExamTakePage"));
+const SyllabusPage = lazy(() => import("./pages/SyllabusPage"));
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route element={<ProtectedRoute />}>
+            <Route path="/syllabus" element={<SyllabusPage />} />
             <Route path="/student/profile" element={<StudentProfilePage />} />
             <Route path="/student/scan" element={<ScanQRPage />} />
             <Route path="/student/history" element={<AttendanceHistoryPage />} />

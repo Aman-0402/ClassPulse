@@ -89,6 +89,7 @@ export default function AppShell({ children }: AppShellProps) {
                     { to: "/teacher/tasks", label: "Tasks" },
                     { to: "/teacher/question-bank", label: "Question Bank" },
                     { to: "/teacher/exams", label: "Exams" },
+                    { to: "/syllabus", label: "Syllabus" },
                   ]}
                 />
                 <NavGroup
@@ -116,6 +117,9 @@ export default function AppShell({ children }: AppShellProps) {
                 </Link>
                 <Link to="/student/exams" className="btn btn-outline-light btn-sm" onClick={closeMenu}>
                   Exams
+                </Link>
+                <Link to="/syllabus" className="btn btn-outline-light btn-sm" onClick={closeMenu}>
+                  Syllabus
                 </Link>
               </>
             )}
