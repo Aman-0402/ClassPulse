@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <LateArrivalsPanel section={section} dateFrom={dateFrom} dateTo={dateTo} />
-      <NotAttendingPanel section={section} dateFrom={dateFrom} dateTo={dateTo} />
+      <NotAttendingPanel />
 
       {downloadError && <Alert variant="danger">{downloadError}</Alert>}
       <ButtonGroup className="mb-3">

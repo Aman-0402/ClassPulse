@@ -1,22 +1,43 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Spinner } from "react-bootstrap";
-import { getNotAttendingReport } from "../api/client";
+import { getAnalytics, getNotAttendingReport } from "../api/client";
 import type { NotAttendingReportResponse } from "../api/client";
 
-interface Props {
+interface FlatRow {
   section: string;
-  dateFrom: string;
-  dateTo: string;
+  crn: string;
+  name: string;
+  date: string;
+}
+
+function flatten(report: NotAttendingReportResponse): FlatRow[] {
+  const rows: FlatRow[] = [];
+  for (const student of report.students) {
+    for (const date of student.dates) {
+      rows.push({ section: student.section, crn: student.crn, name: student.name, date });
+    }
+  }
+  rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.crn.localeCompare(b.crn)));
+  return rows;
 }
 
 // Students marked "not attending" (Day-wise Attendance's distinct-from-Absent
-// status) in the current filter range — same section/date filters as the
-// analytics page above it.
-export default function NotAttendingPanel({ section, dateFrom, dateTo }: Props) {
+// status) — this panel keeps its own section/date filters, independent of
+// whatever the rest of the Analytics page is filtered to.
+export default function NotAttendingPanel() {
+  const [sections, setSections] = useState<string[]>([]);
+  const [section, setSection] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [report, setReport] = useState<NotAttendingReportResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAnalytics()
+      .then((result) => setSections(result.available_sections))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -26,7 +47,6 @@ export default function NotAttendingPanel({ section, dateFrom, dateTo }: Props) 
         if (!active) return;
         setReport(result);
         setError(null);
-        setOpen(null);
       })
       .catch(() => active && setError("Could not load the not-attending list."))
       .finally(() => active && setLoading(false));
@@ -35,13 +55,73 @@ export default function NotAttendingPanel({ section, dateFrom, dateTo }: Props) 
     };
   }, [section, dateFrom, dateTo]);
 
+  const rows = report ? flatten(report) : [];
+
   return (
     <section className="late-panel">
       <div className="late-head">
         <div>
           <h2 className="late-title">Not Attending</h2>
-          <p className="late-sub">Students marked "not attending" on Day-wise Attendance, for this filter.</p>
+          <p className="late-sub">Every student marked "not attending" on Day-wise Attendance, with the date.</p>
         </div>
+      </div>
+
+      <div className="filter-bar mb-3">
+        <div>
+          <label className="small text-muted mb-1 d-block" htmlFor="na-section">
+            Section
+          </label>
+          <select
+            id="na-section"
+            className="form-select form-select-sm"
+            value={section}
+            onChange={(e) => setSection(e.target.value)}
+          >
+            <option value="">All sections</option>
+            {sections.map((s) => (
+              <option key={s} value={s}>
+                Section {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="small text-muted mb-1 d-block" htmlFor="na-from">
+            From
+          </label>
+          <input
+            id="na-from"
+            type="date"
+            className="form-control form-control-sm"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="small text-muted mb-1 d-block" htmlFor="na-to">
+            To
+          </label>
+          <input
+            id="na-to"
+            type="date"
+            className="form-control form-control-sm"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+        {(section || dateFrom || dateTo) && (
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm align-self-end"
+            onClick={() => {
+              setSection("");
+              setDateFrom("");
+              setDateTo("");
+            }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -69,52 +149,30 @@ export default function NotAttendingPanel({ section, dateFrom, dateTo }: Props) 
             ))}
           </div>
 
-          {report.students.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="empty-state">Nobody has been marked not attending for this filter.</div>
           ) : (
             <div className="table-responsive">
               <table className="table mb-0">
                 <thead>
                   <tr>
+                    <th>Date</th>
                     <th>Section</th>
                     <th>CRN</th>
                     <th>Name</th>
-                    <th>Times marked</th>
-                    <th aria-label="Details" />
                   </tr>
                 </thead>
                 <tbody>
-                  {report.students.map((student) => {
-                    const expanded = open === student.crn;
-                    return (
-                      <Fragment key={student.crn}>
-                        <tr className="late-row" onClick={() => setOpen(expanded ? null : student.crn)}>
-                          <td>
-                            <span className="stamp stamp-neutral">{student.section || "-"}</span>
-                          </td>
-                          <td className="font-mono">{student.crn}</td>
-                          <td>{student.name}</td>
-                          <td>
-                            <span className="stamp stamp-not-attending">{student.count}</span>
-                          </td>
-                          <td className="text-end text-muted">{expanded ? "Hide ▴" : "Details ▾"}</td>
-                        </tr>
-                        {expanded && (
-                          <tr className="late-detail">
-                            <td colSpan={5}>
-                              <ul className="late-entries">
-                                {student.dates.map((date) => (
-                                  <li key={date}>
-                                    <span className="font-mono">{date}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                  {rows.map((row, index) => (
+                    <tr key={`${row.crn}-${row.date}-${index}`}>
+                      <td className="font-mono">{row.date}</td>
+                      <td>
+                        <span className="stamp stamp-neutral">{row.section || "-"}</span>
+                      </td>
+                      <td className="font-mono">{row.crn}</td>
+                      <td>{row.name}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
