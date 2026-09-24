@@ -4,6 +4,7 @@ import { Form, Button, Alert, InputGroup, Spinner } from "react-bootstrap";
 import { login } from "../api/client";
 import logo from "../assets/logo.png";
 import Starfield from "../components/Starfield";
+import { getRememberedUsername, setRememberedUsername } from "../utils/session";
 
 // Shared cPanel hosting spins the app down when idle — the first request
 // after a while can take several seconds while Passenger cold-starts a
@@ -14,9 +15,10 @@ const SLOW_LOGIN_HINT_MS = 4000;
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => getRememberedUsername());
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => Boolean(getRememberedUsername()));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showSlowHint, setShowSlowHint] = useState(false);
@@ -29,7 +31,8 @@ export default function LoginPage() {
     setShowSlowHint(false);
     slowHintTimeout.current = setTimeout(() => setShowSlowHint(true), SLOW_LOGIN_HINT_MS);
     try {
-      const { role } = await login(username, password);
+      const { role } = await login(username, password, rememberMe);
+      setRememberedUsername(username, rememberMe);
       const redirectTo = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
       const requestedPath = `${redirectTo?.pathname ?? ""}${redirectTo?.search ?? ""}`;
       const canUseRequestedPath =
@@ -95,6 +98,15 @@ export default function LoginPage() {
                 {showPassword ? "Hide" : "Show"}
               </Button>
             </InputGroup>
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="login-remember">
+            <Form.Check
+              type="checkbox"
+              label="Remember me on this device"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={submitting}
+            />
           </Form.Group>
           <Button type="submit" className="w-100" disabled={submitting}>
             {submitting ? (

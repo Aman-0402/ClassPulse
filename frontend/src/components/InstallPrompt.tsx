@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toast, ToastContainer, Button } from "react-bootstrap";
+import { getRole } from "../utils/session";
 
 const SHOWN_FLAG = "classpulse_install_prompt_shown";
 
@@ -32,7 +33,7 @@ export default function InstallPrompt() {
   const [showIosBanner, setShowIosBanner] = useState(false);
 
   useEffect(() => {
-    const role = localStorage.getItem("classpulse_role");
+    const role = getRole();
     if (role !== "student") return;
     if (!isMobile() || isStandalone()) return;
     if (localStorage.getItem(SHOWN_FLAG)) return;

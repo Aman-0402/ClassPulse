@@ -16,6 +16,7 @@ import AppShell from "../components/AppShell";
 import LoadingScreen from "../components/LoadingScreen";
 import PageHeader from "../components/PageHeader";
 import { confirmAction, notifyError, notifySuccess } from "../utils/alerts";
+import { getRole } from "../utils/session";
 
 function nextSessionNumber(sessions: SyllabusSession[]): number {
   return sessions.length === 0 ? 1 : Math.max(...sessions.map((s) => s.session_number)) + 1;
@@ -58,7 +59,7 @@ export default function SyllabusPage() {
   const [markError, setMarkError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const isTeacher = localStorage.getItem("classpulse_role") === "teacher";
+  const isTeacher = getRole() === "teacher";
 
   const load = () => {
     getSyllabus()

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearSession, getToken, saveSession, updateSessionToken } from "../utils/session";
 
 // Auto-switches so `npm run dev` always talks to a local backend and a real
 // build (`npm run build`, what actually gets deployed) always talks to
@@ -47,7 +48,7 @@ function getOrCreateDeviceId(): string {
 }
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("classpulse_token");
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Token ${token}`;
   }
@@ -60,10 +61,9 @@ export interface LoginResponse {
   username: string;
 }
 
-export async function login(username: string, password: string): Promise<LoginResponse> {
+export async function login(username: string, password: string, remember: boolean): Promise<LoginResponse> {
   const { data } = await api.post<LoginResponse>("/student/login/", { username, password });
-  localStorage.setItem("classpulse_token", data.token);
-  localStorage.setItem("classpulse_role", data.role);
+  saveSession(data.token, data.role, remember);
   return data;
 }
 
@@ -123,8 +123,7 @@ export function logout() {
   // treats logout() as synchronous and navigates immediately after, so this must
   // not block on the network or on the request failing (e.g. already offline).
   api.post("/logout/").catch(() => {});
-  localStorage.removeItem("classpulse_token");
-  localStorage.removeItem("classpulse_role");
+  clearSession();
 }
 
 // Logout for the Log Out button: unlike logout() it waits for the server, because
@@ -139,8 +138,7 @@ export async function requestLogout(): Promise<string | null> {
     }
     // Any other failure (already expired token, offline): still let them out locally.
   }
-  localStorage.removeItem("classpulse_token");
-  localStorage.removeItem("classpulse_role");
+  clearSession();
   return null;
 }
 
@@ -153,7 +151,7 @@ export async function changePassword(oldPassword: string, newPassword: string): 
     old_password: oldPassword,
     new_password: newPassword,
   });
-  localStorage.setItem("classpulse_token", data.token);
+  updateSessionToken(data.token);
 }
 
 // The OTP itself is never sent to the student by this call — it's generated

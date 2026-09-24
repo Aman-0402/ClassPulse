@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Navbar, Nav, Button, Dropdown } from "react-bootstrap";
 import { requestLogout } from "../api/client";
 import { notifyInfo } from "../utils/alerts";
+import { getRole } from "../utils/session";
 import logo from "../assets/logo.png";
 import InstallPrompt from "./InstallPrompt";
 
@@ -38,7 +39,7 @@ function NavGroup({ label, items, onNavigate }: NavGroupProps) {
 
 export default function AppShell({ children }: AppShellProps) {
   const navigate = useNavigate();
-  const role = localStorage.getItem("classpulse_role");
+  const role = getRole();
   const [expanded, setExpanded] = useState(false);
   const closeMenu = () => setExpanded(false);
 
