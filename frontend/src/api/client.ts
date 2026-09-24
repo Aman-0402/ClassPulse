@@ -335,6 +335,7 @@ export interface ScheduleSlot {
   periods: number;
   session_id: number | null;
   session_status: "active" | "closed" | null;
+  present_count: number | null;
 }
 
 export interface TodayScheduleResponse {

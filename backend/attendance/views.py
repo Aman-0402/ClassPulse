@@ -73,6 +73,9 @@ class TodayScheduleView(APIView):
             session = sessions_by_section.get(block["section"])
             block["session_id"] = session.id if session else None
             block["session_status"] = session.status if session else None
+            # Live/closed present count, so the dashboard can show "12 present"
+            # on a session that's already been started, without opening it.
+            block["present_count"] = Attendance.objects.filter(session=session).count() if session else None
         return Response(
             {
                 "day": timezone.localdate().strftime("%A"),

@@ -248,3 +248,20 @@ class TodayScheduleSessionLinkingTest(APITestCase):
         response = self._get_today()
         section_a = next(s for s in response.data["slots"] if s["section"] == "A")
         self.assertIsNone(section_a["session_id"])
+
+    def test_slot_without_a_session_has_no_present_count(self):
+        response = self._get_today()
+        section_a = next(s for s in response.data["slots"] if s["section"] == "A")
+        self.assertIsNone(section_a["present_count"])
+
+    def test_slot_with_a_session_reports_present_count(self):
+        from attendance.models import Attendance
+
+        session = AttendanceSession.objects.create(
+            teacher=self.teacher, subject="AI Training", section="A", date=_monday_date()
+        )
+        student = User.objects.create_user(username="s1", password="pw12345678", role=User.ROLE_STUDENT)
+        Attendance.objects.create(student=student, session=session)
+        response = self._get_today()
+        section_a = next(s for s in response.data["slots"] if s["section"] == "A")
+        self.assertEqual(section_a["present_count"], 1)

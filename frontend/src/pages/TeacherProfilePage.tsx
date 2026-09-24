@@ -225,6 +225,11 @@ export default function TeacherProfilePage() {
                         <span className="tp-slot-main">
                           <span>{slot.subject}</span>
                           <span className="stamp stamp-neutral">BBA III {slot.section}</span>
+                          {slot.present_count !== null && (
+                            <span className="stamp stamp-present">
+                              {slot.present_count} present
+                            </span>
+                          )}
                         </span>
                         <span className={`action-pill ${live ? "action-pill-live" : ""}`}>
                           {live ? "View Live" : slot.session_id ? "View Attendance" : "Start"}
