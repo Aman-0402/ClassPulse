@@ -849,13 +849,42 @@ export async function bulkUploadMCQs(file: File): Promise<MCQBulkUploadResult> {
   return data;
 }
 
+export interface SyllabusCompletionRecord {
+  id: number;
+  section: string;
+  date: string;
+  present_count: number;
+  marked_by_name: string;
+  marked_at: string;
+}
+
 export interface SyllabusSession {
   id: number;
   session_number: number;
   topics: string;
+  completions: SyllabusCompletionRecord[];
 }
 
 export type SyllabusSessionInput = Pick<SyllabusSession, "session_number" | "topics">;
+
+export async function getAttendanceLookup(section: string, date: string): Promise<number | null> {
+  const { data } = await api.get<{ present_count: number | null }>("/syllabus/attendance-lookup/", {
+    params: { section, date },
+  });
+  return data.present_count;
+}
+
+export async function markSyllabusCompletion(
+  sessionId: number,
+  input: { section: string; date: string; present_count: number }
+): Promise<SyllabusCompletionRecord> {
+  const { data } = await api.post<SyllabusCompletionRecord>(`/syllabus/manage/${sessionId}/completion/`, input);
+  return data;
+}
+
+export async function unmarkSyllabusCompletion(sessionId: number, section: string): Promise<void> {
+  await api.delete(`/syllabus/manage/${sessionId}/completion/`, { params: { section } });
+}
 
 export async function getSyllabus(): Promise<SyllabusSession[]> {
   const { data } = await api.get<SyllabusSession[]>("/syllabus/");
