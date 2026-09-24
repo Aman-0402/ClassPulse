@@ -1,8 +1,8 @@
 from rest_framework import generics, permissions
 
 from accounts.permissions import IsTeacher
-from exams.models import MCQQuestion, PracticalQuestion
-from exams.serializers import MCQQuestionSerializer, PracticalQuestionSerializer
+from exams.models import Exam, MCQQuestion, PracticalQuestion
+from exams.serializers import ExamSerializer, MCQQuestionSerializer, PracticalQuestionSerializer
 
 
 class MCQQuestionListCreateView(generics.ListCreateAPIView):
@@ -50,3 +50,25 @@ class PracticalQuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
     serializer_class = PracticalQuestionSerializer
     queryset = PracticalQuestion.objects.all()
+
+
+class ExamListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    serializer_class = ExamSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = Exam.objects.select_related("easy_practical", "hard_practical")
+        section = self.request.query_params.get("section")
+        if section:
+            queryset = queryset.filter(section=section.strip().upper())
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ExamDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    serializer_class = ExamSerializer
+    queryset = Exam.objects.select_related("easy_practical", "hard_practical")
