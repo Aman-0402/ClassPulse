@@ -7,6 +7,7 @@ import { notifyInfo } from "../utils/alerts";
 import { getRole } from "../utils/session";
 import logo from "../assets/logo.png";
 import InstallPrompt from "./InstallPrompt";
+import NewTaskNotifier from "./NewTaskNotifier";
 
 interface AppShellProps {
   children: ReactNode;
@@ -132,6 +133,7 @@ export default function AppShell({ children }: AppShellProps) {
       </Navbar>
       <main className="app-shell-main">{children}</main>
       <InstallPrompt />
+      {role === "student" && <NewTaskNotifier />}
     </div>
   );
 }
