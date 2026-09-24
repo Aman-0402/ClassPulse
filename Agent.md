@@ -81,6 +81,44 @@ npm run dev
 
 Multiple subjects/teachers, timetable integration, geofencing, face/device verification, mobile app. See doc.md §4 and §33 for the full future-enhancement list — don't build these ahead of being asked.
 
+## Phase 6 Plan: Tasks + Exam System
+
+Two new features, spec locked in with the user 2026-09-24. Each phase gets its
+own Work Log entry when done; this section is the standing plan, updated only
+if scope changes.
+
+**Tasks** (view-only, per section, no submission):
+- Admin/teacher posts a task (title, description, due date) to one section.
+- Every student in that section sees it, read-only, soonest-due first.
+
+**Exams**:
+- Admin builds a bank of 100+ MCQs (text, 4 options, correct answer) and a
+  bank of practical questions tagged easy/hard.
+- Admin creates an exam: pick a section, pick exactly 1 easy + 1 hard
+  practical from the bank, set a start/end window, plus a manual open/close
+  override (both apply — scheduled window AND admin can force it early).
+- Each student gets 5 MCQs picked at random from the whole bank the first
+  time they open the exam; that set is then fixed for them and persists
+  across reload (resumable, one attempt).
+- Student answers only the 5 MCQs (radio choice). The 2 practical questions
+  are shown as read-only text — no answer box, no submission for those.
+- On submit: student immediately sees their MCQ score (e.g. "3/5").
+- Admin sees a results page per exam: every student's score + section average.
+
+**Phases:**
+1. Tasks — backend (model, API, tests).
+2. Tasks — frontend (admin create/manage page, student view page, nav).
+3. Exam question bank — backend (MCQ + practical models, CRUD API, tests).
+4. Exam question bank — frontend (admin page to add/edit/tag questions).
+5. Exam scheduling — backend (Exam model: section, practicals, window,
+   manual toggle; list/create/update API, tests).
+6. Exam attempts — backend (assign-5-random-MCQs-once, resumable, submit +
+   score, one-attempt guard; API, tests).
+7. Exam — frontend admin (builder page, results page).
+8. Exam — frontend student (take-exam page: MCQs + read-only practicals,
+   submit, see score; nav/dashboard tiles for both features).
+9. Deploy: rebuild zips, update DEPLOY.md if anything server-side changed.
+
 ## Work Log
 
 Every phase/work update gets an entry here, newest first.
