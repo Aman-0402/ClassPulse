@@ -1838,3 +1838,21 @@ div.required-tag {
   font-size: 0.82rem;
   font-weight: 600;
 }
+
+/* ===== Question Bank ===== */
+.qb-inactive {
+  opacity: 0.55;
+  border-left-color: var(--ink-soft);
+}
+.qb-options {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+}
+.qb-options li.qb-correct {
+  color: var(--stamp-green);
+  font-weight: 600;
+}

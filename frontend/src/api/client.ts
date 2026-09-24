@@ -651,3 +651,59 @@ export async function getStudentTasks(): Promise<Task[]> {
   const { data } = await api.get<Task[]>("/tasks/student/");
   return data;
 }
+
+export interface MCQQuestion {
+  id: number;
+  text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: "a" | "b" | "c" | "d";
+  is_active: boolean;
+  created_at: string;
+}
+
+export type MCQQuestionInput = Omit<MCQQuestion, "id" | "created_at">;
+
+export async function getMCQQuestions(): Promise<MCQQuestion[]> {
+  const { data } = await api.get<MCQQuestion[]>("/exams/mcq/");
+  return data;
+}
+
+export async function saveMCQQuestion(input: MCQQuestionInput, id?: number): Promise<MCQQuestion> {
+  const { data } = id
+    ? await api.patch<MCQQuestion>(`/exams/mcq/${id}/`, input)
+    : await api.post<MCQQuestion>("/exams/mcq/", input);
+  return data;
+}
+
+export async function deleteMCQQuestion(id: number): Promise<void> {
+  await api.delete(`/exams/mcq/${id}/`);
+}
+
+export interface PracticalQuestion {
+  id: number;
+  text: string;
+  difficulty: "easy" | "hard";
+  is_active: boolean;
+  created_at: string;
+}
+
+export type PracticalQuestionInput = Omit<PracticalQuestion, "id" | "created_at">;
+
+export async function getPracticalQuestions(): Promise<PracticalQuestion[]> {
+  const { data } = await api.get<PracticalQuestion[]>("/exams/practical/");
+  return data;
+}
+
+export async function savePracticalQuestion(input: PracticalQuestionInput, id?: number): Promise<PracticalQuestion> {
+  const { data } = id
+    ? await api.patch<PracticalQuestion>(`/exams/practical/${id}/`, input)
+    : await api.post<PracticalQuestion>("/exams/practical/", input);
+  return data;
+}
+
+export async function deletePracticalQuestion(id: number): Promise<void> {
+  await api.delete(`/exams/practical/${id}/`);
+}

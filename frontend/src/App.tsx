@@ -19,6 +19,7 @@ const StudentDataPage = lazy(() => import("./pages/teacher/StudentDataPage"));
 const TimetablePage = lazy(() => import("./pages/teacher/TimetablePage"));
 const ProfileCorrectionsPage = lazy(() => import("./pages/teacher/ProfileCorrectionsPage"));
 const TeacherTasksPage = lazy(() => import("./pages/teacher/TasksPage"));
+const QuestionBankPage = lazy(() => import("./pages/teacher/QuestionBankPage"));
 const StudentTasksPage = lazy(() => import("./pages/student/TasksPage"));
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/teacher/timetable" element={<TimetablePage />} />
             <Route path="/teacher/corrections" element={<ProfileCorrectionsPage />} />
             <Route path="/teacher/tasks" element={<TeacherTasksPage />} />
+            <Route path="/teacher/question-bank" element={<QuestionBankPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

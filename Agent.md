@@ -123,6 +123,8 @@ if scope changes.
 
 Every phase/work update gets an entry here, newest first.
 
+- **2026-09-24** — Phase 4 of the Tasks + Exam System plan done: Exam question bank frontend. `frontend/src/pages/teacher/QuestionBankPage.tsx` — MCQ / Practical tab toggle, add/edit modal (MCQ modal has a radio per option to mark the correct one), Retire/Reactivate (toggles `is_active` without deleting), Delete with confirm. New route `/teacher/question-bank`, nav link, dashboard tile. Verified: `npm run build` passes, `manage.py check` clean (no backend change this phase).
+
 - **2026-09-24** — Phase 3 of the Tasks + Exam System plan done: Exam question bank backend. New `exams` app: `MCQQuestion` (text, 4 options, `correct_option`, `is_active`) and `PracticalQuestion` (text, `difficulty` easy/hard, `is_active`) models. Teacher-only CRUD: `/api/exams/mcq/`, `/api/exams/mcq/<id>/`, `/api/exams/practical/`, `/api/exams/practical/<id>/`, both listable filtered by `?active=` (practical also `?difficulty=`). `is_active=False` retires a question from future exams without touching any exam that already drew it. Verified: 8 new tests pass, full suite 252/252, `manage.py check` clean. No frontend or Exam/attempt model yet — those are Phases 4-6.
 
 - **2026-09-24** — Phase 2 of the Tasks + Exam System plan done: Tasks frontend. `frontend/src/pages/teacher/TasksPage.tsx` — section tabs (same pattern as Timetable), add/edit modal, delete with confirm. `frontend/src/pages/student/TasksPage.tsx` — read-only list for the student's own section, overdue due-dates shown in red. New routes `/teacher/tasks` and `/student/tasks`, nav links in `AppShell`, a "Tasks" tile on the teacher dashboard. Verified: `npm run build` passes, `manage.py check` clean (no backend change this phase).
