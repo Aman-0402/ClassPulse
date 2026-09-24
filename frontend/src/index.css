@@ -1940,3 +1940,18 @@ div.required-tag {
   max-height: 320px;
   overflow-y: auto;
 }
+
+/* Small "updating" indicator on the Student Data detail card while a new
+   selection loads, instead of unmounting the whole page (was causing a
+   full blank/spinner flash on every single click). */
+.sd-detail-loading {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+}
+.sd-detail-fading {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}

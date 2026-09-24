@@ -182,9 +182,9 @@ export default function StudentDataPage() {
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading && <Spinner animation="border" />}
+      {loading && !data && <Spinner animation="border" />}
 
-      {!loading && data && (
+      {data && (
         <Row className="g-4">
           <Col lg={7}>
             <div className="table-responsive">
@@ -232,8 +232,13 @@ export default function StudentDataPage() {
                 </Card.Body>
               </Card>
             ) : (
-              <Card className="sd-detail-card">
-                <Card.Body>
+              <Card className="sd-detail-card" style={{ position: "relative" }}>
+                {loading && (
+                  <div className="sd-detail-loading" aria-hidden="true">
+                    <Spinner animation="border" size="sm" />
+                  </div>
+                )}
+                <Card.Body className={loading ? "sd-detail-fading" : undefined}>
                   <div className="sd-detail-head">
                     <Avatar
                       src={data.selected_student.photo}
