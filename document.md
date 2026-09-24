@@ -1,5 +1,46 @@
 # Smart QR-Based Real-Time Attendance System
 
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Problem Statement](#2-problem-statement)
+3. [Objectives](#3-objectives)
+4. [Scope of the System](#4-scope-of-the-system)
+5. [User Roles](#5-user-roles)
+6. [Student Registration](#6-student-registration)
+7. [Authentication](#7-authentication)
+8. [Attendance Session](#8-attendance-session)
+9. [Dynamic QR Code](#9-dynamic-qr-code)
+10. [QR Validation](#10-qr-validation)
+11. [QR Expiration](#11-qr-expiration)
+12. [Attendance Duration](#12-attendance-duration)
+13. [Attendance Marking](#13-attendance-marking)
+14. [Duplicate Attendance Prevention](#14-duplicate-attendance-prevention)
+15. [Real-Time Teacher Dashboard](#15-real-time-teacher-dashboard)
+16. [Real-Time Notification](#16-real-time-notification)
+17. [Suspicious Activity Detection](#17-suspicious-activity-detection)
+18. [Important Security Consideration](#18-important-security-consideration)
+19. [Student Dashboard](#19-student-dashboard)
+20. [Attendance History](#20-attendance-history)
+21. [Attendance Percentage](#21-attendance-percentage)
+22. [Teacher Analytics](#22-teacher-analytics)
+23. [Attendance Report](#23-attendance-report)
+24. [Database Design](#24-database-design)
+25. [Database Relationships](#25-database-relationships)
+26. [Suggested Technology Stack](#26-suggested-technology-stack)
+27. [System Architecture](#27-system-architecture)
+28. [Complete Attendance Flow](#28-complete-attendance-flow)
+29. [Example Classroom Scenario](#29-example-classroom-scenario)
+30. [Functional Requirements](#30-functional-requirements)
+31. [Non-Functional Requirements](#31-non-functional-requirements)
+32. [Version 1 Development Plan](#32-version-1-development-plan)
+33. [Future Enhancements](#33-future-enhancements)
+34. [Recommended Final Product](#34-recommended-final-product)
+
+*(New chapters get appended below Chapter 34 — add their entry here too, in order.)*
+
+---
+
 ## 1. Project Overview
 
 The **Smart QR-Based Real-Time Attendance System** is a web-based attendance management system designed for a single academic subject/class.
