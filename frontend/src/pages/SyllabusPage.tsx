@@ -258,8 +258,8 @@ export default function SyllabusPage() {
               <tr>
                 <th style={{ width: 90 }}>Session</th>
                 <th>Key Topics Covered</th>
-                <th style={{ width: 220 }}>Status{isTeacher && section ? ` — Section ${section}` : ""}</th>
-                {isTeacher && <th aria-label="Actions" style={{ width: 160 }} />}
+                <th style={{ width: 180 }}>Status{isTeacher && section ? ` — Section ${section}` : ""}</th>
+                {isTeacher && <th aria-label="Actions" style={{ width: 210 }} />}
               </tr>
             </thead>
             <tbody>
@@ -271,38 +271,47 @@ export default function SyllabusPage() {
                     <td>{session.topics}</td>
                     <td>
                       {own ? (
-                        <span className="stamp stamp-present">
-                          Completed — {own.date}
-                          {own.present_count !== undefined ? ` · ${own.present_count} present` : ""}
-                        </span>
+                        <div className="syl-status">
+                          <span className="syl-status-badge syl-status-complete">Completed</span>
+                          <span className="syl-status-meta">
+                            {own.date}
+                            {own.present_count !== undefined ? ` · ${own.present_count} present` : ""}
+                          </span>
+                        </div>
                       ) : (
-                        <span className="stamp stamp-neutral">Pending</span>
+                        <span className="syl-status-badge syl-status-pending">Pending</span>
                       )}
                     </td>
                     {isTeacher && (
-                      <td className="tk-actions">
-                        {!section ? (
-                          <span className="text-muted small">Pick a section</span>
-                        ) : own ? (
-                          <>
-                            <button type="button" onClick={() => openMark(session)}>
-                              Edit
+                      <td>
+                        <div className="syl-actions">
+                          {!section ? (
+                            <span className="text-muted small">Pick a section</span>
+                          ) : own ? (
+                            <div className="syl-actions-row">
+                              <button type="button" className="syl-btn syl-btn-solid" onClick={() => openMark(session)}>
+                                Edit completion
+                              </button>
+                              <button type="button" className="syl-btn syl-btn-danger" onClick={() => handleUnmark(session)}>
+                                Unmark
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="syl-actions-row">
+                              <button type="button" className="syl-btn syl-btn-solid" onClick={() => openMark(session)}>
+                                Mark complete
+                              </button>
+                            </div>
+                          )}
+                          <div className="syl-actions-row syl-actions-row-muted">
+                            <button type="button" className="syl-btn" onClick={() => openEdit(session)}>
+                              Edit topic
                             </button>
-                            <button type="button" className="tt-danger" onClick={() => handleUnmark(session)}>
-                              Unmark
+                            <button type="button" className="syl-btn syl-btn-danger" onClick={() => handleDelete(session)}>
+                              Delete
                             </button>
-                          </>
-                        ) : (
-                          <button type="button" onClick={() => openMark(session)}>
-                            Mark complete
-                          </button>
-                        )}
-                        <button type="button" onClick={() => openEdit(session)}>
-                          Edit topic
-                        </button>
-                        <button type="button" className="tt-danger" onClick={() => handleDelete(session)}>
-                          Delete
-                        </button>
+                          </div>
+                        </div>
                       </td>
                     )}
                   </tr>

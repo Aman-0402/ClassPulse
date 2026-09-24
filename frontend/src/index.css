@@ -1955,3 +1955,67 @@ div.required-tag {
   transition: opacity 0.15s ease;
   pointer-events: none;
 }
+
+/* ===== Syllabus page: status badge + grouped actions ===== */
+.syl-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.syl-status-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.3em 0.85em;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.syl-status-complete {
+  background: var(--stamp-green);
+  color: #fff;
+}
+.syl-status-pending {
+  background: var(--line);
+  color: var(--ink-soft);
+}
+.syl-status-meta {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+.syl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.syl-actions-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.syl-actions-row-muted {
+  padding-top: 0.3rem;
+  border-top: 1px dashed var(--line);
+}
+.syl-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--brass-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.syl-btn-solid {
+  padding: 0.3em 0.8em;
+  border-radius: 999px;
+  background: var(--brass-dark);
+  color: #fff;
+  font-size: 0.78rem;
+}
+.syl-btn-danger {
+  color: var(--stamp-red);
+}
