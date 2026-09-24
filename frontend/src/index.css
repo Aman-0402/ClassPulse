@@ -1900,3 +1900,14 @@ div.required-tag {
 .app-shell-nav .dropdown-toggle::after {
   margin-left: 0.4em;
 }
+
+/* ===== Student Data: keep the detail panel visible while the roster scrolls ===== */
+@media (min-width: 992px) {
+  .sd-detail-col {
+    position: sticky;
+    top: 5.5rem;
+    align-self: flex-start;
+    max-height: calc(100vh - 6.5rem);
+    overflow-y: auto;
+  }
+}

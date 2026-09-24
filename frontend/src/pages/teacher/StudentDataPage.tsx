@@ -224,7 +224,7 @@ export default function StudentDataPage() {
             {filteredStudents.length === 0 && <p className="text-muted">No students found.</p>}
           </Col>
 
-          <Col lg={5}>
+          <Col lg={5} className="sd-detail-col">
             {!data.selected_student ? (
               <Card>
                 <Card.Body>
