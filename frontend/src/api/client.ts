@@ -853,9 +853,10 @@ export interface SyllabusCompletionRecord {
   id: number;
   section: string;
   date: string;
-  present_count: number;
-  marked_by_name: string;
-  marked_at: string;
+  // Present only in the teacher/admin view — students aren't shown this.
+  present_count?: number;
+  marked_by_name?: string;
+  marked_at?: string;
 }
 
 export interface SyllabusSession {

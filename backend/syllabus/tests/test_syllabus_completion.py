@@ -119,6 +119,8 @@ class SyllabusListCompletionVisibilityTest(APITestCase):
         completions = self._my_session(response)["completions"]
         self.assertEqual(len(completions), 1)
         self.assertEqual(completions[0]["section"], "A")
+        self.assertEqual(completions[0]["date"], "2026-09-10")
+        self.assertNotIn("present_count", completions[0])
 
     def test_teacher_sees_every_section_completion(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.teacher_token}")

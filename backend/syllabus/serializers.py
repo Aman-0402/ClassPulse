@@ -19,6 +19,15 @@ class SyllabusCompletionSerializer(serializers.ModelSerializer):
         return obj.marked_by.get_full_name() or obj.marked_by.username
 
 
+class StudentCompletionSerializer(serializers.ModelSerializer):
+    """What a student sees for their own section's completion — the date it
+    was taught, not the headcount. Present count is admin/teacher-only."""
+
+    class Meta:
+        model = SyllabusCompletion
+        fields = ["id", "section", "date"]
+
+
 class MarkCompletionSerializer(serializers.Serializer):
     section = serializers.CharField(max_length=10)
     date = serializers.DateField()
@@ -55,4 +64,5 @@ class SyllabusSessionSerializer(serializers.ModelSerializer):
             profile = getattr(user, "student_profile", None)
             section = profile.section if profile else None
             queryset = queryset.filter(section=section) if section else queryset.none()
+            return StudentCompletionSerializer(queryset, many=True).data
         return SyllabusCompletionSerializer(queryset, many=True).data

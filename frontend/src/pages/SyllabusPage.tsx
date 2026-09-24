@@ -272,7 +272,8 @@ export default function SyllabusPage() {
                     <td>
                       {own ? (
                         <span className="stamp stamp-present">
-                          Completed — {own.date} · {own.present_count} present
+                          Completed — {own.date}
+                          {own.present_count !== undefined ? ` · ${own.present_count} present` : ""}
                         </span>
                       ) : (
                         <span className="stamp stamp-neutral">Pending</span>
