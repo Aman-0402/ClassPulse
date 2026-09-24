@@ -45,6 +45,7 @@ urlpatterns = [
     path('api/logout/', LogoutView.as_view(), name='logout'),
     path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/attendance/', include('attendance.urls')),
+    path('api/tasks/', include('tasks.urls')),
 ]
 
 # Always serve media (student photos) through Django, not just in DEBUG — this
