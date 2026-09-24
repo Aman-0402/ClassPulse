@@ -707,3 +707,129 @@ export async function savePracticalQuestion(input: PracticalQuestionInput, id?: 
 export async function deletePracticalQuestion(id: number): Promise<void> {
   await api.delete(`/exams/practical/${id}/`);
 }
+
+export interface Exam {
+  id: number;
+  title: string;
+  section: string;
+  easy_practical: number;
+  hard_practical: number;
+  easy_practical_text: string;
+  hard_practical_text: string;
+  start_time: string;
+  end_time: string;
+  manual_status: "auto" | "forced_open" | "forced_closed";
+  is_open: boolean;
+  created_at: string;
+}
+
+export type ExamInput = Pick<
+  Exam,
+  "title" | "section" | "easy_practical" | "hard_practical" | "start_time" | "end_time" | "manual_status"
+>;
+
+export async function getExams(section?: string): Promise<Exam[]> {
+  const { data } = await api.get<Exam[]>("/exams/exam/", { params: section ? { section } : {} });
+  return data;
+}
+
+export async function saveExam(input: ExamInput, id?: number): Promise<Exam> {
+  const { data } = id
+    ? await api.patch<Exam>(`/exams/exam/${id}/`, input)
+    : await api.post<Exam>("/exams/exam/", input);
+  return data;
+}
+
+export async function setExamManualStatus(
+  id: number,
+  manual_status: Exam["manual_status"]
+): Promise<Exam> {
+  const { data } = await api.patch<Exam>(`/exams/exam/${id}/`, { manual_status });
+  return data;
+}
+
+export async function deleteExam(id: number): Promise<void> {
+  await api.delete(`/exams/exam/${id}/`);
+}
+
+export interface ExamResultStudent {
+  crn: string;
+  name: string;
+  status: "submitted" | "in_progress";
+  score: number | null;
+  total: number;
+  submitted_at: string | null;
+}
+
+export interface ExamResults {
+  exam_id: number;
+  title: string;
+  section: string;
+  attempted: number;
+  submitted: number;
+  average_score: number | null;
+  students: ExamResultStudent[];
+}
+
+export async function getExamResults(examId: number): Promise<ExamResults> {
+  const { data } = await api.get<ExamResults>(`/exams/exam/${examId}/results/`);
+  return data;
+}
+
+export interface StudentExamSummary {
+  id: number;
+  title: string;
+  section: string;
+  start_time: string;
+  end_time: string;
+  is_open: boolean;
+  status: "not_started" | "in_progress" | "submitted";
+  score: number | null;
+  total: number;
+}
+
+export async function getStudentExams(): Promise<StudentExamSummary[]> {
+  const { data } = await api.get<StudentExamSummary[]>("/exams/student/exams/");
+  return data;
+}
+
+export interface StudentMCQ {
+  id: number;
+  text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+}
+
+export interface ExamAttemptState {
+  exam_id: number;
+  title: string;
+  section: string;
+  easy_practical_text: string;
+  hard_practical_text: string;
+  mcqs: StudentMCQ[];
+  answers: Record<string, string>;
+  submitted: boolean;
+  score: number | null;
+  total: number;
+  is_open: boolean;
+}
+
+export async function startOrResumeExam(examId: number): Promise<ExamAttemptState> {
+  const { data } = await api.get<ExamAttemptState>(`/exams/student/exams/${examId}/`);
+  return data;
+}
+
+export async function saveExamAnswers(
+  examId: number,
+  answers: Record<string, string>
+): Promise<ExamAttemptState> {
+  const { data } = await api.patch<ExamAttemptState>(`/exams/student/exams/${examId}/`, { answers });
+  return data;
+}
+
+export async function submitExam(examId: number): Promise<ExamAttemptState> {
+  const { data } = await api.post<ExamAttemptState>(`/exams/student/exams/${examId}/submit/`);
+  return data;
+}
