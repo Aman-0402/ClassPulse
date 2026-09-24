@@ -6,6 +6,7 @@ import type { AnalyticsResponse } from "../../api/client";
 import AppShell from "../../components/AppShell";
 import PageHeader from "../../components/PageHeader";
 import LateArrivalsPanel from "../../components/LateArrivalsPanel";
+import NotAttendingPanel from "../../components/NotAttendingPanel";
 import LoadingScreen from "../../components/LoadingScreen";
 import TablePagination from "../../components/TablePagination";
 
@@ -195,6 +196,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <LateArrivalsPanel section={section} dateFrom={dateFrom} dateTo={dateTo} />
+      <NotAttendingPanel section={section} dateFrom={dateFrom} dateTo={dateTo} />
 
       {downloadError && <Alert variant="danger">{downloadError}</Alert>}
       <ButtonGroup className="mb-3">

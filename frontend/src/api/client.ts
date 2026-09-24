@@ -914,3 +914,32 @@ export async function saveSyllabusSession(input: SyllabusSessionInput, id?: numb
 export async function deleteSyllabusSession(id: number): Promise<void> {
   await api.delete(`/syllabus/manage/${id}/`);
 }
+
+export interface NotAttendingStudent {
+  name: string;
+  crn: string;
+  section: string;
+  count: number;
+  dates: string[];
+}
+
+export interface NotAttendingReportResponse {
+  total_marks: number;
+  sections: { section: string; students: number; marks: number }[];
+  students: NotAttendingStudent[];
+}
+
+export async function getNotAttendingReport(
+  section?: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<NotAttendingReportResponse> {
+  const { data } = await api.get<NotAttendingReportResponse>("/attendance/not-attending-report/", {
+    params: {
+      ...(section ? { section } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
+    },
+  });
+  return data;
+}

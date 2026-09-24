@@ -512,3 +512,17 @@ class LateReportView(APIView):
         return Response(
             build_late_report(section=section, date_from=date_from, date_to=date_to, min_minutes=min_minutes)
         )
+
+
+class NotAttendingReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get(self, request):
+        from attendance.not_attending_report import build_not_attending_report
+
+        section = request.query_params.get("section", "")
+        try:
+            date_from, date_to = _parse_date_range(request)
+        except ValueError:
+            return Response({"detail": "date_from/date_to must be in YYYY-MM-DD format."}, status=400)
+        return Response(build_not_attending_report(section=section, date_from=date_from, date_to=date_to))
