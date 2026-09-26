@@ -49,7 +49,7 @@ export default function StartAttendancePage() {
         }
       })
       .catch(() => {
-        // Timetable auto-fill is a convenience, not required — the form still works blank.
+        // Timetable auto-fill is a convenience, not required - the form still works blank.
       });
     // Only re-run when this page is opened without a specific slot pre-filled.
     // eslint-disable-next-line react-hooks/exhaustive-deps

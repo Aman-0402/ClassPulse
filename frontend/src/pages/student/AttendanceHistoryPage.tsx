@@ -70,7 +70,7 @@ export default function AttendanceHistoryPage() {
       </section>
 
       {data.history.length === 0 ? (
-        <div className="empty-state">No classes recorded yet — history appears here once a session closes.</div>
+        <div className="empty-state">No classes recorded yet. History appears here once a session closes.</div>
       ) : (
         <>
           <div className="data-table-wrap d-none d-md-block">

@@ -111,7 +111,7 @@ class ProfileEditRequest(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.student.get_full_name() or self.student.username} — {self.status}"
+        return f"{self.student.get_full_name() or self.student.username} ({self.status})"
 
 
 def _generate_otp_code():
@@ -146,4 +146,4 @@ class PasswordResetOTP(models.Model):
         return self.used_at is None and timezone.now() < self.expires_at
 
     def __str__(self):
-        return f"{self.user.username} — {self.code} ({'used' if self.used_at else 'active' if self.is_valid else 'expired'})"
+        return f"{self.user.username}: {self.code} ({'used' if self.used_at else 'active' if self.is_valid else 'expired'})"

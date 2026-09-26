@@ -18,7 +18,7 @@ import PageHeader from "../../components/PageHeader";
 import { formatSessionTime } from "../../utils/time";
 
 // Roughly 5 rows tall (each ListGroup.Item is ~56px with the current padding/avatar
-// size) — beyond that the list scrolls instead of pushing the rest of the page down.
+// size) - beyond that the list scrolls instead of pushing the rest of the page down.
 const RECENT_LIST_MAX_HEIGHT = 280;
 
 const QR_REFRESH_MS = 15000;
@@ -58,7 +58,7 @@ export default function LiveQRPage() {
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Tracks which crns/activity entries have already triggered a toast, so re-polling
-  // the same data (nothing new happened) never re-announces it. Refs, not state —
+  // the same data (nothing new happened) never re-announces it. Refs, not state -
   // this bookkeeping shouldn't itself trigger a re-render.
   const seenAttendanceCrns = useRef<Set<string>>(new Set());
   const seenActivityKeys = useRef<Set<string>>(new Set());
@@ -112,7 +112,7 @@ export default function LiveQRPage() {
           setRoster(data.roster);
           setError(null);
 
-          // Toast only for scans this page hasn't already announced — on the very
+          // Toast only for scans this page hasn't already announced - on the very
           // first poll everything is "new" but shouldn't toast (it's history, not
           // something that just happened).
           if (!firstLivePoll.current) {
@@ -155,7 +155,7 @@ export default function LiveQRPage() {
           setActivityError(null);
         })
         .catch(() => {
-          // Security panel — an empty list must never be confused with "checked, nothing found."
+          // Security panel - an empty list must never be confused with "checked, nothing found."
           if (active) setActivityError("Could not load suspicious activity.");
         });
     };
@@ -185,7 +185,7 @@ export default function LiveQRPage() {
     try {
       await stopSession(Number(sessionId));
     } catch {
-      // Already closed or some other failure — either way, nothing more to do here.
+      // Already closed or some other failure - either way, nothing more to do here.
     }
     navigate("/teacher/profile");
   };
@@ -197,7 +197,7 @@ export default function LiveQRPage() {
     setActionError(null);
     try {
       await resumeSession(id);
-      // Refresh immediately rather than waiting for the next poll — resuming
+      // Refresh immediately rather than waiting for the next poll - resuming
       // should feel instant, not "wait up to 3s and hope it worked."
       setSessionStatus("active");
       const [qr, live] = await Promise.all([getSessionQR(id), getSessionLive(id)]);
@@ -339,7 +339,7 @@ export default function LiveQRPage() {
                         {savingCrn === s.crn ? "Saving..." : s.present ? "Present" : "Absent"}
                       </button>
                     </td>
-                    <td className="font-mono text-muted">{s.marked_at ? formatSessionTime(s.marked_at) : "—"}</td>
+                    <td className="font-mono text-muted">{s.marked_at ? formatSessionTime(s.marked_at) : "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -370,7 +370,7 @@ export default function LiveQRPage() {
           <Modal.Title className="h5">Submit attendance?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Stopping will close this session for good — no more students can mark attendance after
+          Stopping will close this session for good. No more students can mark attendance after
           this. {presentCount} of {roster.length || "?"} students are currently marked present.
         </Modal.Body>
         <Modal.Footer>

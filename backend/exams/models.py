@@ -97,7 +97,7 @@ class Exam(models.Model):
         ordering = ["-start_time"]
 
     def __str__(self):
-        return f"{self.title} — Section {self.section}"
+        return f"{self.title}, Section {self.section}"
 
     def is_open(self, now=None):
         if self.manual_status == self.STATUS_FORCED_OPEN:

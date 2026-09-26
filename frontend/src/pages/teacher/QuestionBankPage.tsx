@@ -17,6 +17,7 @@ import AppShell from "../../components/AppShell";
 import LoadingScreen from "../../components/LoadingScreen";
 import PageHeader from "../../components/PageHeader";
 import { confirmAction, notifyError, notifySuccess } from "../../utils/alerts";
+import { escapeHtml } from "../../utils/html";
 
 const EMPTY_MCQ: MCQQuestionInput = {
   text: "",
@@ -147,8 +148,8 @@ export default function QuestionBankPage() {
           icon: result.created > 0 ? "warning" : "error",
           title: result.created > 0 ? "Uploaded With Some Rows Skipped" : "Upload Failed",
           html: `<p>${result.created} question(s) added. ${result.errors.length} row(s) skipped:</p>
-                 <ul style="text-align:left;max-height:220px;overflow:auto;padding-left:1.2em">
-                   ${result.errors.map((e) => `<li>${e}</li>`).join("")}
+                 <ul class="swal-error-list">
+                   ${result.errors.map((e) => `<li>${escapeHtml(e)}</li>`).join("")}
                  </ul>`,
           confirmButtonColor: "#9d5fd1",
         });
@@ -258,7 +259,7 @@ export default function QuestionBankPage() {
       {tab === "mcq" && (
         <p className="text-muted small mb-3">
           CSV columns (any order, header required): <code>text, option_a, option_b, option_c, option_d, correct_option</code>{" "}
-          — correct_option is a/b/c/d.
+          (correct_option is a, b, c or d).
         </p>
       )}
 
@@ -292,7 +293,7 @@ export default function QuestionBankPage() {
                   ))}
                 </ul>
                 <div className="tk-meta">
-                  <span>{q.is_active ? "Active" : "Retired — not used in new exams"}</span>
+                  <span>{q.is_active ? "Active" : "Retired, not used in new exams"}</span>
                   <div className="tk-actions">
                     <button type="button" onClick={() => handleToggleMcqActive(q)}>
                       {q.is_active ? "Retire" : "Reactivate"}
@@ -322,7 +323,7 @@ export default function QuestionBankPage() {
                 </span>
               </div>
               <div className="tk-meta">
-                <span>{q.is_active ? "Active" : "Retired — not used in new exams"}</span>
+                <span>{q.is_active ? "Active" : "Retired, not used in new exams"}</span>
                 <div className="tk-actions">
                   <button type="button" onClick={() => handleTogglePracticalActive(q)}>
                     {q.is_active ? "Retire" : "Reactivate"}

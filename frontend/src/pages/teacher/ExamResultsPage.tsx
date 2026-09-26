@@ -40,7 +40,7 @@ export default function ExamResultsPage() {
     <AppShell>
       <PageHeader
         eyebrow="Admin"
-        title={results ? `Results — ${results.title}` : "Exam Results"}
+        title={results ? `Results: ${results.title}` : "Exam Results"}
         subtitle={results ? `Section ${results.section}` : undefined}
         actions={
           <Link to="/teacher/exams" className="btn btn-outline-secondary btn-sm">
@@ -64,7 +64,7 @@ export default function ExamResultsPage() {
             </div>
             <div className="stat-tile">
               <span className="stat-label">Class average</span>
-              <span className="stat-value">{results.average_score ?? "—"}</span>
+              <span className="stat-value">{results.average_score ?? "Not yet"}</span>
               <span className="late-of">out of 5 MCQs</span>
             </div>
           </div>
@@ -93,8 +93,8 @@ export default function ExamResultsPage() {
                           {s.status === "submitted" ? "Submitted" : "In progress"}
                         </span>
                       </td>
-                      <td className="font-mono">{s.score !== null ? `${s.score} / ${s.total}` : "—"}</td>
-                      <td className="text-muted">{s.submitted_at ? formatDateTime(s.submitted_at) : "—"}</td>
+                      <td className="font-mono">{s.score !== null ? `${s.score} / ${s.total}` : "Not submitted"}</td>
+                      <td className="text-muted">{s.submitted_at ? formatDateTime(s.submitted_at) : "-"}</td>
                     </tr>
                   ))}
                 </tbody>

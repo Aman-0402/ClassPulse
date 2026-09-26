@@ -34,7 +34,7 @@ function todayIso(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Shown to both roles — the course TOC/syllabus. A teacher/admin gets
+// Shown to both roles - the course TOC/syllabus. A teacher/admin gets
 // add/edit/delete for sessions, plus a per-section "mark complete" flow
 // (date + present count, auto-fetched from that section's attendance where
 // available, always editable). A student sees the same list read-only, with
@@ -151,7 +151,7 @@ export default function SyllabusPage() {
   };
 
   // Re-fetches the section's attendance whenever the date changes, so the
-  // count is pre-filled where it can be — the admin can still type over it.
+  // count is pre-filled where it can be - the admin can still type over it.
   useEffect(() => {
     if (!marking || !section || !markDate) return;
     let active = true;
@@ -259,7 +259,7 @@ export default function SyllabusPage() {
               <tr>
                 <th style={{ width: 90 }}>Session</th>
                 <th>Key Topics Covered</th>
-                <th style={{ width: 180 }}>Status{isTeacher && section ? ` — Section ${section}` : ""}</th>
+                <th style={{ width: 180 }}>Status{isTeacher && section ? ` (Section ${section})` : ""}</th>
                 {isTeacher && <th aria-label="Actions" style={{ width: 210 }} />}
               </tr>
             </thead>
@@ -369,7 +369,7 @@ export default function SyllabusPage() {
           <Form onSubmit={handleMarkSubmit}>
             <Modal.Header closeButton>
               <Modal.Title className="h5">
-                Mark Session {marking?.session_number} complete — Section {section}
+                Mark Session {marking?.session_number} complete for Section {section}
               </Modal.Title>
             </Modal.Header>
             <Modal.Body>
@@ -391,8 +391,8 @@ export default function SyllabusPage() {
                   {markLoading
                     ? "Checking attendance records for that date..."
                     : markLookedUp
-                    ? "Fetched from that day's attendance — edit if it's wrong."
-                    : "No attendance record found for that date/section — enter it manually."}
+                    ? "Fetched from that day's attendance. Edit it if it's wrong."
+                    : "No attendance record found for that date and section. Enter it manually."}
                 </Form.Text>
               </Form.Group>
             </Modal.Body>

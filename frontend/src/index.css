@@ -3,7 +3,7 @@
    Deep royal purple + violet accent + soft lavender paper; geometric
    display face, humanist body, monospace for CRNs/timestamps/codes.
    Signature element: the "stamp" badge (see .stamp below). Present/Absent
-   stay green/red on purpose — the one place color still carries meaning
+   stay green/red on purpose - the one place color still carries meaning
    beyond the monochromatic purple palette. */
 
 :root {
@@ -155,7 +155,7 @@ a:focus-visible {
   position: relative;
   overflow: hidden;
 }
-/* Twinkling starfield — two box-shadow layers of randomly-positioned dots
+/* Twinkling starfield - two box-shadow layers of randomly-positioned dots
    (generated once, not randomized per-render) twinkling on staggered
    durations so they don't pulse in sync. Pure CSS, no canvas/JS needed. */
 .auth-shell::before,
@@ -213,7 +213,7 @@ a:focus-visible {
     transform: rotate(360deg);
   }
 }
-/* Occasional shooting star — a bright dot with a fading gradient trail that
+/* Occasional shooting star - a bright dot with a fading gradient trail that
    streaks diagonally across, then sits idle most of its own animation cycle
    before the next pass (durations deliberately offset per instance so
    several never fire in sync). */
@@ -341,8 +341,8 @@ a:focus-visible {
   box-shadow: 0 0 0 0.2rem rgba(157, 95, 209, 0.35);
 }
 /* Below the navbar's md breakpoint, float the opened menu as a popup card
-   anchored under the toggle — not a full-width block shoving the header
-   taller — and stack its buttons into a tap-friendly vertical list. */
+   anchored under the toggle - not a full-width block shoving the header
+   taller - and stack its buttons into a tap-friendly vertical list. */
 @media (max-width: 767.98px) {
   .app-shell-header .navbar-collapse {
     position: absolute;
@@ -399,7 +399,7 @@ a:focus-visible {
 .stamp-neutral {
   color: var(--brass-dark);
 }
-/* Distinct from plain "absent" — a known reason (leave/dropped/etc), not an
+/* Distinct from plain "absent" - a known reason (leave/dropped/etc), not an
    unexplained no-show, so it gets its own color rather than reusing red. */
 .stamp-not-attending {
   color: #b45309;
@@ -422,7 +422,7 @@ a:focus-visible {
   cursor: not-allowed;
 }
 
-/* A solid, unmissable call-to-action pill — distinct from the outline .stamp
+/* A solid, unmissable call-to-action pill - distinct from the outline .stamp
    badges used for passive status tags (section, present/absent). Used for the
    one thing on a timetable row that's actually clickable-feeling: starting or
    jumping into a session. */
@@ -445,7 +445,7 @@ a:focus-visible {
 }
 
 /* Primary standalone CTA (e.g. "Start Attendance" on the teacher welcome page)
-   — a plain .btn-primary read as too small/generic here, this is the single
+   - a plain .btn-primary read as too small/generic here, this is the single
    most important action on the page and should look like it. */
 .cta-button {
   display: inline-flex;
@@ -473,7 +473,7 @@ a:focus-visible {
   transform: translateY(0);
 }
 
-/* Profile detail rows (StudentProfilePage/TeacherProfilePage) — label stacked
+/* Profile detail rows (StudentProfilePage/TeacherProfilePage) - label stacked
    above value instead of a side-by-side dt/dd grid, which squeezed long
    values (emails especially) into an awkwardly narrow column on mobile. */
 .info-row {
@@ -1907,7 +1907,7 @@ div.required-tag {
     position: sticky;
     top: 5.5rem;
     align-self: flex-start;
-    /* Own scrollbar only if the card genuinely can't fit the viewport at all —
+    /* Own scrollbar only if the card genuinely can't fit the viewport at all -
        normally it shouldn't need one; the attendance list scrolls internally
        instead so the header/actions above it are never pushed off-screen. */
     max-height: calc(100vh - 6.5rem);

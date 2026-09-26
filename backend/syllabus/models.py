@@ -43,4 +43,4 @@ class SyllabusCompletion(models.Model):
         ]
 
     def __str__(self):
-        return f"Session {self.session.session_number} — Section {self.section} ({self.date})"
+        return f"Session {self.session.session_number} for Section {self.section} ({self.date})"

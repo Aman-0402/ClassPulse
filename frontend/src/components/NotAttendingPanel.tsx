@@ -22,7 +22,7 @@ function flatten(report: NotAttendingReportResponse): FlatRow[] {
 }
 
 // Students marked "not attending" (Day-wise Attendance's distinct-from-Absent
-// status) — this panel keeps its own section/date filters, independent of
+// status) - this panel keeps its own section/date filters, independent of
 // whatever the rest of the Analytics page is filtered to.
 export default function NotAttendingPanel() {
   const [sections, setSections] = useState<string[]>([]);

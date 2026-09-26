@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 
-// Shared SweetAlert2 styling so every popup in the app looks consistent —
+// Shared SweetAlert2 styling so every popup in the app looks consistent -
 // this is the second call site to need the exact same confirmButtonColor
 // (ScanQRPage was the first), worth a shared helper instead of repeating it.
 const CONFIRM_COLOR = "#9d5fd1";

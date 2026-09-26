@@ -18,7 +18,7 @@ import { confirmAction, notifyError, notifySuccess } from "../../utils/alerts";
 import { formatDateTime } from "../../utils/time";
 
 // datetime-local wants "YYYY-MM-DDTHH:MM" in LOCAL time, but Date.toISOString()
-// is UTC — build the local string by hand instead of slicing the ISO string.
+// is UTC - build the local string by hand instead of slicing the ISO string.
 function toLocalInputValue(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -174,7 +174,7 @@ export default function ExamsPage() {
       await deleteExam(exam.id);
       load();
     } catch {
-      notifyError("Delete Failed", "Could not delete that exam — it may already have student attempts.");
+      notifyError("Delete Failed", "Could not delete that exam. It may already have student attempts.");
     }
   };
 

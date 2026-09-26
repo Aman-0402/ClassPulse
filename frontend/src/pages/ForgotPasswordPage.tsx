@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
         {step === "request" ? (
           <>
             <p className="text-muted small">
-              Enter your username to request an OTP. Your admin will have the code — ask them for it once
+              Enter your username to request an OTP. Your admin will have the code. Ask them for it once
               you've requested it.
             </p>
             <Form onSubmit={handleRequestOtp}>

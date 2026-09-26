@@ -156,7 +156,7 @@ PRACTICALS = [
     ("Design an end-to-end AI-powered customer segmentation and marketing campaign strategy for a retail clothing brand, including data sources, the AI approach you would use, and how you would measure success.", "hard"),
     ("Build a complete SWOT analysis for a real or fictional company entering the food delivery market, using AI tools to research and structure the analysis, and present strategic recommendations.", "hard"),
     ("Design a full recruitment pipeline using AI: from resume screening, to interview question generation, to candidate evaluation criteria, for hiring a Data Analyst.", "hard"),
-    ("Create a complete social media strategy for a new fitness brand for its first 3 months, including content calendar structure, target buyer personas, and campaign goals — using AI at each step.", "hard"),
+    ("Create a complete social media strategy for a new fitness brand for its first 3 months, including content calendar structure, target buyer personas, and campaign goals, using AI at each step.", "hard"),
     ("Develop a business plan outline for a subscription-based meal kit startup, including business model, target market, and a go-to-market strategy, using AI-assisted research and writing.", "hard"),
     ("Design a data-driven budget forecast model outline for a small business's next fiscal year, explaining what data you would use and how AI could support the forecasting.", "hard"),
     ("Create a full risk analysis and scenario plan for a company considering entering a new international market, covering at least 3 major risks and mitigation strategies.", "hard"),

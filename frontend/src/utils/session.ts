@@ -1,6 +1,6 @@
 // Session storage strategy for "Remember me" on login.
 //
-// Without checking "Remember me", the session lives in sessionStorage —
+// Without checking "Remember me", the session lives in sessionStorage -
 // gone the moment the tab/window closes, which is the safer default on a
 // shared/lab computer. Checking it moves the session into localStorage,
 // which is what this app always did before and survives closing the browser.
@@ -25,7 +25,7 @@ export function saveSession(token: string, role: Role, remember: boolean): void 
   other.removeItem(ROLE_KEY);
 }
 
-// Used after a password change, which issues a new token — keep it in
+// Used after a password change, which issues a new token - keep it in
 // whichever storage already holds the session rather than assuming either.
 export function updateSessionToken(token: string): void {
   if (localStorage.getItem(TOKEN_KEY)) {
@@ -50,7 +50,7 @@ export function clearSession(): void {
   sessionStorage.removeItem(ROLE_KEY);
 }
 
-// Just the username field, independent of the session itself — so it can be
+// Just the username field, independent of the session itself - so it can be
 // pre-filled next time even though the actual sign-in wasn't remembered.
 export function getRememberedUsername(): string {
   return localStorage.getItem(REMEMBERED_USERNAME_KEY) ?? "";

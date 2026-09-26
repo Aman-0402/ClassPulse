@@ -8,7 +8,7 @@ interface AvatarProps {
   className?: string;
 }
 
-// A student photo, or their initial if there's no photo — or if the photo URL
+// A student photo, or their initial if there's no photo - or if the photo URL
 // 404s. Old students photographed before a server move/cleanup can end up with
 // a DB row pointing at a file that's no longer on disk; without this, that
 // showed the browser's broken-image icon everywhere the photo was used.

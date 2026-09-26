@@ -19,7 +19,7 @@ interface NavGroupProps {
   onNavigate: () => void;
 }
 
-// One dropdown button grouping related links — keeps the bar from growing a
+// One dropdown button grouping related links - keeps the bar from growing a
 // new button every time a feature is added (it was 11 buttons wide before this).
 function NavGroup({ label, items, onNavigate }: NavGroupProps) {
   return (

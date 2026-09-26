@@ -1,4 +1,4 @@
-// Backend TimeField serializes as "HH:MM:SS" — render as a 12-hour clock label.
+// Backend TimeField serializes as "HH:MM:SS" - render as a 12-hour clock label.
 export function formatTime(value: string): string {
   const [hourStr, minuteStr] = value.split(":");
   const hour = Number(hourStr);
@@ -8,7 +8,7 @@ export function formatTime(value: string): string {
   return `${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
 }
 
-// Backend DateTimeField serializes as a full ISO string — render as a 12-hour clock label.
+// Backend DateTimeField serializes as a full ISO string - render as a 12-hour clock label.
 export function formatSessionTime(isoDatetime: string): string {
   return new Date(isoDatetime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }

@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     if not username or not password:
         sys.exit(
-            "ADMIN_USERNAME and ADMIN_PASSWORD env vars are required — "
+            "ADMIN_USERNAME and ADMIN_PASSWORD env vars are required. "
             "set them (Setup Python App > Environment Variables) and re-run."
         )
 

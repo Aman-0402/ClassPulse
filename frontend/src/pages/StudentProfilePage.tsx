@@ -97,7 +97,7 @@ export default function StudentProfilePage() {
   const [contactInput, setContactInput] = useState("");
   const [contactSaving, setContactSaving] = useState(false);
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
-  // Session-only snooze — "remind me later" means later this same visit-cycle,
+  // Session-only snooze - "remind me later" means later this same visit-cycle,
   // not forever, so it reappears next time they actually log in again rather
   // than being silenced permanently by one click.
   const [photoReminderDismissed, setPhotoReminderDismissed] = useState(
@@ -114,7 +114,7 @@ export default function StudentProfilePage() {
         setPendingRequest(requests.find((r) => r.status === "pending") ?? null);
       })
       .catch(() => {
-        // Non-critical — the request form still works, it just won't show a pending banner.
+        // Non-critical - the request form still works, it just won't show a pending banner.
       });
   };
 
@@ -131,7 +131,7 @@ export default function StudentProfilePage() {
         setSlots(data.slots);
       })
       .catch(() => {
-        // Timetable card is a convenience — the rest of the dashboard still works without it.
+        // Timetable card is a convenience - the rest of the dashboard still works without it.
       });
     loadEditRequests();
   }, [navigate]);
@@ -173,7 +173,7 @@ export default function StudentProfilePage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    // Generous cap just so FileReader doesn't choke on something absurd — the
+    // Generous cap just so FileReader doesn't choke on something absurd - the
     // cropper re-encodes to a fixed 512x512 JPEG regardless of source size, so
     // the backend's real 1MB limit is checked against that output, not this.
     if (file.size > MAX_SOURCE_PHOTO_BYTES) {
@@ -473,7 +473,7 @@ export default function StudentProfilePage() {
         {scheduleDay && (
           <Card style={{ flex: "1 1 420px" }}>
             <Card.Body>
-              <h2 className="h6 mb-3">{scheduleDay}'s Timetable — Section {profile.section}</h2>
+              <h2 className="h6 mb-3">{scheduleDay}'s timetable, Section {profile.section}</h2>
               {(() => {
                 const mySlots = slots.filter((slot) => slot.section === profile.section);
                 return mySlots.length === 0 ? (
@@ -485,7 +485,7 @@ export default function StudentProfilePage() {
                         {mySlots.map((slot, index) => (
                           <tr key={index}>
                             <td className="text-muted font-mono">
-                              {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                              {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                             </td>
                             <td>{slot.subject}</td>
                           </tr>
@@ -513,9 +513,9 @@ export default function StudentProfilePage() {
           {pendingRequest ? (
             <Alert variant="info" className="mb-0">
               You have a pending request awaiting review
-              {pendingRequest.requested_name && <> — name to "{pendingRequest.requested_name}"</>}
-              {pendingRequest.requested_crn && <> — CRN to "{pendingRequest.requested_crn}"</>}
-              {pendingRequest.requested_urn && <> — roll no. to "{pendingRequest.requested_urn}"</>}.
+              {pendingRequest.requested_name && <>, name to "{pendingRequest.requested_name}"</>}
+              {pendingRequest.requested_crn && <>, CRN to "{pendingRequest.requested_crn}"</>}
+              {pendingRequest.requested_urn && <>, roll no. to "{pendingRequest.requested_urn}"</>}.
             </Alert>
           ) : !showCorrectionForm ? (
             <p className="text-muted mb-0 small">

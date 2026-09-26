@@ -19,7 +19,7 @@ import { notifyError, notifySuccess } from "../../utils/alerts";
 const PAGE_SIZE = 70;
 
 // Same quote-prefix guard the backend's CSV/Excel exports use (sanitize_report_cell
-// in attendance/services.py) — CRN/name are free-text via student profile-edit
+// in attendance/services.py) - CRN/name are free-text via student profile-edit
 // requests, so a value starting with =/+/-/@ could execute as a formula if opened
 // in Excel/Sheets unescaped (CWE-1236). This export is generated client-side (the
 // data's already fully loaded here), so it needs its own copy of the same guard.
@@ -49,7 +49,7 @@ function filterByStatus(students: DayAttendanceStudent[], statusFilter: StatusFi
     case "not_attending":
       return students.filter((s) => s.not_attending);
     case "absent":
-      // "Absent only" means plain unexplained absences — not attending has its own filter.
+      // "Absent only" means plain unexplained absences - not attending has its own filter.
       return students.filter((s) => !s.present && !s.not_attending);
     default:
       return students;
@@ -79,12 +79,12 @@ function formatPromptDate(isoDate: string): string {
 }
 
 function buildErpPrompt(section: string, date: string, presentStudents: DayAttendanceStudent[]): string {
-  const list = presentStudents.map((student) => `${student.crn} — ${student.name}`).join("\n");
+  const list = presentStudents.map((student) => `${student.crn} - ${student.name}`).join("\n");
   return `Go to the ERP attendance module and mark attendance for Section ${section}, dated ${formatPromptDate(date)}.
 
 Open the daily attendance / class attendance marking page for this section and date. For each student below, set their status to "Present" (match by CRN first; if CRN isn't visible, match by Name). Leave any student NOT in this list as "Absent" (or the ERP's default).
 
-Present students (CRN — Name):
+Present students (CRN - Name):
 ${list}
 
 Total: ${presentStudents.length} present.
@@ -303,7 +303,7 @@ export default function DayAttendancePage() {
 
           {data.sessions.length > 1 && (
             <p className="text-muted small">
-              Multiple sessions this day — manual correction is disabled to avoid ambiguity. Use the exports on
+              Multiple sessions this day, so manual correction is disabled to avoid ambiguity. Use the exports on
               Analytics for a full breakdown.
             </p>
           )}

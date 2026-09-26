@@ -160,7 +160,7 @@ export default function TasksPage() {
               </div>
               {task.description && <p className="tk-desc">{task.description}</p>}
               <div className="tk-meta">
-                <span>Posted by {task.created_by_name || "—"} · {formatDateTime(task.created_at)}</span>
+                <span>Posted by {task.created_by_name || "Admin"} · {formatDateTime(task.created_at)}</span>
                 <div className="tk-actions">
                   <button type="button" onClick={() => openEdit(task)}>
                     Edit

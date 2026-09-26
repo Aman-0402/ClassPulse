@@ -38,7 +38,7 @@ export default function TeacherProfilePage() {
         setSlots(data.slots);
       })
       .catch(() => {
-        // Timetable card is a convenience — the rest of the dashboard still works without it.
+        // Timetable card is a convenience - the rest of the dashboard still works without it.
       });
   }, [navigate]);
 
@@ -221,7 +221,7 @@ export default function TeacherProfilePage() {
                         }
                       >
                         <span className="tp-slot-time font-mono">
-                          {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                          {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                         </span>
                         <span className="tp-slot-main">
                           <span>{slot.subject}</span>

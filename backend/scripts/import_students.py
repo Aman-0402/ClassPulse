@@ -85,7 +85,7 @@ def import_file(path: Path):
 if __name__ == "__main__":
     data_dir = Path(__file__).resolve().parent.parent / os.environ.get("DATA_DIR", "Data")
     if not data_dir.is_dir():
-        sys.exit(f"Data directory not found: {data_dir} — upload the section CSVs there first.")
+        sys.exit(f"Data directory not found: {data_dir}. Upload the section CSVs there first.")
 
     csv_files = sorted(data_dir.glob("Section *.csv"))
     if not csv_files:

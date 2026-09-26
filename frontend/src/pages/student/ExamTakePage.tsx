@@ -140,7 +140,7 @@ export default function ExamTakePage() {
         ))}
       </div>
 
-      <PageHeader eyebrow="Practical" title="Practical questions" subtitle="Answer these separately — not scored here." />
+      <PageHeader eyebrow="Practical" title="Practical questions" subtitle="Answer these separately. They are not scored here." />
       <div className="tk-list mb-4">
         <div className="tk-card">
           <div className="tk-card-head">

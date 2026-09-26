@@ -118,7 +118,7 @@ export default function TimetablePage() {
   const handleDelete = async (slot: TimetableSlot) => {
     const ok = await confirmAction(
       "Delete this slot?",
-      `${slot.day_name} ${formatTime(slot.start_time)}–${formatTime(slot.end_time)} · ${slot.subject} (Section ${slot.section})`,
+      `${slot.day_name} ${formatTime(slot.start_time)} - ${formatTime(slot.end_time)} · ${slot.subject} (Section ${slot.section})`,
       "Delete"
     );
     if (!ok) return;
@@ -188,7 +188,7 @@ export default function TimetablePage() {
                 daySlots.map((slot) => (
                   <div key={slot.id} className="tt-slot">
                     <div className="tt-slot-time font-mono">
-                      {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                      {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                     </div>
                     <div className="tt-slot-subject">{slot.subject}</div>
                     <div className="tt-slot-actions">

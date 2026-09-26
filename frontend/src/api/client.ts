@@ -3,7 +3,7 @@ import { clearSession, getToken, saveSession, updateSessionToken } from "../util
 
 // Auto-switches so `npm run dev` always talks to a local backend and a real
 // build (`npm run build`, what actually gets deployed) always talks to
-// production — no more manually editing this before every deploy and
+// production - no more manually editing this before every deploy and
 // forgetting to revert it for local dev.
 const isLocalFrontend =
   typeof window !== "undefined" &&
@@ -28,7 +28,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || (isLocalFrontend ? localApiUrl(
 export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || "https://arxinfo.info";
 
 // Matches the backend's attendance_percentage() convention (see attendance/views.py's
-// AnalyticsView.below_threshold) — kept in one place so the frontend badge coloring and
+// AnalyticsView.below_threshold) - kept in one place so the frontend badge coloring and
 // the backend's below-threshold list can't silently drift apart.
 export const ATTENDANCE_THRESHOLD = 75;
 
@@ -117,7 +117,7 @@ export async function getTeacherProfile() {
 }
 
 export function logout() {
-  // Best-effort — revoke the token server-side before clearing it locally, so it
+  // Best-effort - revoke the token server-side before clearing it locally, so it
   // can't be replayed after "logout" (previously this only cleared localStorage,
   // leaving the token valid forever). Fire-and-forget: every caller in this app
   // treats logout() as synchronous and navigates immediately after, so this must
@@ -154,7 +154,7 @@ export async function changePassword(oldPassword: string, newPassword: string): 
   updateSessionToken(data.token);
 }
 
-// The OTP itself is never sent to the student by this call — it's generated
+// The OTP itself is never sent to the student by this call - it's generated
 // server-side and only visible to the admin (teacher's OTP History page, or
 // Django admin), who relays it to the student out-of-band (in person/phone
 // call). No SMS/email service exists for this app, so this is deliberately
@@ -537,10 +537,10 @@ export interface DayAttendanceStudent {
   name: string;
   present: boolean;
   // A distinct label for a day the student is known not to be attending
-  // (leave, dropped, etc.) — never true at the same time as `present`, and
+  // (leave, dropped, etc.) - never true at the same time as `present`, and
   // counts exactly like absent for percentages. See NotAttendingMark.
   not_attending: boolean;
-  // Only populated on the live-session roster (SessionLiveView) — the
+  // Only populated on the live-session roster (SessionLiveView) - the
   // per-day attendance view has no single "the" session to time-stamp against.
   marked_at?: string | null;
 }
@@ -863,7 +863,7 @@ export interface SyllabusCompletionRecord {
   id: number;
   section: string;
   date: string;
-  // Present only in the teacher/admin view — students aren't shown this.
+  // Present only in the teacher/admin view - students aren't shown this.
   present_count?: number;
   marked_by_name?: string;
   marked_at?: string;

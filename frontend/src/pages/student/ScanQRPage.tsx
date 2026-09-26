@@ -61,7 +61,7 @@ export default function ScanQRPage() {
     } catch (err: any) {
       if (!active()) return;
       // The backend reports every rejection (duplicate, expired QR, wrong
-      // section, invalid token) as {"detail": "..."} — a DRF validation
+      // section, invalid token) as {"detail": "..."} - a DRF validation
       // error on the token field itself (rare, malformed payload) instead
       // uses {"token": [...]}.
       const data = err?.response?.data;

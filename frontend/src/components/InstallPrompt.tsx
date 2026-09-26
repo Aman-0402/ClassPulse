@@ -27,7 +27,7 @@ function isIos(): boolean {
 // One-time "install this as an app" nudge for students on mobile. Android/Chrome
 // gets the real native install flow via beforeinstallprompt; iOS Safari has no such
 // API at all, so it gets a one-time instructional banner instead ("Share > Add to
-// Home Screen") — the closest thing to an install prompt that platform allows.
+// Home Screen") - the closest thing to an install prompt that platform allows.
 export default function InstallPrompt() {
   const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIosBanner, setShowIosBanner] = useState(false);

@@ -6,7 +6,7 @@ import logo from "../assets/logo.png";
 import Starfield from "../components/Starfield";
 import { getRememberedUsername, setRememberedUsername } from "../utils/session";
 
-// Shared cPanel hosting spins the app down when idle — the first request
+// Shared cPanel hosting spins the app down when idle - the first request
 // after a while can take several seconds while Passenger cold-starts a
 // fresh process. This isn't an error, just worth explaining if it's taking
 // a while so the button doesn't look stuck.
@@ -48,7 +48,7 @@ export default function LoginPage() {
     } finally {
       clearTimeout(slowHintTimeout.current);
     }
-    // Deliberately not resetting submitting on success — the page is about
+    // Deliberately not resetting submitting on success - the page is about
     // to navigate away, and leaving the button in its loading state avoids
     // a flash back to "Log In" right before the route change.
   };
@@ -120,7 +120,7 @@ export default function LoginPage() {
           </Button>
           {showSlowHint && (
             <p className="text-center text-muted small mt-2 mb-0">
-              Still working — the server can take a moment to wake up after being idle.
+              Still working. The server can take a moment to wake up after being idle.
             </p>
           )}
         </Form>

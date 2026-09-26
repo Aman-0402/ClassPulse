@@ -26,7 +26,7 @@ interface Change {
   to: string;
 }
 
-// Only the fields the student actually asked to change — a blank requested_*
+// Only the fields the student actually asked to change - a blank requested_*
 // means "leave this alone", not "clear it".
 function changesFor(entry: EditRequestReviewEntry): Change[] {
   const changes: Change[] = [];
@@ -65,7 +65,7 @@ export default function ProfileCorrectionsPage() {
 
   const review = async (entry: EditRequestReviewEntry, action: "approve" | "reject") => {
     const changes = changesFor(entry);
-    const summary = changes.map((c) => `${c.label}: ${c.from || "—"} → ${c.to}`).join("\n");
+    const summary = changes.map((c) => `${c.label}: ${c.from || "(blank)"} → ${c.to}`).join("\n");
     const approving = action === "approve";
     const crnNote =
       approving && entry.requested_crn
@@ -125,7 +125,7 @@ export default function ProfileCorrectionsPage() {
         }
       />
       <p className="d-none">
-        Students can't edit their name, CRN or roll number themselves — they request a change and it lands here.
+        Students can't edit their name, CRN or roll number themselves. They request a change and it lands here.
       </p>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -163,7 +163,7 @@ export default function ProfileCorrectionsPage() {
                         {isPending && (
                           <>
                             <span className="text-muted text-decoration-line-through font-mono">
-                              {change.from || "—"}
+                              {change.from || "(blank)"}
                             </span>
                             <span aria-hidden="true">→</span>
                           </>
