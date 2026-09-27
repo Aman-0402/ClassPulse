@@ -133,11 +133,19 @@ a:hover {
   --bs-btn-border-color: var(--stamp-red);
 }
 
-/* Focus states: visible everywhere, brass ring */
+/* Focus states: visible everywhere, brass ring. Bootstrap's .btn/.form-control
+   already get one; this line covers the app's own custom buttons (chips, tabs,
+   pills, table-row actions) that render as plain <button>/<a> with no .btn
+   class, so keyboard users get the same visible ring on every interactive
+   element instead of just the ones Bootstrap happens to style. */
 .form-control:focus,
 .form-select:focus,
 .btn:focus-visible,
-a:focus-visible {
+a:focus-visible,
+button:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
   box-shadow: 0 0 0 0.2rem rgba(157, 95, 209, 0.35) !important;
   border-color: var(--brass) !important;
 }
@@ -271,7 +279,7 @@ a:focus-visible {
 .auth-card {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-top: 4px solid var(--accent);
   box-shadow: 0 28px 80px -28px rgba(0, 0, 0, 0.62);
@@ -522,7 +530,7 @@ a:focus-visible {
 .card {
   background: var(--card);
   border: 1px solid rgba(231, 216, 255, 0.95);
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(10px);
   animation: card-enter 0.38s ease both;
@@ -767,7 +775,7 @@ a:focus-visible {
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem;
-  border-radius: 18px;
+  border-radius: 16px;
   color: #fff;
   background: linear-gradient(135deg, var(--brass-dark) 0%, var(--chalkboard) 55%, var(--chalkboard-2) 100%);
   box-shadow: var(--shadow-lift);
@@ -866,7 +874,7 @@ div.required-tag {
   gap: 1.25rem;
   flex-wrap: wrap;
   padding: clamp(1.1rem, 3vw, 2rem);
-  border-radius: 22px;
+  border-radius: 16px;
   color: #fff;
   background:
     radial-gradient(circle at 90% 0%, rgba(34, 211, 238, 0.35), transparent 45%),
@@ -879,7 +887,7 @@ div.required-tag {
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 20px;
+  border-radius: 16px;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.6rem;
@@ -1116,7 +1124,7 @@ div.required-tag {
 }
 .sa-step {
   padding: 1.25rem;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-soft);
@@ -1207,7 +1215,7 @@ div.required-tag {
 }
 .sa-summary {
   padding: 1.5rem;
-  border-radius: 20px;
+  border-radius: 16px;
   color: #fff;
   background:
     radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.3), transparent 50%),
@@ -1377,7 +1385,7 @@ div.required-tag {
 
 .empty-state {
   padding: 2.5rem 1rem;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 2px dashed var(--line);
   color: var(--ink-soft);
   text-align: center;
@@ -1386,7 +1394,7 @@ div.required-tag {
 /* Every bootstrap table wrapper becomes a rounded, scrollable panel. */
 .table-responsive,
 .data-table-wrap {
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid var(--line);
   background: var(--card);
   box-shadow: var(--shadow-soft);
@@ -1438,7 +1446,7 @@ div.required-tag {
   display: grid;
   place-items: center;
   padding: 0.75rem;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-soft);
@@ -1516,7 +1524,7 @@ div.required-tag {
 }
 .pw-tips {
   padding: 1.25rem;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--accent-soft);
   border: 1px solid var(--line);
 }
@@ -1546,7 +1554,7 @@ div.required-tag {
 .scanp-live {
   max-width: 460px;
   padding: 1.5rem;
-  border-radius: 22px;
+  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-soft);
