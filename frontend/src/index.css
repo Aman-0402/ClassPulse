@@ -1349,17 +1349,18 @@ div.required-tag {
   justify-content: center;
   gap: 0.2rem;
   padding: 1rem 1.25rem;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-left: 5px solid var(--brass);
   box-shadow: var(--shadow-soft);
 }
 .stat-tile-good {
-  border-left-color: var(--stamp-green);
+  background: rgba(19, 138, 91, 0.07);
+  border-color: rgba(19, 138, 91, 0.3);
 }
 .stat-tile-bad {
-  border-left-color: var(--stamp-red);
+  background: rgba(209, 67, 67, 0.07);
+  border-color: rgba(209, 67, 67, 0.3);
 }
 .stat-label {
   color: var(--ink-soft);
@@ -1492,12 +1493,12 @@ div.required-tag {
   gap: 0.75rem;
   padding: 0.8rem 1rem;
   border-radius: 14px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-left: 5px solid var(--stamp-green);
+  background: rgba(19, 138, 91, 0.06);
+  border: 1px solid rgba(19, 138, 91, 0.25);
 }
 .hist-item-absent {
-  border-left-color: var(--stamp-red);
+  background: rgba(209, 67, 67, 0.06);
+  border-color: rgba(209, 67, 67, 0.25);
 }
 
 /* ===== Student: change password ===== */
@@ -1780,8 +1781,7 @@ div.required-tag {
   padding: 0.6rem 0.7rem;
   border-radius: 12px;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brass);
-  background: #fff;
+  background: var(--card);
 }
 .tt-slot-time {
   color: var(--ink-soft);
@@ -1817,7 +1817,6 @@ div.required-tag {
   border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-left: 5px solid var(--brass);
   box-shadow: var(--shadow-soft);
 }
 .tk-card-head {
