@@ -87,7 +87,7 @@ export default function ScanQRPage() {
           title: "Complete Your Profile",
           text: detail,
           confirmButtonText: "Complete profile",
-          confirmButtonColor: "#9d5fd1",
+          confirmButtonColor: "#7c3aed",
           showCancelButton: true,
           cancelButtonText: "Later",
         }).then((result) => {

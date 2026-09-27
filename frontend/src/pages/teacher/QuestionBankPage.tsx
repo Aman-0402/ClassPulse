@@ -151,7 +151,7 @@ export default function QuestionBankPage() {
                  <ul class="swal-error-list">
                    ${result.errors.map((e) => `<li>${escapeHtml(e)}</li>`).join("")}
                  </ul>`,
-          confirmButtonColor: "#9d5fd1",
+          confirmButtonColor: "#7c3aed",
         });
       }
     } catch (err: any) {

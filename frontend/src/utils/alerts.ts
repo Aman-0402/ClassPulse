@@ -3,7 +3,10 @@ import Swal from "sweetalert2";
 // Shared SweetAlert2 styling so every popup in the app looks consistent -
 // this is the second call site to need the exact same confirmButtonColor
 // (ScanQRPage was the first), worth a shared helper instead of repeating it.
-const CONFIRM_COLOR = "#9d5fd1";
+// #7c3aed (matches --brass-dark), not the lighter #9d5fd1 this used to be:
+// white confirm-button text on #9d5fd1 measured ~4.2:1, axe-core flagged it
+// as failing the 4.5:1 WCAG AA threshold; this shade measures ~5.7:1.
+const CONFIRM_COLOR = "#7c3aed";
 
 export function notifySuccess(title: string, text?: string) {
   return Swal.fire({ icon: "success", title, text, confirmButtonColor: CONFIRM_COLOR });

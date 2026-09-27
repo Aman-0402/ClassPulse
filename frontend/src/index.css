@@ -1981,12 +1981,17 @@ div.required-tag {
   text-transform: uppercase;
 }
 .syl-status-complete {
-  background: var(--stamp-green);
+  /* Darker than --stamp-green specifically here: white text on the token's
+     usual shade measures ~4.36:1, just under the 4.5:1 a badge this small
+     needs (axe-core caught it). This shade measures ~5.4:1. */
+  background: #0e7a4e;
   color: #fff;
 }
 .syl-status-pending {
   background: var(--line);
-  color: var(--ink-soft);
+  /* --ink-soft on --line measures ~3.9:1, under the 4.5:1 a badge this small
+     needs; --ink measures ~13:1. */
+  color: var(--ink);
 }
 .syl-status-meta {
   font-size: 0.78rem;

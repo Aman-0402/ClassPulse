@@ -156,7 +156,7 @@ export default function StudentProfilePage() {
       title: "Add a Profile Photo",
       text: "You haven't uploaded a profile photo yet. Add one so your teacher can recognize you when you scan in.",
       confirmButtonText: "Add Photo Now",
-      confirmButtonColor: "#9d5fd1",
+      confirmButtonColor: "#7c3aed",
       showDenyButton: true,
       denyButtonText: "Remind me next time",
     }).then((result) => {

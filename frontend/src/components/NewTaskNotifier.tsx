@@ -50,7 +50,7 @@ export default function NewTaskNotifier() {
           title,
           html,
           confirmButtonText: "View Tasks",
-          confirmButtonColor: "#9d5fd1",
+          confirmButtonColor: "#7c3aed",
           showCancelButton: true,
           cancelButtonText: "Later",
         }).then((result) => {
