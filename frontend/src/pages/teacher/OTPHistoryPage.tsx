@@ -43,7 +43,6 @@ export default function OTPHistoryPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Teacher"
         title="Password Reset OTP History"
         subtitle="Every OTP a student has requested. Active codes still work; used and expired ones stay for the audit trail. Confirm who they are before relaying a code."
       />

@@ -33,7 +33,6 @@ export default function AttendanceHistoryPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Student"
         title="Attendance History"
         subtitle="Every closed class, newest first."
       />

@@ -39,7 +39,6 @@ export default function ExamResultsPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
         title={results ? `Results: ${results.title}` : "Exam Results"}
         subtitle={results ? `Section ${results.section}` : undefined}
         actions={

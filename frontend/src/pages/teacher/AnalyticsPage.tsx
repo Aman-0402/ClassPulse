@@ -117,7 +117,6 @@ export default function AnalyticsPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Teacher"
         title="Attendance Analytics"
         subtitle="Per-student attendance across sessions."
         actions={

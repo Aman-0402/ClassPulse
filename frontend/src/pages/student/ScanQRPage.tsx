@@ -156,7 +156,7 @@ export default function ScanQRPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Student" title="Scan Attendance QR" subtitle="Point your camera at the QR your teacher is showing." />
+      <PageHeader title="Scan Attendance QR" subtitle="Point your camera at the QR your teacher is showing." />
       {urlToken ? (
         <Alert variant={status?.variant ?? "info"}>
           <Alert.Heading className="h5">{status?.title ?? "Marking Attendance"}</Alert.Heading>

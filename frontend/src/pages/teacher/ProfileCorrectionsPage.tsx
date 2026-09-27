@@ -110,7 +110,6 @@ export default function ProfileCorrectionsPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Teacher"
         title="Profile Corrections"
         subtitle="Students ask for name, CRN or roll number fixes here. Approving applies the change."
         actions={

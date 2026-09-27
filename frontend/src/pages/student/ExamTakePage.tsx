@@ -84,7 +84,7 @@ export default function ExamTakePage() {
   if (error) {
     return (
       <AppShell>
-        <PageHeader eyebrow="Student" title="Exam" />
+        <PageHeader title="Exam" />
         <Alert variant="danger">{error}</Alert>
         <Link to="/student/exams" className="btn btn-outline-secondary btn-sm">
           Back to exams
@@ -100,7 +100,6 @@ export default function ExamTakePage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Student"
         title={exam.title}
         subtitle={`Section ${exam.section} · 5 MCQs, auto-scored, plus 2 practical questions shown below`}
       />
@@ -140,7 +139,10 @@ export default function ExamTakePage() {
         ))}
       </div>
 
-      <PageHeader eyebrow="Practical" title="Practical questions" subtitle="Answer these separately. They are not scored here." />
+      <div className="mb-3">
+        <h2 className="h5 mb-1">Practical questions</h2>
+        <p className="text-muted small mb-0">Answer these separately. They are not scored here.</p>
+      </div>
       <div className="tk-list mb-4">
         <div className="tk-card">
           <div className="tk-card-head">

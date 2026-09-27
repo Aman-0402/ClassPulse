@@ -231,7 +231,7 @@ export default function LiveQRPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Teacher" title="Attendance Live" subtitle="Keep this screen visible - students scan the QR below." />
+      <PageHeader title="Attendance Live" subtitle="Keep this screen visible - students scan the QR below." />
       {error && (
         <Alert variant="warning" className="mt-3">
           {error}

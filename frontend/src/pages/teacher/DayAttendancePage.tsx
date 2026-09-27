@@ -240,7 +240,6 @@ export default function DayAttendancePage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Teacher"
         title="Day-wise Attendance"
         subtitle="Who was present on a given day."
         actions={

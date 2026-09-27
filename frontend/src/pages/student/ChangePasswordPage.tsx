@@ -48,7 +48,7 @@ export default function ChangePasswordPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Account" title="Change Password" subtitle="Pick something only you know." />
+      <PageHeader title="Change Password" subtitle="Pick something only you know." />
       <div className="pw-layout">
       <Card className="pw-card">
         <Card.Body className="p-4">

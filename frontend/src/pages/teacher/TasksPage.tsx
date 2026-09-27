@@ -115,7 +115,6 @@ export default function TasksPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
         title="Tasks"
         subtitle="Post a task or assignment to a section. Students see it, read-only, on their own portal."
         actions={<Button onClick={openNew}>+ Add task</Button>}

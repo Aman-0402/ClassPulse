@@ -41,7 +41,7 @@ export default function StudentExamsPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Student" title="Exams" subtitle="Exams scheduled for your section." />
+      <PageHeader title="Exams" subtitle="Exams scheduled for your section." />
 
       {error && <div className="empty-state">{error}</div>}
       {exams && exams.length === 0 && <div className="empty-state">No exams scheduled for your section yet.</div>}

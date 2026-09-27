@@ -227,7 +227,6 @@ export default function QuestionBankPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
         title="Question Bank"
         subtitle="Build the pool exams draw from. Each student gets 5 random active MCQs; you pick 1 easy + 1 hard practical per exam."
         actions={

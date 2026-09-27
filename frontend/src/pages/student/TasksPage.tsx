@@ -40,7 +40,7 @@ export default function StudentTasksPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Student" title="Tasks" subtitle="Assignments and tasks posted for your section." />
+      <PageHeader title="Tasks" subtitle="Assignments and tasks posted for your section." />
 
       {error && <div className="empty-state">{error}</div>}
 

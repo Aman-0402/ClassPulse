@@ -189,7 +189,6 @@ export default function ExamsPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
         title="Exams"
         subtitle="Schedule an exam window per section. Each student gets 5 random MCQs plus your chosen easy + hard practical."
         actions={<Button onClick={openNew}>+ Schedule exam</Button>}

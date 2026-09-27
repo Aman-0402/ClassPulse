@@ -141,7 +141,6 @@ export default function TimetablePage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Admin"
         title="Timetable"
         subtitle="Set each section's weekly classes. Teachers see these on their dashboard and Start Attendance pre-fills from them."
         actions={
