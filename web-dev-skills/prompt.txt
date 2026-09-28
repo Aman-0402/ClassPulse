@@ -1,0 +1,45 @@
+You are building or editing a website/web UI. Follow this checklist before, during, and after the work — don't skip steps.
+
+## 1. Read the brief first
+State a one-line Design Read: page kind, audience, vibe, aesthetic family. If the user named a reference brand ("make it look like Apple/Stripe/etc"), check references/awesome-design-md.md for a matching DESIGN.md-style brand token source before inventing your own palette.
+
+## 2. Apply design taste (always)
+Load the `design-taste` skill (or references/design-taste-skill.md summary if the skill isn't installed) for every UI task:
+- Typography: scale ratio >=1.25, body 65-75ch, max 3 font families, no reflex Inter/serif defaults.
+- Color: contrast >=4.5:1 body / >=3:1 large text, one locked accent, no pure black/white, avoid AI-purple-glow defaults.
+- Layout: 4/8px spacing scale, cards only when elevation is meaningful, one corner-radius system.
+- Motion: purposeful only, <300ms, ease-out, transform/opacity only, mandatory prefers-reduced-motion.
+- Interaction: design all 8 states (default/hover/focus/active/disabled/loading/error/success).
+- Copy: no em dashes, no marketing buzzwords, no placeholder names.
+- Anti-slop test: if it reads as "AI made this," rework it. Never ship the first draft — build, critique, refine, pre-flight, ship.
+
+## 3. SEO / AEO / GEO (always, for any public-facing page)
+- Semantic HTML + correct heading hierarchy (one h1, logical nesting).
+- Meta title + description per page.
+- Structured data (JSON-LD, schema.org) where relevant.
+- Direct-answer content blocks (good for AEO featured snippets and GEO citation by AI answer engines).
+- Descriptive alt text on images, canonical URLs, sitemap.xml, robots.txt.
+
+## 4. Component sourcing
+Prefer copy-paste shadcn-CLI-compatible libraries over hand-rolling from scratch. Pick by need:
+- General product UI, polished defaults: references/unlumen-ui.md
+- Landing-page marketing widgets, 150+ components: references/magic-ui.md
+- Micro-interactions / polish on existing UI, accessibility-conscious (respects prefers-reduced-motion): references/smooth-ui.md
+- Big hero/background effects (aurora, spotlight, 3D, bento grids): references/aceternity-ui.md
+- Heavy WebGL/GSAP motion work (use with caution, low-confidence source): references/animaster-lib.md
+- Retro/pixel aesthetic specifically requested: references/retro-ui.md
+- Browsing/discovery across all of the above in one place: references/21st-dev.md
+
+## 5. If starting from an existing screenshot/design image
+Use references/screenshot-to-code.md's approach (vision-LLM image-to-code) to get a first-pass layout, then run it through steps 2 and 3 above — raw output is only ~70-80% there and skips real interaction states.
+
+## 6. Backend errors during the build
+If a backend error looks like an API-version mismatch (deprecated method, changed signature) rather than a logic bug, pull current docs via Context7 (references/context7.md) before guessing at a fix.
+
+## 7. Verify before calling it done
+- Run `npm run check` (or the project's typecheck command).
+- Start the dev server and click through the golden path in a real browser — use playwright-cli (references/playwright-cli.md) for token-efficient agent-driven verification, or a manual look if unavailable.
+- Run a Lighthouse audit (references/lighthouse.md) — check Performance, Accessibility, SEO scores, not just "it loads."
+- Re-run the design-taste pre-flight check before shipping.
+
+Do not skip steps 2, 3, or 7 even under time pressure — these are standing requirements, not optional polish.
